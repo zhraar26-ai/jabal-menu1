@@ -137,13 +137,14 @@ const CATEGORIES: Category[] = [
 
 const NAV_LINKS = [
   { href: "#home", label: "الرئيسية" },
-  { href: "#menu", label: "القائمة" },
+  { href: "#menu", label: "قائمتنا الفاخرة" },
   { href: "#about", label: "عن المطعم" },
   { href: "#contact", label: "تواصل" },
 ];
 
 function HomePage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const [navOpen, setNavOpen] = useState(false);
 
   const setQty = (key: string, delta: number) =>
@@ -154,10 +155,12 @@ function HomePage() {
     [quantities],
   );
 
-  const orderOnWhatsapp = (item?: MenuItem) => {
-    const text = item
+  const orderOnWhatsapp = (item?: MenuItem, key?: string) => {
+    const note = key ? notes[key]?.trim() : "";
+    const base = item
       ? `مرحباً، أرغب بطلب: ${item.name} - ${item.price.toLocaleString()} د.ع`
       : "مرحباً، أرغب بتقديم طلب من مطعم جبل";
+    const text = note ? `${base}\nملاحظة: ${note}` : base;
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -249,11 +252,6 @@ function HomePage() {
         </div>
 
         <div className="relative mx-auto flex min-h-[88vh] max-w-5xl flex-col items-center justify-center px-4 py-24 text-center md:py-32">
-          <span className="inline-flex items-center gap-2 rounded-full gold-border bg-[var(--forest-deep)]/60 px-5 py-2 text-xs uppercase tracking-widest text-[var(--gold)] backdrop-blur animate-fade-in">
-            <ChefHat className="h-4 w-4" />
-            مطعم جبل · البصرة
-          </span>
-
           <h1 className="mt-7 font-display text-4xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl animate-fade-in">
             نكهات غريبة <span className="gold-text">بطعم مختلف</span>
           </h1>
@@ -269,19 +267,146 @@ function HomePage() {
               className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-7 py-3.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
             >
               <UtensilsCrossed className="h-4 w-4" />
-              تصفّح القائمة
+              تصفح المنيو
             </a>
             <button
               onClick={() => orderOnWhatsapp()}
               className="inline-flex items-center gap-2 rounded-full gold-border bg-transparent px-7 py-3.5 text-sm font-bold text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
             >
               <Phone className="h-4 w-4" />
-              للطلبات
+              للطلب والاستفسار
             </button>
           </div>
+        </div>
+      </section>
 
-          <div className="mt-12 flex divider-ornament items-center gap-4 text-[var(--gold)]/70">
-            <span className="text-xs tracking-widest">JABAL · 2026</span>
+      {/* ============ MENU ============ */}
+      <section id="menu" className="relative px-4 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center">
+            <span className="text-xs uppercase tracking-widest text-[var(--gold)]">قائمتنا الفاخرة</span>
+            <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
+              <span className="gold-text">أقسام</span> المطعم
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-foreground/75">
+              تشكيلة واسعة من أشهى الأطباق العالمية والشرقية، اختر ما يناسب ذوقك.
+            </p>
+          </div>
+
+          {/* Category chips */}
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            {CATEGORIES.map((c) => (
+              <a
+                key={c.id}
+                href={`#cat-${c.id}`}
+                className="group inline-flex flex-col items-center gap-1 rounded-2xl gold-border bg-[var(--forest-deep)] px-5 py-3 text-center shadow-card transition-transform hover:-translate-y-1 hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+              >
+                <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] group-hover:text-[var(--forest-deep)]">
+                  {c.tag}
+                </span>
+                <span className="font-display text-base font-bold md:text-lg">
+                  {c.name}
+                </span>
+              </a>
+            ))}
+          </div>
+
+          {/* Items per category */}
+          <div className="mt-20 space-y-20">
+            {CATEGORIES.map((c) => (
+              <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
+                <div className="mb-8 flex divider-ornament items-center gap-5">
+                  <h3 className="shrink-0 font-display text-2xl font-bold md:text-3xl">
+                    <span className="text-foreground/70">/</span>{" "}
+                    <span className="gold-text">{c.name}</span>
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {c.items.map((item) => {
+                    const key = `${c.id}-${item.name}`;
+                    const qty = quantities[key] ?? 0;
+                    return (
+                      <article
+                        key={key}
+                        className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
+                      >
+                        <div className="aspect-[16/9] w-full overflow-hidden">
+                          <img
+                            src={c.img}
+                            alt={item.name}
+                            width={800}
+                            height={450}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
+                              {item.name}
+                            </h4>
+                            {item.desc && (
+                              <p className="mt-1 text-sm leading-relaxed text-foreground/65">
+                                {item.desc}
+                              </p>
+                            )}
+                          </div>
+                          <div className="shrink-0 text-end">
+                            <div className="gold-text font-display text-xl font-bold md:text-2xl">
+                              {item.price.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
+                              د.ع
+                            </div>
+                          </div>
+                        </div>
+
+                        <input
+                          type="text"
+                          value={notes[key] ?? ""}
+                          onChange={(e) =>
+                            setNotes((n) => ({ ...n, [key]: e.target.value }))
+                          }
+                          placeholder="ملاحظات (مثلاً: بدون مخلل)"
+                          className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                        />
+
+                        <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
+                          <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                            <button
+                              onClick={() => setQty(key, -1)}
+                              className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                              aria-label="إنقاص"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
+                            <button
+                              onClick={() => setQty(key, +1)}
+                              className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                              aria-label="زيادة"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => orderOnWhatsapp(item, key)}
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] transition-transform hover:scale-[1.02]"
+                          >
+                            <ShoppingBag className="h-4 w-4" />
+                            إضافة إلى الطلب
+                          </button>
+                        </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -317,127 +442,6 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ============ MENU ============ */}
-      <section id="menu" className="relative px-4 py-20 md:py-28">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center">
-            <span className="text-xs uppercase tracking-widest text-[var(--gold)]">القائمة</span>
-            <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
-              <span className="gold-text">قائمتنا</span> الفاخرة
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-foreground/75">
-              تشكيلة واسعة من أشهى الأطباق العالمية والشرقية، اختر ما يناسب ذوقك.
-            </p>
-          </div>
-
-          {/* Category cards */}
-          <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {CATEGORIES.map((c) => (
-              <a
-                key={c.id}
-                href={`#cat-${c.id}`}
-                className="group relative overflow-hidden rounded-3xl gold-border bg-[var(--forest-deep)] shadow-card transition-transform hover:-translate-y-1"
-              >
-                <div className="aspect-[4/5] overflow-hidden">
-                  <img
-                    src={c.img}
-                    alt={c.name}
-                    width={800}
-                    height={800}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--forest-deep)] via-[var(--forest-deep)]/40 to-transparent" />
-                <div className="absolute bottom-0 right-0 left-0 p-4 md:p-5">
-                  <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]">
-                    {c.tag}
-                  </div>
-                  <div className="mt-1 font-display text-xl font-bold text-foreground md:text-2xl">
-                    {c.name}
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-
-          {/* Items per category */}
-          <div className="mt-20 space-y-20">
-            {CATEGORIES.map((c) => (
-              <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
-                <div className="mb-8 flex divider-ornament items-center gap-5">
-                  <h3 className="shrink-0 font-display text-2xl font-bold md:text-3xl">
-                    <span className="text-foreground/70">/</span>{" "}
-                    <span className="gold-text">{c.name}</span>
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {c.items.map((item) => {
-                    const key = `${c.id}-${item.name}`;
-                    const qty = quantities[key] ?? 0;
-                    return (
-                      <article
-                        key={key}
-                        className="glass-card group flex flex-col gap-4 rounded-3xl p-5 transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)] md:p-6"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
-                              {item.name}
-                            </h4>
-                            {item.desc && (
-                              <p className="mt-1 text-sm leading-relaxed text-foreground/65">
-                                {item.desc}
-                              </p>
-                            )}
-                          </div>
-                          <div className="shrink-0 text-end">
-                            <div className="gold-text font-display text-xl font-bold md:text-2xl">
-                              {item.price.toLocaleString()}
-                            </div>
-                            <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
-                              د.ع
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
-                          <div className="flex items-center gap-1 rounded-full gold-border p-1">
-                            <button
-                              onClick={() => setQty(key, -1)}
-                              className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                              aria-label="إنقاص"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </button>
-                            <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
-                            <button
-                              onClick={() => setQty(key, +1)}
-                              className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                              aria-label="زيادة"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => orderOnWhatsapp(item)}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] transition-transform hover:scale-[1.02]"
-                          >
-                            <ShoppingBag className="h-4 w-4" />
-                            إضافة إلى الطلب
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ============ CONTACT ============ */}
       <section id="contact" className="relative px-4 py-20 md:py-28">
         <div className="mx-auto max-w-6xl">
@@ -453,12 +457,12 @@ function HomePage() {
               {
                 icon: MapPin,
                 title: "العنوان",
-                lines: ["البصرة", "أبي الخصيب"],
+                lines: ["أبي الخصيب", "فلكة التجنيد مجاور جاليري مول"],
                 href: "https://maps.google.com/?q=Abi+Al-Khasib+Basra",
               },
               {
                 icon: Phone,
-                title: "للطلبات",
+                title: "للطلب والاستفسار",
                 lines: ["07756000241", "07878777237"],
                 href: `tel:${PHONE_PRIMARY}`,
               },
