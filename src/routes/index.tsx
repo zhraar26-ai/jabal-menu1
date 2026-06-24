@@ -144,6 +144,7 @@ const NAV_LINKS = [
 
 function HomePage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const [navOpen, setNavOpen] = useState(false);
 
   const setQty = (key: string, delta: number) =>
@@ -154,10 +155,12 @@ function HomePage() {
     [quantities],
   );
 
-  const orderOnWhatsapp = (item?: MenuItem) => {
-    const text = item
+  const orderOnWhatsapp = (item?: MenuItem, key?: string) => {
+    const note = key ? notes[key]?.trim() : "";
+    const base = item
       ? `مرحباً، أرغب بطلب: ${item.name} - ${item.price.toLocaleString()} د.ع`
       : "مرحباً، أرغب بتقديم طلب من مطعم جبل";
+    const text = note ? `${base}\nملاحظة: ${note}` : base;
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
