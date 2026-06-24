@@ -77,19 +77,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "مطعم جبل | Jabal Restaurant - نكهات غريبة بطعم مختلف" },
+      {
+        name: "description",
+        content:
+          "مطعم جبل في البصرة - تجربة طعام تجمع بين الفن الغربي والذوق الشرقي. ستيك، بيتزا، برغر، دولمة، شاورما والمزيد.",
+      },
+      { property: "og:title", content: "مطعم جبل | Jabal Restaurant" },
+      {
+        property: "og:description",
+        content: "نكهات غريبة بطعم مختلف - مطعم جبل في البصرة",
+      },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Lemonada:wght@300;400;500;600;700&display=swap",
       },
     ],
   }),
