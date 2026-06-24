@@ -411,6 +411,37 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ============ ABOUT ============ */}
+      <section id="about" className="relative px-4 py-20 md:py-28">
+        <div className="mx-auto max-w-5xl text-center">
+          <span className="text-xs uppercase tracking-widest text-[var(--gold)]">عن المطعم</span>
+          <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
+            قصتنا تبدأ <span className="gold-text">بشغف</span>
+          </h2>
+          <p className="mx-auto mt-6 max-w-3xl text-base leading-loose text-foreground/85 md:text-lg">
+            مطعم جبل ليس مجرد مطعم – إنه وجهة لمحبي الطعام الراقي في البصرة.
+            نختار مكوناتنا بعناية، ونحضّر أطباقنا بحب، لنقدّم لك تجربة لا تُنسى مع كل لقمة.
+          </p>
+
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              { icon: UtensilsCrossed, value: "+8", label: "قسم في القائمة" },
+              { icon: ChefHat, value: "+5", label: "أطباق مميّزة" },
+              { icon: Star, value: "5.0", label: "تقييم الزبائن" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="glass-card flex flex-col items-center gap-2 rounded-3xl p-7 transition-transform hover:-translate-y-1"
+              >
+                <s.icon className="h-7 w-7 text-[var(--gold)]" />
+                <div className="gold-text font-display text-4xl font-bold">{s.value}</div>
+                <div className="text-sm text-foreground/75">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ============ CONTACT ============ */}
       <section id="contact" className="relative px-4 py-20 md:py-28">
         <div className="mx-auto max-w-6xl">
@@ -426,12 +457,12 @@ function HomePage() {
               {
                 icon: MapPin,
                 title: "العنوان",
-                lines: ["البصرة", "أبي الخصيب"],
+                lines: ["أبي الخصيب", "فلكة التجنيد مجاور جاليري مول"],
                 href: "https://maps.google.com/?q=Abi+Al-Khasib+Basra",
               },
               {
                 icon: Phone,
-                title: "للطلبات",
+                title: "للطلب والاستفسار",
                 lines: ["07756000241", "07878777237"],
                 href: `tel:${PHONE_PRIMARY}`,
               },
