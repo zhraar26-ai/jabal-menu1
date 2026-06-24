@@ -280,77 +280,33 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ============ ABOUT ============ */}
-      <section id="about" className="relative px-4 py-20 md:py-28">
-        <div className="mx-auto max-w-5xl text-center">
-          <span className="text-xs uppercase tracking-widest text-[var(--gold)]">عن المطعم</span>
-          <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
-            قصتنا تبدأ <span className="gold-text">بشغف</span>
-          </h2>
-          <p className="mx-auto mt-6 max-w-3xl text-base leading-loose text-foreground/85 md:text-lg">
-            مطعم جبل ليس مجرد مطعم – إنه وجهة لمحبي الطعام الراقي في البصرة.
-            نختار مكوناتنا بعناية، ونحضّر أطباقنا بحب، لنقدّم لك تجربة لا تُنسى مع كل لقمة.
-          </p>
-
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
-              { icon: UtensilsCrossed, value: "+8", label: "قسم في القائمة" },
-              { icon: ChefHat, value: "+5", label: "أطباق مميّزة" },
-              { icon: Star, value: "5.0", label: "تقييم الزبائن" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="glass-card flex flex-col items-center gap-2 rounded-3xl p-7 transition-transform hover:-translate-y-1"
-              >
-                <s.icon className="h-7 w-7 text-[var(--gold)]" />
-                <div className="gold-text font-display text-4xl font-bold">{s.value}</div>
-                <div className="text-sm text-foreground/75">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ============ MENU ============ */}
       <section id="menu" className="relative px-4 py-20 md:py-28">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
-            <span className="text-xs uppercase tracking-widest text-[var(--gold)]">القائمة</span>
+            <span className="text-xs uppercase tracking-widest text-[var(--gold)]">قائمتنا الفاخرة</span>
             <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
-              <span className="gold-text">قائمتنا</span> الفاخرة
+              <span className="gold-text">أقسام</span> المطعم
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-foreground/75">
               تشكيلة واسعة من أشهى الأطباق العالمية والشرقية، اختر ما يناسب ذوقك.
             </p>
           </div>
 
-          {/* Category cards */}
-          <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {/* Category chips */}
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
             {CATEGORIES.map((c) => (
               <a
                 key={c.id}
                 href={`#cat-${c.id}`}
-                className="group relative overflow-hidden rounded-3xl gold-border bg-[var(--forest-deep)] shadow-card transition-transform hover:-translate-y-1"
+                className="group inline-flex flex-col items-center gap-1 rounded-2xl gold-border bg-[var(--forest-deep)] px-5 py-3 text-center shadow-card transition-transform hover:-translate-y-1 hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
               >
-                <div className="aspect-[4/5] overflow-hidden">
-                  <img
-                    src={c.img}
-                    alt={c.name}
-                    width={800}
-                    height={800}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--forest-deep)] via-[var(--forest-deep)]/40 to-transparent" />
-                <div className="absolute bottom-0 right-0 left-0 p-4 md:p-5">
-                  <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]">
-                    {c.tag}
-                  </div>
-                  <div className="mt-1 font-display text-xl font-bold text-foreground md:text-2xl">
-                    {c.name}
-                  </div>
-                </div>
+                <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] group-hover:text-[var(--forest-deep)]">
+                  {c.tag}
+                </span>
+                <span className="font-display text-base font-bold md:text-lg">
+                  {c.name}
+                </span>
               </a>
             ))}
           </div>
