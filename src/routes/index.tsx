@@ -252,11 +252,6 @@ function HomePage() {
         </div>
 
         <div className="relative mx-auto flex min-h-[88vh] max-w-5xl flex-col items-center justify-center px-4 py-24 text-center md:py-32">
-          <span className="inline-flex items-center gap-2 rounded-full gold-border bg-[var(--forest-deep)]/60 px-5 py-2 text-xs uppercase tracking-widest text-[var(--gold)] backdrop-blur animate-fade-in">
-            <ChefHat className="h-4 w-4" />
-            مطعم جبل · البصرة
-          </span>
-
           <h1 className="mt-7 font-display text-4xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl animate-fade-in">
             نكهات غريبة <span className="gold-text">بطعم مختلف</span>
           </h1>
@@ -272,19 +267,15 @@ function HomePage() {
               className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-7 py-3.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
             >
               <UtensilsCrossed className="h-4 w-4" />
-              تصفّح القائمة
+              تصفح المنيو
             </a>
             <button
               onClick={() => orderOnWhatsapp()}
               className="inline-flex items-center gap-2 rounded-full gold-border bg-transparent px-7 py-3.5 text-sm font-bold text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
             >
               <Phone className="h-4 w-4" />
-              للطلبات
+              للطلب والاستفسار
             </button>
-          </div>
-
-          <div className="mt-12 flex divider-ornament items-center gap-4 text-[var(--gold)]/70">
-            <span className="text-xs tracking-widest">JABAL · 2026</span>
           </div>
         </div>
       </section>
