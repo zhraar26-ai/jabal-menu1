@@ -329,8 +329,20 @@ function HomePage() {
                     return (
                       <article
                         key={key}
-                        className="glass-card group flex flex-col gap-4 rounded-3xl p-5 transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)] md:p-6"
+                        className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
                       >
+                        <div className="aspect-[16/9] w-full overflow-hidden">
+                          <img
+                            src={c.img}
+                            alt={item.name}
+                            width={800}
+                            height={450}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
@@ -352,6 +364,16 @@ function HomePage() {
                           </div>
                         </div>
 
+                        <input
+                          type="text"
+                          value={notes[key] ?? ""}
+                          onChange={(e) =>
+                            setNotes((n) => ({ ...n, [key]: e.target.value }))
+                          }
+                          placeholder="ملاحظات (مثلاً: بدون مخلل)"
+                          className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                        />
+
                         <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
                           <div className="flex items-center gap-1 rounded-full gold-border p-1">
                             <button
@@ -371,12 +393,13 @@ function HomePage() {
                             </button>
                           </div>
                           <button
-                            onClick={() => orderOnWhatsapp(item)}
+                            onClick={() => orderOnWhatsapp(item, key)}
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] transition-transform hover:scale-[1.02]"
                           >
                             <ShoppingBag className="h-4 w-4" />
                             إضافة إلى الطلب
                           </button>
+                        </div>
                         </div>
                       </article>
                     );
