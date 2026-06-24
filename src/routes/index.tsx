@@ -137,7 +137,7 @@ const CATEGORIES: Category[] = [
 
 const NAV_LINKS = [
   { href: "#home", label: "الرئيسية" },
-  { href: "#menu", label: "القائمة" },
+  { href: "#menu", label: "قائمتنا الفاخرة" },
   { href: "#about", label: "عن المطعم" },
   { href: "#contact", label: "تواصل" },
 ];
