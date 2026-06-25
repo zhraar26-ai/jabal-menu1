@@ -739,8 +739,8 @@ function ThemeTab() {
     setUploading(false);
   };
 
-  const Color = ({ label, k }: { label: string; k: keyof ThemeSettings }) => (
-    <div>
+  const colorField = (label: string, k: "forest_color" | "forest_deep_color" | "gold_color") => (
+    <div key={k}>
       <label className="text-xs text-foreground/70">{label}</label>
       <div className="mt-1 flex items-center gap-2">
         <input
@@ -761,10 +761,11 @@ function ThemeTab() {
   return (
     <div className="glass-card space-y-4 rounded-2xl p-5">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Color label="الأخضر الأساسي" k="forest_color" />
-        <Color label="الأخضر الداكن" k="forest_deep_color" />
-        <Color label="الذهبي" k="gold_color" />
+        {colorField("الأخضر الأساسي", "forest_color")}
+        {colorField("الأخضر الداكن", "forest_deep_color")}
+        {colorField("الذهبي", "gold_color")}
       </div>
+
 
       <div>
         <label className="text-xs text-foreground/70">نمط الخلفية</label>
