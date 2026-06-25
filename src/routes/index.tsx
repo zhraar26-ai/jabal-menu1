@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Phone,
   MapPin,
@@ -15,17 +15,22 @@ import {
   UtensilsCrossed,
   ChefHat,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
 import logoImg from "@/assets/logo.png";
-import catPizza from "@/assets/cat-pizza.jpg";
-import catBurger from "@/assets/cat-burger.jpg";
-import catSteak from "@/assets/cat-steak.jpg";
-import catDolma from "@/assets/cat-dolma.jpg";
-import catShawarma from "@/assets/cat-shawarma.jpg";
-import catItalian from "@/assets/cat-italian.jpg";
-import catAppetizers from "@/assets/cat-appetizers.jpg";
+import {
+  Category,
+  MenuItem,
+  Offer,
+  ThemeSettings,
+  applyTheme,
+  fetchCategories,
+  fetchMenuItems,
+  fetchOffers,
+  fetchTheme,
+} from "@/lib/menuData";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,94 +53,11 @@ export const Route = createFileRoute("/")({
 
 const WHATSAPP = "https://wa.me/9647756000241";
 const PHONE_PRIMARY = "07756000241";
-
-type MenuItem = { name: string; price: number; desc?: string };
-type Category = {
-  id: string;
-  name: string;
-  img: string;
-  tag: string;
-  items: MenuItem[];
-};
-
-const CATEGORIES: Category[] = [
-  {
-    id: "pizza",
-    name: "بيتزا",
-    tag: "إيطالي أصيل",
-    img: catPizza,
-    items: [
-      { name: "بيتزا مارغريتا", price: 12000, desc: "صلصة طماطم، موزاريلا، ريحان طازج" },
-      { name: "بيتزا بيبروني", price: 15000, desc: "موزاريلا، بيبروني، صلصة خاصة" },
-      { name: "بيتزا جبل الخاصة", price: 18000, desc: "لحم، فطر، فلفل، زيتون، جبن" },
-    ],
-  },
-  {
-    id: "burger",
-    name: "برغر",
-    tag: "محضّر طازج",
-    img: catBurger,
-    items: [
-      { name: "كلاسيك تشيز برغر", price: 10000, desc: "لحم بقري، شيدر، خس، طماطم" },
-      { name: "دبل برغر", price: 14000, desc: "قطعتين لحم، جبن مزدوج، صلصة الشيف" },
-      { name: "برغر جبل الفاخر", price: 16000, desc: "لحم واغيو، فطر مشوي، صوص الفلفل" },
-    ],
-  },
-  {
-    id: "steak",
-    name: "ستيك",
-    tag: "مشوي على الفحم",
-    img: catSteak,
-    items: [
-      { name: "ريب آي ستيك", price: 35000, desc: "300غ، مع البطاطس والخضار المشوية" },
-      { name: "تندرلوين", price: 40000, desc: "أنعم قطعة، صلصة الفلفل الأسود" },
-      { name: "تي-بون ستيك", price: 45000, desc: "500غ، يكفي لشخصين" },
-    ],
-  },
-  {
-    id: "dolma",
-    name: "دولمة",
-    tag: "تراث عراقي",
-    img: catDolma,
-    items: [
-      { name: "دولمة مشكّلة", price: 15000, desc: "ورق عنب، باذنجان، فلفل، كوسا" },
-      { name: "دولمة باللحم", price: 18000, desc: "حشوة فاخرة باللحم والأرز" },
-    ],
-  },
-  {
-    id: "shawarma",
-    name: "شاورما",
-    tag: "على الفحم",
-    img: catShawarma,
-    items: [
-      { name: "شاورما دجاج", price: 6000, desc: "خبز عربي، ثوم، مخلل، بطاطس" },
-      { name: "شاورما لحم", price: 8000, desc: "لحم بقري متبّل، طحينة، طماطم" },
-      { name: "صحن شاورما مشكّل", price: 14000, desc: "دجاج ولحم مع الأرز" },
-    ],
-  },
-  {
-    id: "italian",
-    name: "إيطالي",
-    tag: "باستا وريزوتو",
-    img: catItalian,
-    items: [
-      { name: "باستا كاربونارا", price: 13000, desc: "كريمة، بانشيتا، بارميزان" },
-      { name: "فيتوتشيني ألفريدو", price: 14000, desc: "صلصة كريمية، دجاج مشوي" },
-      { name: "لازانيا باللحم", price: 16000, desc: "طبقات لحم وجبن، بشاميل" },
-    ],
-  },
-  {
-    id: "appetizers",
-    name: "مقبلات",
-    tag: "للبداية المثالية",
-    img: catAppetizers,
-    items: [
-      { name: "حمص بالطحينة", price: 4000, desc: "زيت زيتون بكر، صنوبر" },
-      { name: "متبّل باذنجان", price: 4000, desc: "محمّر على الفحم، رمان" },
-      { name: "طبق مقبلات جبل", price: 9000, desc: "تشكيلة من 6 مقبلات" },
-    ],
-  },
-];
+const ITEM_PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 450'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23042c08'/><stop offset='1' stop-color='%23021805'/></linearGradient></defs><rect width='800' height='450' fill='url(%23g)'/><text x='50%' y='52%' font-family='serif' font-size='42' fill='%23ffbd59' text-anchor='middle' opacity='0.55'>مطعم جبل</text></svg>`,
+  );
 
 const NAV_LINKS = [
   { href: "#home", label: "الرئيسية" },
@@ -147,6 +69,11 @@ const NAV_LINKS = [
 type CartLine = { qty: number; note: string };
 
 function HomePage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [theme, setTheme] = useState<ThemeSettings | null>(null);
+
   const [pendingQty, setPendingQty] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<Record<string, CartLine>>({});
@@ -157,6 +84,39 @@ function HomePage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCategories().then(setCategories).catch(console.error);
+    fetchMenuItems().then(setItems).catch(console.error);
+    fetchOffers(true).then(setOffers).catch(console.error);
+    fetchTheme()
+      .then((t) => {
+        if (t) {
+          setTheme(t);
+          applyTheme(t);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const itemsByCat = useMemo(() => {
+    const m: Record<string, MenuItem[]> = {};
+    for (const c of categories) m[c.id] = [];
+    for (const it of items) {
+      if (!it.available) continue;
+      (m[it.category_id] ||= []).push(it);
+    }
+    return m;
+  }, [categories, items]);
+
+  const itemById = useMemo(() => {
+    const m: Record<string, MenuItem> = {};
+    for (const it of items) m[it.id] = it;
+    return m;
+  }, [items]);
+
+  const effectivePrice = (it: MenuItem) =>
+    it.discount_price != null && it.discount_price < it.price ? it.discount_price : it.price;
 
   const getPending = (key: string) => pendingQty[key] ?? 1;
   const setPending = (key: string, delta: number) =>
@@ -187,38 +147,34 @@ function HomePage() {
 
   const cartEntries = useMemo(() => {
     const entries: { key: string; item: MenuItem; qty: number; note: string }[] = [];
-    for (const c of CATEGORIES) {
-      for (const item of c.items) {
-        const key = `${c.id}-${item.name}`;
-        const line = cart[key];
-        if (line && line.qty > 0)
-          entries.push({ key, item, qty: line.qty, note: line.note });
-      }
+    for (const [key, line] of Object.entries(cart)) {
+      const it = itemById[key];
+      if (it && line.qty > 0) entries.push({ key, item: it, qty: line.qty, note: line.note });
     }
     return entries;
-  }, [cart]);
+  }, [cart, itemById]);
 
   const cartTotal = useMemo(
-    () => cartEntries.reduce((s, e) => s + e.item.price * e.qty, 0),
+    () => cartEntries.reduce((s, e) => s + effectivePrice(e.item) * e.qty, 0),
     [cartEntries],
   );
 
-  const addToCart = (key: string) => {
-    const qty = getPending(key);
-    const note = (notes[key] ?? "").trim();
+  const addToCart = (itemId: string) => {
+    const qty = getPending(itemId);
+    const note = (notes[itemId] ?? "").trim();
     setCart((c) => {
-      const existing = c[key];
+      const existing = c[itemId];
       return {
         ...c,
-        [key]: {
+        [itemId]: {
           qty: (existing?.qty ?? 0) + qty,
           note: note || existing?.note || "",
         },
       };
     });
-    setPendingQty((q) => ({ ...q, [key]: 1 }));
-    setJustAdded(key);
-    setTimeout(() => setJustAdded((j) => (j === key ? null : j)), 1200);
+    setPendingQty((q) => ({ ...q, [itemId]: 1 }));
+    setJustAdded(itemId);
+    setTimeout(() => setJustAdded((j) => (j === itemId ? null : j)), 1200);
   };
 
   const sendCartToWhatsapp = () => {
@@ -228,7 +184,7 @@ function HomePage() {
     }
     const lines = cartEntries.map(
       (e) =>
-        `• ${e.item.name} × ${e.qty} = ${(e.item.price * e.qty).toLocaleString()} د.ع${
+        `• ${e.item.name} × ${e.qty} = ${(effectivePrice(e.item) * e.qty).toLocaleString()} د.ع${
           e.note ? `\n   ملاحظة: ${e.note}` : ""
         }`,
     );
@@ -244,13 +200,17 @@ function HomePage() {
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
+  const heroSrc = theme?.hero_image_url || heroImg;
+  const heroTitle = theme?.hero_title || "نكهات غريبة بطعم مختلف";
+  const heroSubtitle =
+    theme?.hero_subtitle ||
+    "في مطعم جبل، نقدّم تجربة طعام تجمع بين الفن الغربي والذوق الشرقي، من الستيك المشوي إلى البيتزا الإيطالية، كل طبق يُحضّر بشغف ومكونات طازجة.";
 
   return (
     <div className="min-h-screen bg-[var(--forest)] text-foreground">
       {/* ============ HEADER ============ */}
       <header className="sticky top-0 z-50 border-b border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[color-mix(in_oklab,var(--forest-deep)_85%,transparent)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
-          {/* Nav (desktop) */}
           <nav className="hidden flex-1 items-center gap-7 text-sm md:flex">
             {NAV_LINKS.map((l) => (
               <a
@@ -263,15 +223,11 @@ function HomePage() {
             ))}
           </nav>
 
-          {/* Logo (center) */}
           <a href="#home" className="flex shrink-0 items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2">
             <img src={logoImg} alt="مطعم جبل" width={44} height={44} className="h-11 w-11 rounded-full" />
-            <span className="gold-text font-display text-lg font-bold md:text-xl">
-              مطعم جبل
-            </span>
+            <span className="gold-text font-display text-lg font-bold md:text-xl">مطعم جبل</span>
           </a>
 
-          {/* Order button */}
           <div className="hidden flex-1 items-center justify-start md:flex">
             <a
               href={`tel:${PHONE_PRIMARY}`}
@@ -282,7 +238,6 @@ function HomePage() {
             </a>
           </div>
 
-          {/* Mobile toggle */}
           <button
             onClick={() => setNavOpen((v) => !v)}
             className="rounded-full gold-border p-2 text-[var(--gold)] md:hidden"
@@ -292,7 +247,6 @@ function HomePage() {
           </button>
         </div>
 
-        {/* Mobile nav */}
         {navOpen && (
           <nav className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)] px-4 py-4 md:hidden animate-fade-in">
             <div className="flex flex-col gap-3 text-base">
@@ -322,8 +276,8 @@ function HomePage() {
       <section id="home" className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src={heroImg}
-            alt="ستيك مشوي"
+            src={heroSrc}
+            alt="مطعم جبل"
             width={1600}
             height={1100}
             className="h-full w-full object-cover opacity-45"
@@ -334,12 +288,18 @@ function HomePage() {
 
         <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-16 text-center md:min-h-[68vh] md:py-20">
           <h1 className="mt-7 font-display text-4xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl animate-fade-in">
-            نكهات غريبة <span className="gold-text">بطعم مختلف</span>
+            {heroTitle.split(" ").length > 1 ? (
+              <>
+                {heroTitle.split(" ").slice(0, -1).join(" ")}{" "}
+                <span className="gold-text">{heroTitle.split(" ").slice(-1)[0]}</span>
+              </>
+            ) : (
+              <span className="gold-text">{heroTitle}</span>
+            )}
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-base leading-loose text-foreground/85 md:text-lg animate-fade-in">
-            في مطعم جبل، نقدّم تجربة طعام تجمع بين الفن الغربي والذوق الشرقي،
-            من الستيك المشوي إلى البيتزا الإيطالية، كل طبق يُحضّر بشغف ومكونات طازجة.
+            {heroSubtitle}
           </p>
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3 animate-fade-in">
@@ -361,8 +321,41 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ============ OFFERS BANNER ============ */}
+      {offers.length > 0 && (
+        <section className="px-4 pt-12">
+          <div className="mx-auto max-w-6xl">
+            <div className="text-center">
+              <span className="text-xs uppercase tracking-widest text-[var(--gold)]">عروضنا</span>
+              <h2 className="mt-2 font-display text-2xl font-bold md:text-3xl">
+                <span className="gold-text">عروض</span> وخصومات
+              </h2>
+            </div>
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {offers.map((o) => (
+                <div
+                  key={o.id}
+                  className="glass-card relative overflow-hidden rounded-3xl p-5 transition-transform hover:-translate-y-1"
+                >
+                  {o.badge && (
+                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-[var(--gold)] px-3 py-1 text-xs font-bold text-[var(--forest-deep)]">
+                      <Sparkles className="h-3 w-3" />
+                      {o.badge}
+                    </span>
+                  )}
+                  <h3 className="mt-6 font-display text-lg font-bold text-foreground">{o.title}</h3>
+                  {o.description && (
+                    <p className="mt-2 text-sm leading-relaxed text-foreground/75">{o.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ============ MENU ============ */}
-      <section id="menu" className="relative px-4 py-20 md:py-28">
+      <section id="menu" className="relative px-4 py-16 md:py-24">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <span className="text-xs uppercase tracking-widest text-[var(--gold)]">قائمتنا الفاخرة</span>
@@ -376,131 +369,148 @@ function HomePage() {
 
           {/* Category chips */}
           <div className="mt-12 flex flex-wrap justify-center gap-3">
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <a
                 key={c.id}
                 href={`#cat-${c.id}`}
                 className="group inline-flex flex-col items-center gap-1 rounded-2xl gold-border bg-[var(--forest-deep)] px-5 py-3 text-center shadow-card transition-transform hover:-translate-y-1 hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
               >
-                <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] group-hover:text-[var(--forest-deep)]">
-                  {c.tag}
-                </span>
-                <span className="font-display text-base font-bold md:text-lg">
-                  {c.name}
-                </span>
+                {c.tag && (
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] group-hover:text-[var(--forest-deep)]">
+                    {c.tag}
+                  </span>
+                )}
+                <span className="font-display text-base font-bold md:text-lg">{c.name}</span>
               </a>
             ))}
           </div>
 
           {/* Items per category */}
           <div className="mt-20 space-y-20">
-            {CATEGORIES.map((c) => (
-              <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
-                <div className="mb-10 flex flex-col items-center gap-4 text-center">
-                  <h3 className="font-display text-2xl font-bold md:text-3xl">
-                    <span className="gold-text">{c.name}</span>
-                  </h3>
-                  <div className="flex w-full max-w-md items-center gap-3">
-                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
-                    <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
-                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+            {categories.map((c) => {
+              const catItems = itemsByCat[c.id] ?? [];
+              if (catItems.length === 0) return null;
+              return (
+                <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
+                  <div className="mb-10 flex flex-col items-center gap-4 text-center">
+                    <h3 className="font-display text-2xl font-bold md:text-3xl">
+                      <span className="gold-text">{c.name}</span>
+                    </h3>
+                    <div className="flex w-full max-w-md items-center gap-3">
+                      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                      <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
+                      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {c.items.map((item) => {
-                    const key = `${c.id}-${item.name}`;
-                    const qty = getPending(key);
-                    const inCart = cart[key]?.qty ?? 0;
-                    return (
-                      <article
-                        key={key}
-                        className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
-                      >
-                        <div className="aspect-[16/9] w-full overflow-hidden">
-                          <img
-                            src={c.img}
-                            alt={item.name}
-                            width={800}
-                            height={450}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          />
-                        </div>
-
-                        <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
-                              {item.name}
-                            </h4>
-                            {item.desc && (
-                              <p className="mt-1 text-sm leading-relaxed text-foreground/65">
-                                {item.desc}
-                              </p>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {catItems.map((item) => {
+                      const key = item.id;
+                      const qty = getPending(key);
+                      const inCart = cart[key]?.qty ?? 0;
+                      const hasDiscount =
+                        item.discount_price != null && item.discount_price < item.price;
+                      const price = hasDiscount ? item.discount_price! : item.price;
+                      return (
+                        <article
+                          key={key}
+                          className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
+                        >
+                          <div className="relative aspect-[16/9] w-full overflow-hidden">
+                            <img
+                              src={item.image_url || ITEM_PLACEHOLDER}
+                              alt={item.name}
+                              width={800}
+                              height={450}
+                              loading="lazy"
+                              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                            {hasDiscount && (
+                              <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
+                                <Sparkles className="h-3 w-3" /> عرض
+                              </span>
                             )}
                           </div>
-                          <div className="shrink-0 text-end">
-                            <div className="gold-text font-display text-xl font-bold md:text-2xl">
-                              {item.price.toLocaleString()}
+
+                          <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
+                                  {item.name}
+                                </h4>
+                                {item.description && (
+                                  <p className="mt-1 text-sm leading-relaxed text-foreground/65">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="shrink-0 text-end">
+                                <div className="gold-text font-display text-xl font-bold md:text-2xl">
+                                  {price.toLocaleString()}
+                                </div>
+                                {hasDiscount && (
+                                  <div className="text-[11px] text-foreground/50 line-through">
+                                    {item.price.toLocaleString()}
+                                  </div>
+                                )}
+                                <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
+                                  د.ع
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
-                              د.ع
+
+                            <input
+                              type="text"
+                              value={notes[key] ?? ""}
+                              onChange={(e) =>
+                                setNotes((n) => ({ ...n, [key]: e.target.value }))
+                              }
+                              placeholder="ملاحظات (مثلاً: بدون مخلل)"
+                              className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                            />
+
+                            <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
+                              <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                                <button
+                                  onClick={() => setPending(key, -1)}
+                                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                  aria-label="إنقاص"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </button>
+                                <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
+                                <button
+                                  onClick={() => setPending(key, +1)}
+                                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                  aria-label="زيادة"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => addToCart(key)}
+                                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
+                                  justAdded === key
+                                    ? "bg-[#25D366] text-white"
+                                    : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                                }`}
+                              >
+                                <ShoppingBag className="h-4 w-4" />
+                                {justAdded === key
+                                  ? "تمت الإضافة ✓"
+                                  : inCart > 0
+                                    ? `إضافة (${inCart} في السلة)`
+                                    : "أضف إلى السلة"}
+                              </button>
                             </div>
                           </div>
-                        </div>
-
-                        <input
-                          type="text"
-                          value={notes[key] ?? ""}
-                          onChange={(e) =>
-                            setNotes((n) => ({ ...n, [key]: e.target.value }))
-                          }
-                          placeholder="ملاحظات (مثلاً: بدون مخلل)"
-                          className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
-                        />
-
-                        <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
-                          <div className="flex items-center gap-1 rounded-full gold-border p-1">
-                            <button
-                              onClick={() => setPending(key, -1)}
-                              className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                              aria-label="إنقاص"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </button>
-                            <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
-                            <button
-                              onClick={() => setPending(key, +1)}
-                              className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                              aria-label="زيادة"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => addToCart(key)}
-                            className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
-                              justAdded === key
-                                ? "bg-[#25D366] text-white"
-                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
-                            }`}
-                          >
-                            <ShoppingBag className="h-4 w-4" />
-                            {justAdded === key
-                              ? "تمت الإضافة ✓"
-                              : inCart > 0
-                                ? `إضافة (${inCart} في السلة)`
-                                : "أضف إلى السلة"}
-                          </button>
-                        </div>
-                        </div>
-                      </article>
-                    );
-                  })}
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -519,8 +529,8 @@ function HomePage() {
 
           <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              { icon: UtensilsCrossed, value: "+8", label: "قسم في القائمة" },
-              { icon: ChefHat, value: "+5", label: "أطباق مميّزة" },
+              { icon: UtensilsCrossed, value: `+${categories.length}`, label: "قسم في القائمة" },
+              { icon: ChefHat, value: `+${items.length}`, label: "أطباق مميّزة" },
               { icon: Star, value: "5.0", label: "تقييم الزبائن" },
             ].map((s) => (
               <div
@@ -602,6 +612,12 @@ function HomePage() {
           <p className="mt-5 text-sm leading-loose text-foreground/75">
             هنا تجد الطعم كما لم تذقه من قبل <span className="text-red-400">❤️</span>
           </p>
+          <a
+            href="/admin"
+            className="mt-4 inline-block text-[10px] uppercase tracking-widest text-foreground/30 hover:text-[var(--gold)]"
+          >
+            لوحة التحكم
+          </a>
         </div>
       </footer>
 
@@ -672,7 +688,7 @@ function HomePage() {
                       <div className="min-w-0 flex-1">
                         <div className="font-bold">{e.item.name}</div>
                         <div className="text-xs text-foreground/60">
-                          {e.item.price.toLocaleString()} د.ع × {e.qty}
+                          {effectivePrice(e.item).toLocaleString()} د.ع × {e.qty}
                         </div>
                         {e.note && (
                           <div className="mt-1 text-xs text-[var(--gold)]/80">📝 {e.note}</div>
