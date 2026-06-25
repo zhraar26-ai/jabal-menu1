@@ -144,36 +144,59 @@ const NAV_LINKS = [
   { href: "#contact", label: "تواصل" },
 ];
 
+type CartLine = { qty: number; note: string };
+
 function HomePage() {
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [pendingQty, setPendingQty] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [cart, setCart] = useState<Record<string, CartLine>>({});
+
   const [navOpen, setNavOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
-  const setQty = (key: string, delta: number) =>
-    setQuantities((q) => ({ ...q, [key]: Math.max(0, (q[key] ?? 0) + delta) }));
+  const getPending = (key: string) => pendingQty[key] ?? 1;
+  const setPending = (key: string, delta: number) =>
+    setPendingQty((q) => ({ ...q, [key]: Math.max(1, (q[key] ?? 1) + delta) }));
+
+  const setCartQty = (key: string, delta: number) =>
+    setCart((c) => {
+      const cur = c[key];
+      if (!cur) return c;
+      const next = cur.qty + delta;
+      const copy = { ...c };
+      if (next <= 0) delete copy[key];
+      else copy[key] = { ...cur, qty: next };
+      return copy;
+    });
+
+  const removeFromCart = (key: string) =>
+    setCart((c) => {
+      const copy = { ...c };
+      delete copy[key];
+      return copy;
+    });
 
   const cartCount = useMemo(
-    () => Object.values(quantities).reduce((a, b) => a + b, 0),
-    [quantities],
+    () => Object.values(cart).reduce((a, b) => a + b.qty, 0),
+    [cart],
   );
 
-  // Build cart entries
   const cartEntries = useMemo(() => {
     const entries: { key: string; item: MenuItem; qty: number; note: string }[] = [];
     for (const c of CATEGORIES) {
       for (const item of c.items) {
         const key = `${c.id}-${item.name}`;
-        const qty = quantities[key] ?? 0;
-        if (qty > 0) entries.push({ key, item, qty, note: notes[key]?.trim() ?? "" });
+        const line = cart[key];
+        if (line && line.qty > 0)
+          entries.push({ key, item, qty: line.qty, note: line.note });
       }
     }
     return entries;
-  }, [quantities, notes]);
+  }, [cart]);
 
   const cartTotal = useMemo(
     () => cartEntries.reduce((s, e) => s + e.item.price * e.qty, 0),
@@ -181,8 +204,21 @@ function HomePage() {
   );
 
   const addToCart = (key: string) => {
-    setQty(key, +1);
-    // Subtle feedback: open cart briefly? keep closed; user opens via FAB
+    const qty = getPending(key);
+    const note = (notes[key] ?? "").trim();
+    setCart((c) => {
+      const existing = c[key];
+      return {
+        ...c,
+        [key]: {
+          qty: (existing?.qty ?? 0) + qty,
+          note: note || existing?.note || "",
+        },
+      };
+    });
+    setPendingQty((q) => ({ ...q, [key]: 1 }));
+    setJustAdded(key);
+    setTimeout(() => setJustAdded((j) => (j === key ? null : j)), 1200);
   };
 
   const sendCartToWhatsapp = () => {
@@ -199,7 +235,7 @@ function HomePage() {
     const text =
       `مرحباً، أرغب بتقديم طلب من مطعم جبل:\n\n${lines.join("\n")}\n\n` +
       `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
-      `الاسم: ${customerName || "—"}\nرقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
+      `رقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -207,6 +243,7 @@ function HomePage() {
     const text = "مرحباً، أرغب بالاستفسار عن مطعم جبل";
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
+
 
   return (
     <div className="min-h-screen bg-[var(--forest)] text-foreground">
@@ -359,16 +396,22 @@ function HomePage() {
           <div className="mt-20 space-y-20">
             {CATEGORIES.map((c) => (
               <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
-                <div className="mb-8 text-center">
-                  <h3 className="inline-block font-display text-2xl font-bold md:text-3xl">
+                <div className="mb-10 flex flex-col items-center gap-4 text-center">
+                  <h3 className="font-display text-2xl font-bold md:text-3xl">
                     <span className="gold-text">{c.name}</span>
                   </h3>
+                  <div className="flex w-full max-w-md items-center gap-3">
+                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                    <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
+                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {c.items.map((item) => {
                     const key = `${c.id}-${item.name}`;
-                    const qty = quantities[key] ?? 0;
+                    const qty = getPending(key);
+                    const inCart = cart[key]?.qty ?? 0;
                     return (
                       <article
                         key={key}
@@ -420,7 +463,7 @@ function HomePage() {
                         <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
                           <div className="flex items-center gap-1 rounded-full gold-border p-1">
                             <button
-                              onClick={() => setQty(key, -1)}
+                              onClick={() => setPending(key, -1)}
                               className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                               aria-label="إنقاص"
                             >
@@ -428,7 +471,7 @@ function HomePage() {
                             </button>
                             <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
                             <button
-                              onClick={() => setQty(key, +1)}
+                              onClick={() => setPending(key, +1)}
                               className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                               aria-label="زيادة"
                             >
@@ -437,10 +480,18 @@ function HomePage() {
                           </div>
                           <button
                             onClick={() => addToCart(key)}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] transition-transform hover:scale-[1.02]"
+                            className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
+                              justAdded === key
+                                ? "bg-[#25D366] text-white"
+                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                            }`}
                           >
                             <ShoppingBag className="h-4 w-4" />
-                            أضف إلى السلة
+                            {justAdded === key
+                              ? "تمت الإضافة ✓"
+                              : inCart > 0
+                                ? `إضافة (${inCart} في السلة)`
+                                : "أضف إلى السلة"}
                           </button>
                         </div>
                         </div>
@@ -629,7 +680,7 @@ function HomePage() {
                       </div>
                       <div className="flex items-center gap-1 rounded-full gold-border p-1">
                         <button
-                          onClick={() => setQty(e.key, -1)}
+                          onClick={() => setCartQty(e.key, -1)}
                           className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                           aria-label="إنقاص"
                         >
@@ -637,7 +688,7 @@ function HomePage() {
                         </button>
                         <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
                         <button
-                          onClick={() => setQty(e.key, +1)}
+                          onClick={() => setCartQty(e.key, +1)}
                           className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                           aria-label="زيادة"
                         >
@@ -645,7 +696,7 @@ function HomePage() {
                         </button>
                       </div>
                       <button
-                        onClick={() => setQuantities((q) => ({ ...q, [e.key]: 0 }))}
+                        onClick={() => removeFromCart(e.key)}
                         className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
                         aria-label="حذف"
                       >
@@ -660,13 +711,6 @@ function HomePage() {
             {cartEntries.length > 0 && (
               <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest)] px-5 py-4">
                 <div className="mb-3 space-y-2">
-                  <input
-                    type="text"
-                    placeholder="الاسم (اختياري)"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
-                  />
                   <input
                     type="tel"
                     placeholder="رقم الهاتف *"

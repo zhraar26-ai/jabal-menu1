@@ -82,9 +82,23 @@
   body {
     background-color: var(--forest);
     background-image:
-      radial-gradient(circle at 15% 10%, color-mix(in oklab, var(--gold) 10%, transparent), transparent 45%),
-      radial-gradient(circle at 85% 80%, color-mix(in oklab, var(--gold) 8%, transparent), transparent 50%),
-      linear-gradient(180deg, var(--forest-deep), var(--forest) 30%, var(--forest-deep));
+      radial-gradient(ellipse at top, color-mix(in oklab, var(--gold) 7%, transparent), transparent 55%),
+      radial-gradient(ellipse at bottom, color-mix(in oklab, var(--forest-deep) 90%, transparent), transparent 60%),
+      repeating-linear-gradient(
+        135deg,
+        transparent 0,
+        transparent 38px,
+        color-mix(in oklab, var(--gold) 3.5%, transparent) 38px,
+        color-mix(in oklab, var(--gold) 3.5%, transparent) 39px
+      ),
+      repeating-linear-gradient(
+        45deg,
+        transparent 0,
+        transparent 38px,
+        color-mix(in oklab, var(--gold) 2.5%, transparent) 38px,
+        color-mix(in oklab, var(--gold) 2.5%, transparent) 39px
+      ),
+      linear-gradient(180deg, var(--forest-deep), var(--forest) 45%, var(--forest-deep));
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
