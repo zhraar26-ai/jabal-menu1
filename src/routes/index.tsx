@@ -8,11 +8,13 @@ import {
   Plus,
   Minus,
   ShoppingBag,
+  ShoppingCart,
   Menu as MenuIcon,
   X,
   Star,
   UtensilsCrossed,
   ChefHat,
+  Trash2,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
