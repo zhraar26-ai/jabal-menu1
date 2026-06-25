@@ -719,13 +719,6 @@ function HomePage() {
                     className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
                   />
                   <input
-                    type="tel"
-                    placeholder="رقم الهاتف *"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
-                  />
-                  <input
                     type="text"
                     placeholder="العنوان الكامل للتوصيل *"
                     value={customerAddress}
