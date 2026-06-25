@@ -680,7 +680,7 @@ function HomePage() {
                       </div>
                       <div className="flex items-center gap-1 rounded-full gold-border p-1">
                         <button
-                          onClick={() => setQty(e.key, -1)}
+                          onClick={() => setCartQty(e.key, -1)}
                           className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                           aria-label="إنقاص"
                         >
@@ -688,7 +688,7 @@ function HomePage() {
                         </button>
                         <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
                         <button
-                          onClick={() => setQty(e.key, +1)}
+                          onClick={() => setCartQty(e.key, +1)}
                           className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                           aria-label="زيادة"
                         >
@@ -696,7 +696,7 @@ function HomePage() {
                         </button>
                       </div>
                       <button
-                        onClick={() => setQuantities((q) => ({ ...q, [e.key]: 0 }))}
+                        onClick={() => removeFromCart(e.key)}
                         className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
                         aria-label="حذف"
                       >
