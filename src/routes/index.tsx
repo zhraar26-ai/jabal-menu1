@@ -148,6 +148,11 @@ function HomePage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [navOpen, setNavOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
 
   const setQty = (key: string, delta: number) =>
     setQuantities((q) => ({ ...q, [key]: Math.max(0, (q[key] ?? 0) + delta) }));
@@ -157,12 +162,49 @@ function HomePage() {
     [quantities],
   );
 
-  const orderOnWhatsapp = (item?: MenuItem, key?: string) => {
-    const note = key ? notes[key]?.trim() : "";
-    const base = item
-      ? `مرحباً، أرغب بطلب: ${item.name} - ${item.price.toLocaleString()} د.ع`
-      : "مرحباً، أرغب بتقديم طلب من مطعم جبل";
-    const text = note ? `${base}\nملاحظة: ${note}` : base;
+  // Build cart entries
+  const cartEntries = useMemo(() => {
+    const entries: { key: string; item: MenuItem; qty: number; note: string }[] = [];
+    for (const c of CATEGORIES) {
+      for (const item of c.items) {
+        const key = `${c.id}-${item.name}`;
+        const qty = quantities[key] ?? 0;
+        if (qty > 0) entries.push({ key, item, qty, note: notes[key]?.trim() ?? "" });
+      }
+    }
+    return entries;
+  }, [quantities, notes]);
+
+  const cartTotal = useMemo(
+    () => cartEntries.reduce((s, e) => s + e.item.price * e.qty, 0),
+    [cartEntries],
+  );
+
+  const addToCart = (key: string) => {
+    setQty(key, +1);
+    // Subtle feedback: open cart briefly? keep closed; user opens via FAB
+  };
+
+  const sendCartToWhatsapp = () => {
+    if (!customerPhone.trim() || !customerAddress.trim()) {
+      setShowCheckoutWarning(true);
+      return;
+    }
+    const lines = cartEntries.map(
+      (e) =>
+        `• ${e.item.name} × ${e.qty} = ${(e.item.price * e.qty).toLocaleString()} د.ع${
+          e.note ? `\n   ملاحظة: ${e.note}` : ""
+        }`,
+    );
+    const text =
+      `مرحباً، أرغب بتقديم طلب من مطعم جبل:\n\n${lines.join("\n")}\n\n` +
+      `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
+      `الاسم: ${customerName || "—"}\nرقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
+    window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const quickWhatsapp = () => {
+    const text = "مرحباً، أرغب بالاستفسار عن مطعم جبل";
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
