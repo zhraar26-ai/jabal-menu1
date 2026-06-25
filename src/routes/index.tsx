@@ -314,7 +314,7 @@ function HomePage() {
               تصفح المنيو
             </a>
             <button
-              onClick={() => orderOnWhatsapp()}
+              onClick={quickWhatsapp}
               className="inline-flex items-center gap-2 rounded-full gold-border bg-transparent px-7 py-3.5 text-sm font-bold text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
             >
               <Phone className="h-4 w-4" />
@@ -437,11 +437,11 @@ function HomePage() {
                             </button>
                           </div>
                           <button
-                            onClick={() => orderOnWhatsapp(item, key)}
+                            onClick={() => addToCart(key)}
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] transition-transform hover:scale-[1.02]"
                           >
                             <ShoppingBag className="h-4 w-4" />
-                            إضافة إلى الطلب
+                            أضف إلى السلة
                           </button>
                         </div>
                         </div>
