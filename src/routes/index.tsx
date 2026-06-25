@@ -396,16 +396,22 @@ function HomePage() {
           <div className="mt-20 space-y-20">
             {CATEGORIES.map((c) => (
               <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
-                <div className="mb-8 text-center">
-                  <h3 className="inline-block font-display text-2xl font-bold md:text-3xl">
+                <div className="mb-10 flex flex-col items-center gap-4 text-center">
+                  <h3 className="font-display text-2xl font-bold md:text-3xl">
                     <span className="gold-text">{c.name}</span>
                   </h3>
+                  <div className="flex w-full max-w-md items-center gap-3">
+                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                    <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
+                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {c.items.map((item) => {
                     const key = `${c.id}-${item.name}`;
-                    const qty = quantities[key] ?? 0;
+                    const qty = getPending(key);
+                    const inCart = cart[key]?.qty ?? 0;
                     return (
                       <article
                         key={key}
