@@ -144,36 +144,59 @@ const NAV_LINKS = [
   { href: "#contact", label: "تواصل" },
 ];
 
+type CartLine = { qty: number; note: string };
+
 function HomePage() {
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [pendingQty, setPendingQty] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [cart, setCart] = useState<Record<string, CartLine>>({});
+
   const [navOpen, setNavOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
-  const setQty = (key: string, delta: number) =>
-    setQuantities((q) => ({ ...q, [key]: Math.max(0, (q[key] ?? 0) + delta) }));
+  const getPending = (key: string) => pendingQty[key] ?? 1;
+  const setPending = (key: string, delta: number) =>
+    setPendingQty((q) => ({ ...q, [key]: Math.max(1, (q[key] ?? 1) + delta) }));
+
+  const setCartQty = (key: string, delta: number) =>
+    setCart((c) => {
+      const cur = c[key];
+      if (!cur) return c;
+      const next = cur.qty + delta;
+      const copy = { ...c };
+      if (next <= 0) delete copy[key];
+      else copy[key] = { ...cur, qty: next };
+      return copy;
+    });
+
+  const removeFromCart = (key: string) =>
+    setCart((c) => {
+      const copy = { ...c };
+      delete copy[key];
+      return copy;
+    });
 
   const cartCount = useMemo(
-    () => Object.values(quantities).reduce((a, b) => a + b, 0),
-    [quantities],
+    () => Object.values(cart).reduce((a, b) => a + b.qty, 0),
+    [cart],
   );
 
-  // Build cart entries
   const cartEntries = useMemo(() => {
     const entries: { key: string; item: MenuItem; qty: number; note: string }[] = [];
     for (const c of CATEGORIES) {
       for (const item of c.items) {
         const key = `${c.id}-${item.name}`;
-        const qty = quantities[key] ?? 0;
-        if (qty > 0) entries.push({ key, item, qty, note: notes[key]?.trim() ?? "" });
+        const line = cart[key];
+        if (line && line.qty > 0)
+          entries.push({ key, item, qty: line.qty, note: line.note });
       }
     }
     return entries;
-  }, [quantities, notes]);
+  }, [cart]);
 
   const cartTotal = useMemo(
     () => cartEntries.reduce((s, e) => s + e.item.price * e.qty, 0),
@@ -181,8 +204,21 @@ function HomePage() {
   );
 
   const addToCart = (key: string) => {
-    setQty(key, +1);
-    // Subtle feedback: open cart briefly? keep closed; user opens via FAB
+    const qty = getPending(key);
+    const note = (notes[key] ?? "").trim();
+    setCart((c) => {
+      const existing = c[key];
+      return {
+        ...c,
+        [key]: {
+          qty: (existing?.qty ?? 0) + qty,
+          note: note || existing?.note || "",
+        },
+      };
+    });
+    setPendingQty((q) => ({ ...q, [key]: 1 }));
+    setJustAdded(key);
+    setTimeout(() => setJustAdded((j) => (j === key ? null : j)), 1200);
   };
 
   const sendCartToWhatsapp = () => {
@@ -199,7 +235,7 @@ function HomePage() {
     const text =
       `مرحباً، أرغب بتقديم طلب من مطعم جبل:\n\n${lines.join("\n")}\n\n` +
       `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
-      `الاسم: ${customerName || "—"}\nرقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
+      `رقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -207,6 +243,7 @@ function HomePage() {
     const text = "مرحباً، أرغب بالاستفسار عن مطعم جبل";
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
+
 
   return (
     <div className="min-h-screen bg-[var(--forest)] text-foreground">
