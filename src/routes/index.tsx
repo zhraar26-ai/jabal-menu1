@@ -8,11 +8,13 @@ import {
   Plus,
   Minus,
   ShoppingBag,
+  ShoppingCart,
   Menu as MenuIcon,
   X,
   Star,
   UtensilsCrossed,
   ChefHat,
+  Trash2,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -146,6 +148,11 @@ function HomePage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [navOpen, setNavOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
 
   const setQty = (key: string, delta: number) =>
     setQuantities((q) => ({ ...q, [key]: Math.max(0, (q[key] ?? 0) + delta) }));
@@ -155,12 +162,49 @@ function HomePage() {
     [quantities],
   );
 
-  const orderOnWhatsapp = (item?: MenuItem, key?: string) => {
-    const note = key ? notes[key]?.trim() : "";
-    const base = item
-      ? `مرحباً، أرغب بطلب: ${item.name} - ${item.price.toLocaleString()} د.ع`
-      : "مرحباً، أرغب بتقديم طلب من مطعم جبل";
-    const text = note ? `${base}\nملاحظة: ${note}` : base;
+  // Build cart entries
+  const cartEntries = useMemo(() => {
+    const entries: { key: string; item: MenuItem; qty: number; note: string }[] = [];
+    for (const c of CATEGORIES) {
+      for (const item of c.items) {
+        const key = `${c.id}-${item.name}`;
+        const qty = quantities[key] ?? 0;
+        if (qty > 0) entries.push({ key, item, qty, note: notes[key]?.trim() ?? "" });
+      }
+    }
+    return entries;
+  }, [quantities, notes]);
+
+  const cartTotal = useMemo(
+    () => cartEntries.reduce((s, e) => s + e.item.price * e.qty, 0),
+    [cartEntries],
+  );
+
+  const addToCart = (key: string) => {
+    setQty(key, +1);
+    // Subtle feedback: open cart briefly? keep closed; user opens via FAB
+  };
+
+  const sendCartToWhatsapp = () => {
+    if (!customerPhone.trim() || !customerAddress.trim()) {
+      setShowCheckoutWarning(true);
+      return;
+    }
+    const lines = cartEntries.map(
+      (e) =>
+        `• ${e.item.name} × ${e.qty} = ${(e.item.price * e.qty).toLocaleString()} د.ع${
+          e.note ? `\n   ملاحظة: ${e.note}` : ""
+        }`,
+    );
+    const text =
+      `مرحباً، أرغب بتقديم طلب من مطعم جبل:\n\n${lines.join("\n")}\n\n` +
+      `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
+      `الاسم: ${customerName || "—"}\nرقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
+    window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const quickWhatsapp = () => {
+    const text = "مرحباً، أرغب بالاستفسار عن مطعم جبل";
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -251,7 +295,7 @@ function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,color-mix(in_oklab,var(--gold)_15%,transparent),transparent_60%)]" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[88vh] max-w-5xl flex-col items-center justify-center px-4 py-24 text-center md:py-32">
+        <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-16 text-center md:min-h-[68vh] md:py-20">
           <h1 className="mt-7 font-display text-4xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl animate-fade-in">
             نكهات غريبة <span className="gold-text">بطعم مختلف</span>
           </h1>
@@ -270,7 +314,7 @@ function HomePage() {
               تصفح المنيو
             </a>
             <button
-              onClick={() => orderOnWhatsapp()}
+              onClick={quickWhatsapp}
               className="inline-flex items-center gap-2 rounded-full gold-border bg-transparent px-7 py-3.5 text-sm font-bold text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
             >
               <Phone className="h-4 w-4" />
@@ -315,9 +359,8 @@ function HomePage() {
           <div className="mt-20 space-y-20">
             {CATEGORIES.map((c) => (
               <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
-                <div className="mb-8 flex divider-ornament items-center gap-5">
-                  <h3 className="shrink-0 font-display text-2xl font-bold md:text-3xl">
-                    <span className="text-foreground/70">/</span>{" "}
+                <div className="mb-8 text-center">
+                  <h3 className="inline-block font-display text-2xl font-bold md:text-3xl">
                     <span className="gold-text">{c.name}</span>
                   </h3>
                 </div>
@@ -393,11 +436,11 @@ function HomePage() {
                             </button>
                           </div>
                           <button
-                            onClick={() => orderOnWhatsapp(item, key)}
+                            onClick={() => addToCart(key)}
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] transition-transform hover:scale-[1.02]"
                           >
                             <ShoppingBag className="h-4 w-4" />
-                            إضافة إلى الطلب
+                            أضف إلى السلة
                           </button>
                         </div>
                         </div>
@@ -506,27 +549,164 @@ function HomePage() {
         <div className="mx-auto max-w-3xl">
           <img src={logoImg} alt="مطعم جبل" width={56} height={56} className="mx-auto h-14 w-14 rounded-full" />
           <p className="mt-5 text-sm leading-loose text-foreground/75">
-            مطعم جبل — هنا تجد الطعم كما لم تذقه من قبل{" "}
-            <span className="text-red-400">❤️</span> — جميع الحقوق محفوظة 2026.
+            هنا تجد الطعم كما لم تذقه من قبل <span className="text-red-400">❤️</span>
           </p>
         </div>
       </footer>
 
-      {/* ============ FLOATING WHATSAPP ============ */}
+      {/* ============ FLOATING ACTIONS ============ */}
       <a
         href={WHATSAPP}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="واتساب"
-        className="fixed bottom-5 left-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_40px_-10px_rgba(37,211,102,0.7)] transition-transform hover:scale-110 animate-fade-in"
+        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_40px_-10px_rgba(37,211,102,0.7)] transition-transform hover:scale-110"
       >
         <MessageCircle className="h-6 w-6" />
+      </a>
+
+      <button
+        onClick={() => setCartOpen(true)}
+        aria-label="السلة"
+        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[var(--gold)] text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-110"
+      >
+        <ShoppingCart className="h-6 w-6" />
         {cartCount > 0 && (
-          <span className="absolute -top-1 -right-1 grid h-6 min-w-6 place-items-center rounded-full bg-[var(--gold)] px-1.5 text-xs font-bold text-[var(--forest-deep)]">
+          <span className="absolute -top-1 -right-1 grid h-6 min-w-6 place-items-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
             {cartCount}
           </span>
         )}
-      </a>
+      </button>
+
+      {/* ============ CART DRAWER ============ */}
+      {cartOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setCartOpen(false);
+              setShowCheckoutWarning(false);
+            }}
+          />
+          <aside className="relative ms-auto flex h-full w-full max-w-md flex-col bg-[var(--forest-deep)] shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between border-b border-[color-mix(in_oklab,var(--gold)_18%,transparent)] px-5 py-4">
+              <h3 className="font-display text-lg font-bold">
+                <span className="gold-text">سلة الطلب</span>
+                {cartCount > 0 && (
+                  <span className="ms-2 text-sm text-foreground/60">({cartCount} عنصر)</span>
+                )}
+              </h3>
+              <button
+                onClick={() => setCartOpen(false)}
+                className="rounded-full gold-border p-2 text-[var(--gold)]"
+                aria-label="إغلاق"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {cartEntries.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-foreground/60">
+                  <ShoppingCart className="h-12 w-12 text-[var(--gold)]/50" />
+                  <p>السلة فارغة. أضف أطباقك المفضلة!</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {cartEntries.map((e) => (
+                    <div
+                      key={e.key}
+                      className="glass-card flex items-center justify-between gap-3 rounded-2xl p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold">{e.item.name}</div>
+                        <div className="text-xs text-foreground/60">
+                          {e.item.price.toLocaleString()} د.ع × {e.qty}
+                        </div>
+                        {e.note && (
+                          <div className="mt-1 text-xs text-[var(--gold)]/80">📝 {e.note}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                        <button
+                          onClick={() => setQty(e.key, -1)}
+                          className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                          aria-label="إنقاص"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
+                        <button
+                          onClick={() => setQty(e.key, +1)}
+                          className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                          aria-label="زيادة"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => setQuantities((q) => ({ ...q, [e.key]: 0 }))}
+                        className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
+                        aria-label="حذف"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {cartEntries.length > 0 && (
+              <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest)] px-5 py-4">
+                <div className="mb-3 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="الاسم (اختياري)"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="رقم الهاتف *"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="العنوان الكامل للتوصيل *"
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
+                  />
+                </div>
+
+                {showCheckoutWarning && (!customerPhone.trim() || !customerAddress.trim()) && (
+                  <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    ⚠️ يرجى إضافة رقم الهاتف والعنوان قبل إرسال الطلب.
+                  </div>
+                )}
+
+                <div className="mb-3 flex items-center justify-between text-sm">
+                  <span className="text-foreground/70">المجموع</span>
+                  <span className="gold-text font-display text-xl font-bold">
+                    {cartTotal.toLocaleString()} د.ع
+                  </span>
+                </div>
+                <button
+                  onClick={sendCartToWhatsapp}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  إرسال الطلب عبر واتساب
+                </button>
+              </div>
+            )}
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
