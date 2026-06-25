@@ -463,7 +463,7 @@ function HomePage() {
                         <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
                           <div className="flex items-center gap-1 rounded-full gold-border p-1">
                             <button
-                              onClick={() => setQty(key, -1)}
+                              onClick={() => setPending(key, -1)}
                               className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                               aria-label="إنقاص"
                             >
@@ -471,7 +471,7 @@ function HomePage() {
                             </button>
                             <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
                             <button
-                              onClick={() => setQty(key, +1)}
+                              onClick={() => setPending(key, +1)}
                               className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                               aria-label="زيادة"
                             >
@@ -480,10 +480,18 @@ function HomePage() {
                           </div>
                           <button
                             onClick={() => addToCart(key)}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] transition-transform hover:scale-[1.02]"
+                            className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
+                              justAdded === key
+                                ? "bg-[#25D366] text-white"
+                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                            }`}
                           >
                             <ShoppingBag className="h-4 w-4" />
-                            أضف إلى السلة
+                            {justAdded === key
+                              ? "تمت الإضافة ✓"
+                              : inCart > 0
+                                ? `إضافة (${inCart} في السلة)`
+                                : "أضف إلى السلة"}
                           </button>
                         </div>
                         </div>
