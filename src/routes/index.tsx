@@ -712,10 +712,10 @@ function HomePage() {
               <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest)] px-5 py-4">
                 <div className="mb-3 space-y-2">
                   <input
-                    type="text"
-                    placeholder="الاسم (اختياري)"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    type="tel"
+                    placeholder="رقم الهاتف *"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
                     className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
                   />
                   <input
