@@ -81,6 +81,11 @@
   }
   body {
     background-color: var(--forest);
+    background-image:
+      radial-gradient(circle at 15% 10%, color-mix(in oklab, var(--gold) 10%, transparent), transparent 45%),
+      radial-gradient(circle at 85% 80%, color-mix(in oklab, var(--gold) 8%, transparent), transparent 50%),
+      linear-gradient(180deg, var(--forest-deep), var(--forest) 30%, var(--forest-deep));
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01";
