@@ -390,158 +390,173 @@ function HomePage() {
             <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
               <span className="gold-text">أقسام</span> المطعم
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-foreground/75">
-              تشكيلة واسعة من أشهى الأطباق العالمية والشرقية، اختر ما يناسب ذوقك.
-            </p>
           </div>
 
-          {/* Category chips */}
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
-            {categories.map((c) => (
-              <a
-                key={c.id}
-                href={`#cat-${c.id}`}
-                className="group inline-flex flex-col items-center gap-1 rounded-2xl gold-border bg-[var(--forest-deep)] px-5 py-3 text-center shadow-card transition-transform hover:-translate-y-1 hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-              >
-                {c.tag && (
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] group-hover:text-[var(--forest-deep)]">
-                    {c.tag}
-                  </span>
-                )}
-                <span className="font-display text-base font-bold md:text-lg">{c.name}</span>
-              </a>
-            ))}
-          </div>
-
-          {/* Items per category */}
-          <div className="mt-20 space-y-20">
+          {/* Collapsible categories */}
+          <div className="mx-auto mt-10 max-w-5xl space-y-4">
             {categories.map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
               if (catItems.length === 0) return null;
+              const isOpen = openCats.has(c.id);
               return (
-                <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
-                  <div className="mb-10 flex flex-col items-center gap-4 text-center">
-                    <h3 className="font-display text-2xl font-bold md:text-3xl">
-                      <span className="gold-text">{c.name}</span>
-                    </h3>
-                    <div className="flex w-full max-w-md items-center gap-3">
-                      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
-                      <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
-                      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                <div
+                  key={c.id}
+                  id={`cat-${c.id}`}
+                  className="glass-card overflow-hidden rounded-3xl scroll-mt-24"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleCat(c.id)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-7 md:py-5"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)]">
+                        <UtensilsCrossed className="h-4 w-4" />
+                      </span>
+                      <div className="text-right">
+                        {c.tag && (
+                          <span className="block text-[10px] uppercase tracking-widest text-[var(--gold)]/80">
+                            {c.tag}
+                          </span>
+                        )}
+                        <span className="font-display text-lg font-bold md:text-2xl">
+                          <span className="gold-text">{c.name}</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                    <div className="flex items-center gap-3">
+                      <span className="hidden rounded-full bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-3 py-1 text-xs text-[var(--gold)] sm:inline-block">
+                        {catItems.length} طبق
+                      </span>
+                      <ChevronDown
+                        className={`h-5 w-5 text-[var(--gold)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                      />
+                    </div>
+                  </button>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {catItems.map((item) => {
-                      const key = item.id;
-                      const qty = getPending(key);
-                      const inCart = cart[key]?.qty ?? 0;
-                      const hasDiscount =
-                        item.discount_price != null && item.discount_price < item.price;
-                      const price = hasDiscount ? item.discount_price! : item.price;
-                      return (
-                        <article
-                          key={key}
-                          className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
-                        >
-                          <div className="relative aspect-[16/9] w-full overflow-hidden">
-                            <img
-                              src={item.image_url || ITEM_PLACEHOLDER}
-                              alt={item.name}
-                              width={800}
-                              height={450}
-                              loading="lazy"
-                              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                            {hasDiscount && (
-                              <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
-                                <Sparkles className="h-3 w-3" /> عرض
-                              </span>
-                            )}
-                          </div>
+                  {isOpen && (
+                    <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] px-3 py-5 md:px-5">
+                      <div className="mb-5 flex w-full items-center gap-3">
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                        <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                      </div>
 
-                          <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0 flex-1">
-                                <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
-                                  {item.name}
-                                </h4>
-                                {item.description && (
-                                  <p className="mt-1 text-sm leading-relaxed text-foreground/65">
-                                    {item.description}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="shrink-0 text-end">
-                                <div className="gold-text font-display text-xl font-bold md:text-2xl">
-                                  {price.toLocaleString()}
-                                </div>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {catItems.map((item) => {
+                          const key = item.id;
+                          const qty = getPending(key);
+                          const inCart = cart[key]?.qty ?? 0;
+                          const hasDiscount =
+                            item.discount_price != null && item.discount_price < item.price;
+                          const price = hasDiscount ? item.discount_price! : item.price;
+                          return (
+                            <article
+                              key={key}
+                              className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
+                            >
+                              <div className="relative aspect-[16/9] w-full overflow-hidden">
+                                <img
+                                  src={item.image_url || ITEM_PLACEHOLDER}
+                                  alt={item.name}
+                                  width={800}
+                                  height={450}
+                                  loading="lazy"
+                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
                                 {hasDiscount && (
-                                  <div className="text-[11px] text-foreground/50 line-through">
-                                    {item.price.toLocaleString()}
-                                  </div>
+                                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
+                                    <Sparkles className="h-3 w-3" /> عرض
+                                  </span>
                                 )}
-                                <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
-                                  د.ع
+                              </div>
+
+                              <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
+                                      {item.name}
+                                    </h4>
+                                    {item.description && (
+                                      <p className="mt-1 text-sm leading-relaxed text-foreground/65">
+                                        {item.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="shrink-0 text-end">
+                                    <div className="gold-text font-display text-xl font-bold md:text-2xl">
+                                      {price.toLocaleString()}
+                                    </div>
+                                    {hasDiscount && (
+                                      <div className="text-[11px] text-foreground/50 line-through">
+                                        {item.price.toLocaleString()}
+                                      </div>
+                                    )}
+                                    <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
+                                      د.ع
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <input
+                                  type="text"
+                                  value={notes[key] ?? ""}
+                                  onChange={(e) =>
+                                    setNotes((n) => ({ ...n, [key]: e.target.value }))
+                                  }
+                                  placeholder="ملاحظات (مثلاً: بدون مخلل)"
+                                  className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                                />
+
+                                <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
+                                  <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                                    <button
+                                      onClick={() => setPending(key, -1)}
+                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      aria-label="إنقاص"
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </button>
+                                    <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
+                                    <button
+                                      onClick={() => setPending(key, +1)}
+                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      aria-label="زيادة"
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => addToCart(key)}
+                                    className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
+                                      justAdded === key
+                                        ? "bg-[#25D366] text-white"
+                                        : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                                    }`}
+                                  >
+                                    <ShoppingBag className="h-4 w-4" />
+                                    {justAdded === key
+                                      ? "تمت الإضافة ✓"
+                                      : inCart > 0
+                                        ? `إضافة (${inCart} في السلة)`
+                                        : "أضف إلى السلة"}
+                                  </button>
                                 </div>
                               </div>
-                            </div>
-
-                            <input
-                              type="text"
-                              value={notes[key] ?? ""}
-                              onChange={(e) =>
-                                setNotes((n) => ({ ...n, [key]: e.target.value }))
-                              }
-                              placeholder="ملاحظات (مثلاً: بدون مخلل)"
-                              className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
-                            />
-
-                            <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
-                              <div className="flex items-center gap-1 rounded-full gold-border p-1">
-                                <button
-                                  onClick={() => setPending(key, -1)}
-                                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                                  aria-label="إنقاص"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </button>
-                                <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
-                                <button
-                                  onClick={() => setPending(key, +1)}
-                                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                                  aria-label="زيادة"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </button>
-                              </div>
-                              <button
-                                onClick={() => addToCart(key)}
-                                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
-                                  justAdded === key
-                                    ? "bg-[#25D366] text-white"
-                                    : "bg-[var(--gold)] text-[var(--forest-deep)]"
-                                }`}
-                              >
-                                <ShoppingBag className="h-4 w-4" />
-                                {justAdded === key
-                                  ? "تمت الإضافة ✓"
-                                  : inCart > 0
-                                    ? `إضافة (${inCart} في السلة)`
-                                    : "أضف إلى السلة"}
-                              </button>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
       </section>
+
 
       {/* ============ ABOUT ============ */}
       <section id="about" className="relative px-4 py-20 md:py-28">
