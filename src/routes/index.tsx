@@ -606,18 +606,18 @@ function HomePage() {
             </h2>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
             {[
               {
                 icon: MapPin,
                 title: "العنوان",
-                lines: ["أبي الخصيب", "فلكة التجنيد مجاور جاليري مول"],
+                lines: ["أبي الخصيب - فلكة التجنيد"],
                 href: "https://maps.google.com/?q=Abi+Al-Khasib+Basra",
               },
               {
                 icon: Phone,
                 title: "للطلب والاستفسار",
-                lines: ["07756000241", "07878777237"],
+                lines: [PHONE_PRIMARY, PHONE_SECONDARY],
                 href: `tel:${PHONE_PRIMARY}`,
               },
               {
@@ -638,15 +638,15 @@ function HomePage() {
                 href={c.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="glass-card group flex flex-col items-center gap-3 rounded-3xl p-7 text-center transition-transform hover:-translate-y-1"
+                className="glass-card group flex flex-col items-center gap-1.5 rounded-2xl p-3 text-center transition-transform hover:-translate-y-1 sm:p-4"
               >
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--gold)]/15 text-[var(--gold)] transition-colors group-hover:bg-[var(--gold)] group-hover:text-[var(--forest-deep)]">
-                  <c.icon className="h-6 w-6" />
+                <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--gold)]/15 text-[var(--gold)] transition-colors group-hover:bg-[var(--gold)] group-hover:text-[var(--forest-deep)] sm:h-10 sm:w-10">
+                  <c.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <div className="font-display text-lg font-bold">{c.title}</div>
-                <div className="space-y-0.5 text-sm text-foreground/75">
+                <div className="font-display text-xs font-bold sm:text-sm">{c.title}</div>
+                <div className="space-y-0.5 text-[11px] text-foreground/75 sm:text-xs">
                   {c.lines.map((l) => (
-                    <div key={l}>{l}</div>
+                    <div key={l} dir="ltr">{l}</div>
                   ))}
                 </div>
               </a>
