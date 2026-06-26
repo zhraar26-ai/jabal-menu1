@@ -288,8 +288,16 @@ function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,color-mix(in_oklab,var(--gold)_15%,transparent),transparent_60%)]" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-16 text-center md:min-h-[68vh] md:py-20">
-          <h1 className="mt-7 font-display text-4xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl animate-fade-in">
+        <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-12 text-center md:min-h-[68vh] md:py-16">
+          <img
+            src={logoImg}
+            alt="مطعم جبل - Jabal Restaurant"
+            width={320}
+            height={320}
+            className="mx-auto h-40 w-auto object-contain drop-shadow-[0_8px_30px_rgba(255,189,89,0.35)] md:h-56"
+          />
+
+          <h1 className="mt-4 font-display text-3xl font-bold leading-tight text-foreground md:text-5xl lg:text-6xl animate-fade-in">
             {heroTitle.split(" ").length > 1 ? (
               <>
                 {heroTitle.split(" ").slice(0, -1).join(" ")}{" "}
@@ -300,11 +308,11 @@ function HomePage() {
             )}
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-loose text-foreground/85 md:text-lg animate-fade-in">
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-loose text-foreground/85 md:text-lg animate-fade-in">
             {heroSubtitle}
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3 animate-fade-in">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-fade-in">
             <a
               href="#menu"
               className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-7 py-3.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
@@ -312,13 +320,27 @@ function HomePage() {
               <UtensilsCrossed className="h-4 w-4" />
               تصفح المنيو
             </a>
-            <button
-              onClick={quickWhatsapp}
-              className="inline-flex items-center gap-2 rounded-full gold-border bg-transparent px-7 py-3.5 text-sm font-bold text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+          </div>
+
+          <div className="mt-7 grid w-full max-w-2xl grid-cols-1 gap-2 text-sm sm:grid-cols-2 animate-fade-in">
+            <a
+              href={`tel:${PHONE_PRIMARY}`}
+              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
             >
-              <Phone className="h-4 w-4" />
-              للطلب والاستفسار
-            </button>
+              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <span dir="ltr">{PHONE_PRIMARY}</span>
+            </a>
+            <a
+              href={`tel:${PHONE_SECONDARY}`}
+              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
+            >
+              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <span dir="ltr">{PHONE_SECONDARY}</span>
+            </a>
+            <div className="glass-card sm:col-span-2 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/85">
+              <MapPin className="h-4 w-4 text-[var(--gold)]" />
+              <span>{ADDRESS_FULL}</span>
+            </div>
           </div>
         </div>
       </section>
