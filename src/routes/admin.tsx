@@ -859,6 +859,7 @@ function ThemeTab() {
         {savedAt > 0 && Date.now() - savedAt < 2500 && (
           <span className="text-xs text-green-400">تم الحفظ ✓</span>
         )}
+        {saveErr && <span className="text-xs text-red-400">خطأ: {saveErr}</span>}
       </div>
     </div>
   );
