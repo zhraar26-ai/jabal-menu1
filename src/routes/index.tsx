@@ -197,10 +197,6 @@ function HomePage() {
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const quickWhatsapp = () => {
-    const text = "مرحباً، أرغب بالاستفسار عن مطعم جبل";
-    window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
-  };
 
   const heroSrc = theme?.hero_image_url || heroImg;
   const heroTitle = theme?.hero_title || "نكهات غريبة بطعم مختلف";
