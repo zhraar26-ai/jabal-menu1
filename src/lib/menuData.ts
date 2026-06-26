@@ -37,6 +37,7 @@ export type ThemeSettings = {
   hero_title: string | null;
   hero_subtitle: string | null;
   background_style: string;
+  font_family: string;
 };
 
 const sb = supabase as any;
@@ -86,6 +87,17 @@ export const BACKGROUND_STYLES: Record<string, string> = {
   plain: "linear-gradient(180deg, var(--forest-deep), var(--forest) 50%, var(--forest-deep))",
 };
 
+export const FONT_OPTIONS: { value: string; label: string }[] = [
+  { value: "Lemonada", label: "Lemonada (افتراضي)" },
+  { value: "Cairo", label: "Cairo" },
+  { value: "Tajawal", label: "Tajawal" },
+  { value: "Almarai", label: "Almarai" },
+  { value: "Amiri", label: "Amiri (كلاسيكي)" },
+  { value: "Rakkas", label: "Rakkas (عريض)" },
+  { value: "Noto Kufi Arabic", label: "Noto Kufi" },
+  { value: "Reem Kufi", label: "Reem Kufi" },
+];
+
 export function applyTheme(t: ThemeSettings) {
   const root = document.documentElement;
   root.style.setProperty("--forest", t.forest_color);
@@ -93,4 +105,10 @@ export function applyTheme(t: ThemeSettings) {
   root.style.setProperty("--gold", t.gold_color);
   const bg = BACKGROUND_STYLES[t.background_style] ?? BACKGROUND_STYLES["gold-lines"];
   document.body.style.backgroundImage = bg;
+  if (t.font_family) {
+    const stack = `"${t.font_family}", "Lemonada", system-ui, sans-serif`;
+    root.style.setProperty("--font-sans", stack);
+    root.style.setProperty("--font-display", stack);
+    document.body.style.fontFamily = stack;
+  }
 }

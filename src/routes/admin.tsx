@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   BACKGROUND_STYLES,
   Category,
+  FONT_OPTIONS,
   MenuItem,
   Offer,
   ThemeSettings,
+  applyTheme,
   fetchCategories,
   fetchMenuItems,
   fetchOffers,
@@ -709,6 +711,7 @@ function ThemeTab() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [savedAt, setSavedAt] = useState(0);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTheme()
@@ -719,15 +722,16 @@ function ThemeTab() {
   if (loading || !t) return <div className="text-foreground/70">جاري التحميل…</div>;
 
   const save = async () => {
-    await sb.from("theme_settings").update(t).eq("id", 1);
+    setSaveErr(null);
+    const { error } = await sb.from("theme_settings").update(t).eq("id", 1);
+    if (error) {
+      setSaveErr(error.message || "فشل الحفظ");
+      return;
+    }
     setSavedAt(Date.now());
-    // Live apply
-    document.documentElement.style.setProperty("--forest", t.forest_color);
-    document.documentElement.style.setProperty("--forest-deep", t.forest_deep_color);
-    document.documentElement.style.setProperty("--gold", t.gold_color);
-    document.body.style.backgroundImage =
-      BACKGROUND_STYLES[t.background_style] ?? BACKGROUND_STYLES["gold-lines"];
+    applyTheme(t);
   };
+
 
   const uploadHero = async (file: File) => {
     setUploading(true);
@@ -767,19 +771,38 @@ function ThemeTab() {
       </div>
 
 
-      <div>
-        <label className="text-xs text-foreground/70">نمط الخلفية</label>
-        <select
-          value={t.background_style}
-          onChange={(e) => setT({ ...t, background_style: e.target.value })}
-          className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
-        >
-          <option value="gold-lines">خطوط ذهبية متقاطعة</option>
-          <option value="dots">نقاط ذهبية</option>
-          <option value="waves">موجات</option>
-          <option value="plain">سادة</option>
-        </select>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div>
+          <label className="text-xs text-foreground/70">نمط الخلفية</label>
+          <select
+            value={t.background_style}
+            onChange={(e) => setT({ ...t, background_style: e.target.value })}
+            className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+          >
+            {Object.keys(BACKGROUND_STYLES).map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-foreground/70">الخط (Font Family)</label>
+          <select
+            value={t.font_family ?? "Lemonada"}
+            onChange={(e) => setT({ ...t, font_family: e.target.value })}
+            style={{ fontFamily: `"${t.font_family}", sans-serif` }}
+            className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+          >
+            {FONT_OPTIONS.map((f) => (
+              <option key={f.value} value={f.value} style={{ fontFamily: `"${f.value}", sans-serif` }}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
 
       <div>
         <label className="text-xs text-foreground/70">عنوان الهيرو</label>
@@ -836,6 +859,7 @@ function ThemeTab() {
         {savedAt > 0 && Date.now() - savedAt < 2500 && (
           <span className="text-xs text-green-400">تم الحفظ ✓</span>
         )}
+        {saveErr && <span className="text-xs text-red-400">خطأ: {saveErr}</span>}
       </div>
     </div>
   );

@@ -118,6 +118,7 @@ export type Database = {
       theme_settings: {
         Row: {
           background_style: string
+          font_family: string
           forest_color: string
           forest_deep_color: string
           gold_color: string
@@ -128,6 +129,7 @@ export type Database = {
         }
         Insert: {
           background_style?: string
+          font_family?: string
           forest_color?: string
           forest_deep_color?: string
           gold_color?: string
@@ -138,6 +140,7 @@ export type Database = {
         }
         Update: {
           background_style?: string
+          font_family?: string
           forest_color?: string
           forest_deep_color?: string
           gold_color?: string

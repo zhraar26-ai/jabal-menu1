@@ -16,6 +16,7 @@ import {
   ChefHat,
   Trash2,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -51,8 +52,10 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const WHATSAPP = "https://wa.me/9647756000241";
-const PHONE_PRIMARY = "07756000241";
+const WHATSAPP = "https://wa.me/9647878777237";
+const PHONE_PRIMARY = "07878777237";
+const PHONE_SECONDARY = "07756000241";
+const ADDRESS_FULL = "البصرة - أبي الخصيب، فلكة التجنيد مجاور جاليري مول";
 const ITEM_PLACEHOLDER =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
@@ -84,6 +87,13 @@ function HomePage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
+  const [openCats, setOpenCats] = useState<Set<string>>(new Set());
+  const toggleCat = (id: string) =>
+    setOpenCats((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(console.error);
@@ -140,6 +150,13 @@ function HomePage() {
       return copy;
     });
 
+  const setCartNote = (key: string, note: string) =>
+    setCart((c) => {
+      const cur = c[key];
+      if (!cur) return c;
+      return { ...c, [key]: { ...cur, note } };
+    });
+
   const cartCount = useMemo(
     () => Object.values(cart).reduce((a, b) => a + b.qty, 0),
     [cart],
@@ -189,16 +206,12 @@ function HomePage() {
         }`,
     );
     const text =
-      `مرحباً، أرغب بتقديم طلب من مطعم جبل:\n\n${lines.join("\n")}\n\n` +
+      `مرحبا، طلب جديد من منيو جبل الإلكتروني:\n\n${lines.join("\n")}\n\n` +
       `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
       `رقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const quickWhatsapp = () => {
-    const text = "مرحباً، أرغب بالاستفسار عن مطعم جبل";
-    window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
-  };
 
   const heroSrc = theme?.hero_image_url || heroImg;
   const heroTitle = theme?.hero_title || "نكهات غريبة بطعم مختلف";
@@ -286,8 +299,16 @@ function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,color-mix(in_oklab,var(--gold)_15%,transparent),transparent_60%)]" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-16 text-center md:min-h-[68vh] md:py-20">
-          <h1 className="mt-7 font-display text-4xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl animate-fade-in">
+        <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-12 text-center md:min-h-[68vh] md:py-16">
+          <img
+            src={logoImg}
+            alt="مطعم جبل - Jabal Restaurant"
+            width={320}
+            height={320}
+            className="mx-auto h-40 w-auto object-contain drop-shadow-[0_8px_30px_rgba(255,189,89,0.35)] md:h-56"
+          />
+
+          <h1 className="mt-4 font-display text-3xl font-bold leading-tight text-foreground md:text-5xl lg:text-6xl animate-fade-in">
             {heroTitle.split(" ").length > 1 ? (
               <>
                 {heroTitle.split(" ").slice(0, -1).join(" ")}{" "}
@@ -298,11 +319,11 @@ function HomePage() {
             )}
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-loose text-foreground/85 md:text-lg animate-fade-in">
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-loose text-foreground/85 md:text-lg animate-fade-in">
             {heroSubtitle}
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3 animate-fade-in">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-fade-in">
             <a
               href="#menu"
               className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-7 py-3.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
@@ -310,13 +331,27 @@ function HomePage() {
               <UtensilsCrossed className="h-4 w-4" />
               تصفح المنيو
             </a>
-            <button
-              onClick={quickWhatsapp}
-              className="inline-flex items-center gap-2 rounded-full gold-border bg-transparent px-7 py-3.5 text-sm font-bold text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+          </div>
+
+          <div className="mt-7 grid w-full max-w-2xl grid-cols-1 gap-2 text-sm sm:grid-cols-2 animate-fade-in">
+            <a
+              href={`tel:${PHONE_PRIMARY}`}
+              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
             >
-              <Phone className="h-4 w-4" />
-              للطلب والاستفسار
-            </button>
+              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <span dir="ltr">{PHONE_PRIMARY}</span>
+            </a>
+            <a
+              href={`tel:${PHONE_SECONDARY}`}
+              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
+            >
+              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <span dir="ltr">{PHONE_SECONDARY}</span>
+            </a>
+            <div className="glass-card sm:col-span-2 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/85">
+              <MapPin className="h-4 w-4 text-[var(--gold)]" />
+              <span>{ADDRESS_FULL}</span>
+            </div>
           </div>
         </div>
       </section>
@@ -362,158 +397,173 @@ function HomePage() {
             <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
               <span className="gold-text">أقسام</span> المطعم
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-foreground/75">
-              تشكيلة واسعة من أشهى الأطباق العالمية والشرقية، اختر ما يناسب ذوقك.
-            </p>
           </div>
 
-          {/* Category chips */}
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
-            {categories.map((c) => (
-              <a
-                key={c.id}
-                href={`#cat-${c.id}`}
-                className="group inline-flex flex-col items-center gap-1 rounded-2xl gold-border bg-[var(--forest-deep)] px-5 py-3 text-center shadow-card transition-transform hover:-translate-y-1 hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-              >
-                {c.tag && (
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] group-hover:text-[var(--forest-deep)]">
-                    {c.tag}
-                  </span>
-                )}
-                <span className="font-display text-base font-bold md:text-lg">{c.name}</span>
-              </a>
-            ))}
-          </div>
-
-          {/* Items per category */}
-          <div className="mt-20 space-y-20">
+          {/* Collapsible categories */}
+          <div className="mx-auto mt-10 max-w-5xl space-y-4">
             {categories.map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
               if (catItems.length === 0) return null;
+              const isOpen = openCats.has(c.id);
               return (
-                <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
-                  <div className="mb-10 flex flex-col items-center gap-4 text-center">
-                    <h3 className="font-display text-2xl font-bold md:text-3xl">
-                      <span className="gold-text">{c.name}</span>
-                    </h3>
-                    <div className="flex w-full max-w-md items-center gap-3">
-                      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
-                      <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
-                      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                <div
+                  key={c.id}
+                  id={`cat-${c.id}`}
+                  className="glass-card overflow-hidden rounded-3xl scroll-mt-24"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleCat(c.id)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-7 md:py-5"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)]">
+                        <UtensilsCrossed className="h-4 w-4" />
+                      </span>
+                      <div className="text-right">
+                        {c.tag && (
+                          <span className="block text-[10px] uppercase tracking-widest text-[var(--gold)]/80">
+                            {c.tag}
+                          </span>
+                        )}
+                        <span className="font-display text-lg font-bold md:text-2xl">
+                          <span className="gold-text">{c.name}</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                    <div className="flex items-center gap-3">
+                      <span className="hidden rounded-full bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-3 py-1 text-xs text-[var(--gold)] sm:inline-block">
+                        {catItems.length} طبق
+                      </span>
+                      <ChevronDown
+                        className={`h-5 w-5 text-[var(--gold)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                      />
+                    </div>
+                  </button>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {catItems.map((item) => {
-                      const key = item.id;
-                      const qty = getPending(key);
-                      const inCart = cart[key]?.qty ?? 0;
-                      const hasDiscount =
-                        item.discount_price != null && item.discount_price < item.price;
-                      const price = hasDiscount ? item.discount_price! : item.price;
-                      return (
-                        <article
-                          key={key}
-                          className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
-                        >
-                          <div className="relative aspect-[16/9] w-full overflow-hidden">
-                            <img
-                              src={item.image_url || ITEM_PLACEHOLDER}
-                              alt={item.name}
-                              width={800}
-                              height={450}
-                              loading="lazy"
-                              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                            {hasDiscount && (
-                              <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
-                                <Sparkles className="h-3 w-3" /> عرض
-                              </span>
-                            )}
-                          </div>
+                  {isOpen && (
+                    <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] px-3 py-5 md:px-5">
+                      <div className="mb-5 flex w-full items-center gap-3">
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                        <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
+                      </div>
 
-                          <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0 flex-1">
-                                <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
-                                  {item.name}
-                                </h4>
-                                {item.description && (
-                                  <p className="mt-1 text-sm leading-relaxed text-foreground/65">
-                                    {item.description}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="shrink-0 text-end">
-                                <div className="gold-text font-display text-xl font-bold md:text-2xl">
-                                  {price.toLocaleString()}
-                                </div>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {catItems.map((item) => {
+                          const key = item.id;
+                          const qty = getPending(key);
+                          const inCart = cart[key]?.qty ?? 0;
+                          const hasDiscount =
+                            item.discount_price != null && item.discount_price < item.price;
+                          const price = hasDiscount ? item.discount_price! : item.price;
+                          return (
+                            <article
+                              key={key}
+                              className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
+                            >
+                              <div className="relative aspect-[16/9] w-full overflow-hidden">
+                                <img
+                                  src={item.image_url || ITEM_PLACEHOLDER}
+                                  alt={item.name}
+                                  width={800}
+                                  height={450}
+                                  loading="lazy"
+                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
                                 {hasDiscount && (
-                                  <div className="text-[11px] text-foreground/50 line-through">
-                                    {item.price.toLocaleString()}
-                                  </div>
+                                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
+                                    <Sparkles className="h-3 w-3" /> عرض
+                                  </span>
                                 )}
-                                <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
-                                  د.ع
+                              </div>
+
+                              <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
+                                      {item.name}
+                                    </h4>
+                                    {item.description && (
+                                      <p className="mt-1 text-sm leading-relaxed text-foreground/65">
+                                        {item.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="shrink-0 text-end">
+                                    <div className="gold-text font-display text-xl font-bold md:text-2xl">
+                                      {price.toLocaleString()}
+                                    </div>
+                                    {hasDiscount && (
+                                      <div className="text-[11px] text-foreground/50 line-through">
+                                        {item.price.toLocaleString()}
+                                      </div>
+                                    )}
+                                    <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
+                                      د.ع
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <input
+                                  type="text"
+                                  value={notes[key] ?? ""}
+                                  onChange={(e) =>
+                                    setNotes((n) => ({ ...n, [key]: e.target.value }))
+                                  }
+                                  placeholder="ملاحظات (مثلاً: بدون مخلل)"
+                                  className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                                />
+
+                                <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
+                                  <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                                    <button
+                                      onClick={() => setPending(key, -1)}
+                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      aria-label="إنقاص"
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </button>
+                                    <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
+                                    <button
+                                      onClick={() => setPending(key, +1)}
+                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      aria-label="زيادة"
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => addToCart(key)}
+                                    className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
+                                      justAdded === key
+                                        ? "bg-[#25D366] text-white"
+                                        : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                                    }`}
+                                  >
+                                    <ShoppingBag className="h-4 w-4" />
+                                    {justAdded === key
+                                      ? "تمت الإضافة ✓"
+                                      : inCart > 0
+                                        ? `إضافة (${inCart} في السلة)`
+                                        : "أضف إلى السلة"}
+                                  </button>
                                 </div>
                               </div>
-                            </div>
-
-                            <input
-                              type="text"
-                              value={notes[key] ?? ""}
-                              onChange={(e) =>
-                                setNotes((n) => ({ ...n, [key]: e.target.value }))
-                              }
-                              placeholder="ملاحظات (مثلاً: بدون مخلل)"
-                              className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
-                            />
-
-                            <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
-                              <div className="flex items-center gap-1 rounded-full gold-border p-1">
-                                <button
-                                  onClick={() => setPending(key, -1)}
-                                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                                  aria-label="إنقاص"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </button>
-                                <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
-                                <button
-                                  onClick={() => setPending(key, +1)}
-                                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                                  aria-label="زيادة"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </button>
-                              </div>
-                              <button
-                                onClick={() => addToCart(key)}
-                                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
-                                  justAdded === key
-                                    ? "bg-[#25D366] text-white"
-                                    : "bg-[var(--gold)] text-[var(--forest-deep)]"
-                                }`}
-                              >
-                                <ShoppingBag className="h-4 w-4" />
-                                {justAdded === key
-                                  ? "تمت الإضافة ✓"
-                                  : inCart > 0
-                                    ? `إضافة (${inCart} في السلة)`
-                                    : "أضف إلى السلة"}
-                              </button>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
       </section>
+
 
       {/* ============ ABOUT ============ */}
       <section id="about" className="relative px-4 py-20 md:py-28">
@@ -527,19 +577,19 @@ function HomePage() {
             نختار مكوناتنا بعناية، ونحضّر أطباقنا بحب، لنقدّم لك تجربة لا تُنسى مع كل لقمة.
           </p>
 
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid grid-cols-3 gap-2 sm:gap-4">
             {[
-              { icon: UtensilsCrossed, value: `+${categories.length}`, label: "قسم في القائمة" },
-              { icon: ChefHat, value: `+${items.length}`, label: "أطباق مميّزة" },
-              { icon: Star, value: "5.0", label: "تقييم الزبائن" },
+              { icon: UtensilsCrossed, value: `+${categories.length}`, label: "قسم" },
+              { icon: ChefHat, value: `+${items.length}`, label: "طبق مميّز" },
+              { icon: Star, value: "5.0", label: "تقييم" },
             ].map((s) => (
               <div
                 key={s.label}
-                className="glass-card flex flex-col items-center gap-2 rounded-3xl p-7 transition-transform hover:-translate-y-1"
+                className="glass-card flex flex-col items-center gap-1 rounded-2xl p-3 transition-transform hover:-translate-y-1 sm:p-4"
               >
-                <s.icon className="h-7 w-7 text-[var(--gold)]" />
-                <div className="gold-text font-display text-4xl font-bold">{s.value}</div>
-                <div className="text-sm text-foreground/75">{s.label}</div>
+                <s.icon className="h-5 w-5 text-[var(--gold)]" />
+                <div className="gold-text font-display text-xl font-bold sm:text-2xl">{s.value}</div>
+                <div className="text-[11px] text-foreground/75 sm:text-xs">{s.label}</div>
               </div>
             ))}
           </div>
@@ -556,18 +606,18 @@ function HomePage() {
             </h2>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
             {[
               {
                 icon: MapPin,
                 title: "العنوان",
-                lines: ["أبي الخصيب", "فلكة التجنيد مجاور جاليري مول"],
+                lines: ["أبي الخصيب - فلكة التجنيد"],
                 href: "https://maps.google.com/?q=Abi+Al-Khasib+Basra",
               },
               {
                 icon: Phone,
                 title: "للطلب والاستفسار",
-                lines: ["07756000241", "07878777237"],
+                lines: [PHONE_PRIMARY, PHONE_SECONDARY],
                 href: `tel:${PHONE_PRIMARY}`,
               },
               {
@@ -588,15 +638,15 @@ function HomePage() {
                 href={c.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="glass-card group flex flex-col items-center gap-3 rounded-3xl p-7 text-center transition-transform hover:-translate-y-1"
+                className="glass-card group flex flex-col items-center gap-1.5 rounded-2xl p-3 text-center transition-transform hover:-translate-y-1 sm:p-4"
               >
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--gold)]/15 text-[var(--gold)] transition-colors group-hover:bg-[var(--gold)] group-hover:text-[var(--forest-deep)]">
-                  <c.icon className="h-6 w-6" />
+                <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--gold)]/15 text-[var(--gold)] transition-colors group-hover:bg-[var(--gold)] group-hover:text-[var(--forest-deep)] sm:h-10 sm:w-10">
+                  <c.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <div className="font-display text-lg font-bold">{c.title}</div>
-                <div className="space-y-0.5 text-sm text-foreground/75">
+                <div className="font-display text-xs font-bold sm:text-sm">{c.title}</div>
+                <div className="space-y-0.5 text-[11px] text-foreground/75 sm:text-xs">
                   {c.lines.map((l) => (
-                    <div key={l}>{l}</div>
+                    <div key={l} dir="ltr">{l}</div>
                   ))}
                 </div>
               </a>
@@ -683,41 +733,47 @@ function HomePage() {
                   {cartEntries.map((e) => (
                     <div
                       key={e.key}
-                      className="glass-card flex items-center justify-between gap-3 rounded-2xl p-3"
+                      className="glass-card flex flex-col gap-2 rounded-2xl p-3"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold">{e.item.name}</div>
-                        <div className="text-xs text-foreground/60">
-                          {effectivePrice(e.item).toLocaleString()} د.ع × {e.qty}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold">{e.item.name}</div>
+                          <div className="text-xs text-foreground/60">
+                            {effectivePrice(e.item).toLocaleString()} د.ع × {e.qty}
+                          </div>
                         </div>
-                        {e.note && (
-                          <div className="mt-1 text-xs text-[var(--gold)]/80">📝 {e.note}</div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                        <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                          <button
+                            onClick={() => setCartQty(e.key, -1)}
+                            className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                            aria-label="إنقاص"
+                          >
+                            <Minus className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
+                          <button
+                            onClick={() => setCartQty(e.key, +1)}
+                            className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                            aria-label="زيادة"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <button
-                          onClick={() => setCartQty(e.key, -1)}
-                          className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                          aria-label="إنقاص"
+                          onClick={() => removeFromCart(e.key)}
+                          className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
+                          aria-label="حذف"
                         >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
-                        <button
-                          onClick={() => setCartQty(e.key, +1)}
-                          className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                          aria-label="زيادة"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(e.key)}
-                        className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
-                        aria-label="حذف"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <input
+                        type="text"
+                        value={e.note}
+                        onChange={(ev) => setCartNote(e.key, ev.target.value)}
+                        placeholder="✏️ أضف أو عدّل ملاحظة (مثلاً: بدون مخلل)"
+                        className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/60 px-3 py-2 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                      />
                     </div>
                   ))}
                 </div>
