@@ -771,19 +771,38 @@ function ThemeTab() {
       </div>
 
 
-      <div>
-        <label className="text-xs text-foreground/70">نمط الخلفية</label>
-        <select
-          value={t.background_style}
-          onChange={(e) => setT({ ...t, background_style: e.target.value })}
-          className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
-        >
-          <option value="gold-lines">خطوط ذهبية متقاطعة</option>
-          <option value="dots">نقاط ذهبية</option>
-          <option value="waves">موجات</option>
-          <option value="plain">سادة</option>
-        </select>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div>
+          <label className="text-xs text-foreground/70">نمط الخلفية</label>
+          <select
+            value={t.background_style}
+            onChange={(e) => setT({ ...t, background_style: e.target.value })}
+            className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+          >
+            {Object.keys(BACKGROUND_STYLES).map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-foreground/70">الخط (Font Family)</label>
+          <select
+            value={t.font_family ?? "Lemonada"}
+            onChange={(e) => setT({ ...t, font_family: e.target.value })}
+            style={{ fontFamily: `"${t.font_family}", sans-serif` }}
+            className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+          >
+            {FONT_OPTIONS.map((f) => (
+              <option key={f.value} value={f.value} style={{ fontFamily: `"${f.value}", sans-serif` }}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
 
       <div>
         <label className="text-xs text-foreground/70">عنوان الهيرو</label>
