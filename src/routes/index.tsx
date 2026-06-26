@@ -51,8 +51,10 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const WHATSAPP = "https://wa.me/9647756000241";
-const PHONE_PRIMARY = "07756000241";
+const WHATSAPP = "https://wa.me/9647878777237";
+const PHONE_PRIMARY = "07878777237";
+const PHONE_SECONDARY = "07756000241";
+const ADDRESS_FULL = "البصرة - أبي الخصيب، فلكة التجنيد مجاور جاليري مول";
 const ITEM_PLACEHOLDER =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
