@@ -191,7 +191,7 @@ function HomePage() {
         }`,
     );
     const text =
-      `مرحباً، أرغب بتقديم طلب من مطعم جبل:\n\n${lines.join("\n")}\n\n` +
+      `مرحبا، طلب جديد من منيو جبل الإلكتروني:\n\n${lines.join("\n")}\n\n` +
       `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
       `رقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
