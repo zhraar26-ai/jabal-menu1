@@ -711,6 +711,7 @@ function ThemeTab() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [savedAt, setSavedAt] = useState(0);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTheme()
@@ -721,15 +722,16 @@ function ThemeTab() {
   if (loading || !t) return <div className="text-foreground/70">جاري التحميل…</div>;
 
   const save = async () => {
-    await sb.from("theme_settings").update(t).eq("id", 1);
+    setSaveErr(null);
+    const { error } = await sb.from("theme_settings").update(t).eq("id", 1);
+    if (error) {
+      setSaveErr(error.message || "فشل الحفظ");
+      return;
+    }
     setSavedAt(Date.now());
-    // Live apply
-    document.documentElement.style.setProperty("--forest", t.forest_color);
-    document.documentElement.style.setProperty("--forest-deep", t.forest_deep_color);
-    document.documentElement.style.setProperty("--gold", t.gold_color);
-    document.body.style.backgroundImage =
-      BACKGROUND_STYLES[t.background_style] ?? BACKGROUND_STYLES["gold-lines"];
+    applyTheme(t);
   };
+
 
   const uploadHero = async (file: File) => {
     setUploading(true);
