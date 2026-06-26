@@ -83,13 +83,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "مطعم جبل في البصرة - تجربة طعام تجمع بين الفن الغربي والذوق الشرقي. ستيك، بيتزا، برغر، دولمة، شاورما والمزيد.",
       },
-      { property: "og:title", content: "مطعم جبل | Jabal Restaurant" },
+      { property: "og:title", content: "مطعم جبل | Jabal Restaurant - نكهات غريبة بطعم مختلف" },
       {
         property: "og:description",
         content: "نكهات غريبة بطعم مختلف - مطعم جبل في البصرة",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "مطعم جبل | Jabal Restaurant - نكهات غريبة بطعم مختلف" },
+      { name: "description", content: "Jabal Menu Elegance is a professional digital menu website for Jabal Restaurant." },
+      { property: "og:description", content: "Jabal Menu Elegance is a professional digital menu website for Jabal Restaurant." },
+      { name: "twitter:description", content: "Jabal Menu Elegance is a professional digital menu website for Jabal Restaurant." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8c69d28f-b5cd-40bb-9585-4413883ee319/id-preview-bc6502ff--62221ccd-e29e-4ad7-bd15-36ba135324b4.lovable.app-1782465084222.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8c69d28f-b5cd-40bb-9585-4413883ee319/id-preview-bc6502ff--62221ccd-e29e-4ad7-bd15-36ba135324b4.lovable.app-1782465084222.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
