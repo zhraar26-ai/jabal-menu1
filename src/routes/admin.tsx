@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   BACKGROUND_STYLES,
   Category,
+  FONT_OPTIONS,
   MenuItem,
   Offer,
   ThemeSettings,
+  applyTheme,
   fetchCategories,
   fetchMenuItems,
   fetchOffers,
