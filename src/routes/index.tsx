@@ -733,41 +733,47 @@ function HomePage() {
                   {cartEntries.map((e) => (
                     <div
                       key={e.key}
-                      className="glass-card flex items-center justify-between gap-3 rounded-2xl p-3"
+                      className="glass-card flex flex-col gap-2 rounded-2xl p-3"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold">{e.item.name}</div>
-                        <div className="text-xs text-foreground/60">
-                          {effectivePrice(e.item).toLocaleString()} د.ع × {e.qty}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold">{e.item.name}</div>
+                          <div className="text-xs text-foreground/60">
+                            {effectivePrice(e.item).toLocaleString()} د.ع × {e.qty}
+                          </div>
                         </div>
-                        {e.note && (
-                          <div className="mt-1 text-xs text-[var(--gold)]/80">📝 {e.note}</div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                        <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                          <button
+                            onClick={() => setCartQty(e.key, -1)}
+                            className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                            aria-label="إنقاص"
+                          >
+                            <Minus className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
+                          <button
+                            onClick={() => setCartQty(e.key, +1)}
+                            className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                            aria-label="زيادة"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <button
-                          onClick={() => setCartQty(e.key, -1)}
-                          className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                          aria-label="إنقاص"
+                          onClick={() => removeFromCart(e.key)}
+                          className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
+                          aria-label="حذف"
                         >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
-                        <button
-                          onClick={() => setCartQty(e.key, +1)}
-                          className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                          aria-label="زيادة"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(e.key)}
-                        className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
-                        aria-label="حذف"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <input
+                        type="text"
+                        value={e.note}
+                        onChange={(ev) => setCartNote(e.key, ev.target.value)}
+                        placeholder="✏️ أضف أو عدّل ملاحظة (مثلاً: بدون مخلل)"
+                        className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/60 px-3 py-2 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                      />
                     </div>
                   ))}
                 </div>
