@@ -577,19 +577,19 @@ function HomePage() {
             نختار مكوناتنا بعناية، ونحضّر أطباقنا بحب، لنقدّم لك تجربة لا تُنسى مع كل لقمة.
           </p>
 
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid grid-cols-3 gap-2 sm:gap-4">
             {[
-              { icon: UtensilsCrossed, value: `+${categories.length}`, label: "قسم في القائمة" },
-              { icon: ChefHat, value: `+${items.length}`, label: "أطباق مميّزة" },
-              { icon: Star, value: "5.0", label: "تقييم الزبائن" },
+              { icon: UtensilsCrossed, value: `+${categories.length}`, label: "قسم" },
+              { icon: ChefHat, value: `+${items.length}`, label: "طبق مميّز" },
+              { icon: Star, value: "5.0", label: "تقييم" },
             ].map((s) => (
               <div
                 key={s.label}
-                className="glass-card flex flex-col items-center gap-2 rounded-3xl p-7 transition-transform hover:-translate-y-1"
+                className="glass-card flex flex-col items-center gap-1 rounded-2xl p-3 transition-transform hover:-translate-y-1 sm:p-4"
               >
-                <s.icon className="h-7 w-7 text-[var(--gold)]" />
-                <div className="gold-text font-display text-4xl font-bold">{s.value}</div>
-                <div className="text-sm text-foreground/75">{s.label}</div>
+                <s.icon className="h-5 w-5 text-[var(--gold)]" />
+                <div className="gold-text font-display text-xl font-bold sm:text-2xl">{s.value}</div>
+                <div className="text-[11px] text-foreground/75 sm:text-xs">{s.label}</div>
               </div>
             ))}
           </div>
