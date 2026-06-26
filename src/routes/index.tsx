@@ -150,6 +150,13 @@ function HomePage() {
       return copy;
     });
 
+  const setCartNote = (key: string, note: string) =>
+    setCart((c) => {
+      const cur = c[key];
+      if (!cur) return c;
+      return { ...c, [key]: { ...cur, note } };
+    });
+
   const cartCount = useMemo(
     () => Object.values(cart).reduce((a, b) => a + b.qty, 0),
     [cart],
