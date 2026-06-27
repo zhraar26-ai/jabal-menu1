@@ -53,6 +53,7 @@ export const Route = createFileRoute("/")({
 });
 
 const WHATSAPP = "https://wa.me/9647878777237";
+const TIKTOK_URL = "https://www.tiktok.com/@jeepl25";
 const PHONE_PRIMARY = "07878777237";
 const PHONE_SECONDARY = "07756000241";
 const ADDRESS_FULL = "البصرة - أبي الخصيب، فلكة التجنيد مجاور جاليري مول";
@@ -64,7 +65,7 @@ const ITEM_PLACEHOLDER =
 
 const NAV_LINKS = [
   { href: "#home", label: "الرئيسية" },
-  { href: "#menu", label: "قائمتنا الفاخرة" },
+  { href: "#menu", label: "أقسام المنيو" },
   { href: "#about", label: "عن المطعم" },
   { href: "#contact", label: "تواصل" },
 ];
