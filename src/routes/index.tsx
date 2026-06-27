@@ -677,30 +677,31 @@ function HomePage() {
       </section>
 
       {/* ============ FOOTER ============ */}
-      <footer className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)] px-4 py-10 text-center">
+      <footer className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] px-4 py-10 text-center">
         <div className="mx-auto max-w-3xl">
           <img src={logoImg} alt="مطعم جبل" width={56} height={56} className="mx-auto h-14 w-14 rounded-full" />
           <p className="mt-5 text-sm leading-loose text-foreground/75">
             هنا تجد الطعم كما لم تذقه من قبل <span className="text-red-400">❤️</span>
           </p>
-          <a
-            href="/admin"
-            className="mt-4 inline-block text-[10px] uppercase tracking-widest text-foreground/30 hover:text-[var(--gold)]"
-          >
-            لوحة التحكم
-          </a>
+          <p className="mt-4 text-xs text-foreground/60">
+            مطعم جبل 2026 — جميع الحقوق محفوظة
+          </p>
+          <a href="/admin" aria-label="admin" className="mt-3 inline-block h-2 w-2 rounded-full bg-foreground/10 hover:bg-[var(--gold)]" />
         </div>
       </footer>
 
       {/* ============ FLOATING ACTIONS ============ */}
       <a
-        href={WHATSAPP}
+        href={TIKTOK_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="واتساب"
-        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_40px_-10px_rgba(37,211,102,0.7)] transition-transform hover:scale-110"
+        aria-label="تيك توك"
+        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-black text-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.7)] transition-transform hover:scale-110"
       >
-        <MessageCircle className="h-6 w-6" />
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden="true">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.59A8.16 8.16 0 0 0 22 10.13V6.71a4.79 4.79 0 0 1-2.41-.02z"/>
+        </svg>
+        <span className="absolute -bottom-1 -right-1 rounded-full bg-[var(--gold)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--forest-deep)]">@jeepl25</span>
       </a>
 
       <button
