@@ -252,23 +252,26 @@ function CategoriesTab() {
 
   const add = async () => {
     if (!newName.trim()) return;
-    await sb.from("categories").insert({
+    const { error } = await sb.from("categories").insert({
       name: newName.trim(),
       tag: newTag.trim() || null,
       sort_order: cats.length + 1,
     });
+    if (error) return alert("فشل الإضافة: " + error.message);
     setNewName("");
     setNewTag("");
     load();
   };
 
   const update = async (id: string, patch: Partial<Category>) => {
-    await sb.from("categories").update(patch).eq("id", id);
+    const { error } = await sb.from("categories").update(patch).eq("id", id);
+    if (error) alert("فشل الحفظ: " + error.message);
   };
 
   const remove = async (id: string) => {
     if (!confirm("حذف القسم وجميع أكلاته؟")) return;
-    await sb.from("categories").delete().eq("id", id);
+    const { error } = await sb.from("categories").delete().eq("id", id);
+    if (error) return alert("فشل الحذف: " + error.message);
     load();
   };
 
