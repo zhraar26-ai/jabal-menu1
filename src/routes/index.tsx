@@ -256,15 +256,19 @@ function HomePage() {
       {/* ============ HEADER ============ */}
       <header className="sticky top-0 z-50 border-b border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[color-mix(in_oklab,var(--forest-deep)_85%,transparent)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
-          <nav className="hidden flex-1 items-center gap-7 text-sm md:flex">
-            {NAV_LINKS.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className="story-link text-foreground/85 transition-colors hover:text-[var(--gold)]"
-              >
-                {l.label}
-              </a>
+          <nav className="hidden flex-1 items-center gap-2 text-sm md:flex">
+            {NAV_LINKS.map((l, idx) => (
+              <span key={l.href} className="flex items-center gap-2">
+                <a
+                  href={l.href}
+                  className="story-link text-foreground/85 transition-colors hover:text-[var(--gold)]"
+                >
+                  {l.label}
+                </a>
+                {idx < NAV_LINKS.length - 1 && (
+                  <span className="text-[var(--gold)]/40">•</span>
+                )}
+              </span>
             ))}
           </nav>
 
@@ -273,12 +277,12 @@ function HomePage() {
             <span className="gold-text font-display text-lg font-bold md:text-xl">مطعم جبل</span>
           </a>
 
-          <div className="hidden flex-1 items-center justify-start md:flex">
+          <div className="hidden flex-1 items-center justify-end md:flex">
             <a
               href={`tel:${PHONE_PRIMARY}`}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-2.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3.5 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
             >
-              <Phone className="h-4 w-4" />
+              <Phone className="h-3.5 w-3.5" />
               اتصل للطلب
             </a>
           </div>
