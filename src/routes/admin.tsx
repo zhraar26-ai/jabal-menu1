@@ -455,7 +455,7 @@ function ItemCard({
   const [savedAt, setSavedAt] = useState(0);
 
   const save = async () => {
-    await sb
+    const { error } = await sb
       .from("menu_items")
       .update({
         name: m.name,
@@ -467,6 +467,7 @@ function ItemCard({
         available: m.available,
       })
       .eq("id", m.id);
+    if (error) return alert("فشل الحفظ: " + error.message);
     setSavedAt(Date.now());
     onSaved();
   };
