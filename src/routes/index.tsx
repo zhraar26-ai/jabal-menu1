@@ -97,7 +97,7 @@ function HomePage() {
       return n;
     });
 
-  useEffect(() => {
+  const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
     fetchMenuItems().then(setItems).catch(console.error);
     fetchOffers(true).then(setOffers).catch(console.error);
@@ -109,6 +109,36 @@ function HomePage() {
         }
       })
       .catch(console.error);
+  };
+
+  useEffect(() => {
+    reloadAll();
+    const sb = supabase as any;
+    const channel = sb
+      .channel("menu-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () =>
+        fetchCategories().then(setCategories).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, () =>
+        fetchMenuItems().then(setItems).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "offers" }, () =>
+        fetchOffers(true).then(setOffers).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "theme_settings" }, () =>
+        fetchTheme()
+          .then((t) => {
+            if (t) {
+              setTheme(t);
+              applyTheme(t);
+            }
+          })
+          .catch(console.error),
+      )
+      .subscribe();
+    return () => {
+      sb.removeChannel(channel);
+    };
   }, []);
 
   const itemsByCat = useMemo(() => {
