@@ -21,6 +21,7 @@ import {
 
 import heroImg from "@/assets/hero.jpg";
 import logoImg from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Category,
   MenuItem,
@@ -53,6 +54,7 @@ export const Route = createFileRoute("/")({
 });
 
 const WHATSAPP = "https://wa.me/9647878777237";
+const TIKTOK_URL = "https://www.tiktok.com/@jeepl25";
 const PHONE_PRIMARY = "07878777237";
 const PHONE_SECONDARY = "07756000241";
 const ADDRESS_FULL = "البصرة - أبي الخصيب، فلكة التجنيد مجاور جاليري مول";
@@ -64,7 +66,7 @@ const ITEM_PLACEHOLDER =
 
 const NAV_LINKS = [
   { href: "#home", label: "الرئيسية" },
-  { href: "#menu", label: "قائمتنا الفاخرة" },
+  { href: "#menu", label: "أقسام المنيو" },
   { href: "#about", label: "عن المطعم" },
   { href: "#contact", label: "تواصل" },
 ];
@@ -95,7 +97,7 @@ function HomePage() {
       return n;
     });
 
-  useEffect(() => {
+  const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
     fetchMenuItems().then(setItems).catch(console.error);
     fetchOffers(true).then(setOffers).catch(console.error);
@@ -107,6 +109,36 @@ function HomePage() {
         }
       })
       .catch(console.error);
+  };
+
+  useEffect(() => {
+    reloadAll();
+    const sb = supabase as any;
+    const channel = sb
+      .channel("menu-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () =>
+        fetchCategories().then(setCategories).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, () =>
+        fetchMenuItems().then(setItems).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "offers" }, () =>
+        fetchOffers(true).then(setOffers).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "theme_settings" }, () =>
+        fetchTheme()
+          .then((t) => {
+            if (t) {
+              setTheme(t);
+              applyTheme(t);
+            }
+          })
+          .catch(console.error),
+      )
+      .subscribe();
+    return () => {
+      sb.removeChannel(channel);
+    };
   }, []);
 
   const itemsByCat = useMemo(() => {
@@ -224,15 +256,19 @@ function HomePage() {
       {/* ============ HEADER ============ */}
       <header className="sticky top-0 z-50 border-b border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[color-mix(in_oklab,var(--forest-deep)_85%,transparent)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
-          <nav className="hidden flex-1 items-center gap-7 text-sm md:flex">
-            {NAV_LINKS.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className="story-link text-foreground/85 transition-colors hover:text-[var(--gold)]"
-              >
-                {l.label}
-              </a>
+          <nav className="hidden flex-1 items-center gap-2 text-sm md:flex">
+            {NAV_LINKS.map((l, idx) => (
+              <span key={l.href} className="flex items-center gap-2">
+                <a
+                  href={l.href}
+                  className="story-link text-foreground/85 transition-colors hover:text-[var(--gold)]"
+                >
+                  {l.label}
+                </a>
+                {idx < NAV_LINKS.length - 1 && (
+                  <span className="text-[var(--gold)]/40">•</span>
+                )}
+              </span>
             ))}
           </nav>
 
@@ -241,12 +277,12 @@ function HomePage() {
             <span className="gold-text font-display text-lg font-bold md:text-xl">مطعم جبل</span>
           </a>
 
-          <div className="hidden flex-1 items-center justify-start md:flex">
+          <div className="hidden flex-1 items-center justify-end md:flex">
             <a
               href={`tel:${PHONE_PRIMARY}`}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-2.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3.5 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
             >
-              <Phone className="h-4 w-4" />
+              <Phone className="h-3.5 w-3.5" />
               اتصل للطلب
             </a>
           </div>
@@ -323,33 +359,23 @@ function HomePage() {
             {heroSubtitle}
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-fade-in">
-            <a
-              href="#menu"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-7 py-3.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
-            >
-              <UtensilsCrossed className="h-4 w-4" />
-              تصفح المنيو
-            </a>
-          </div>
-
-          <div className="mt-7 grid w-full max-w-2xl grid-cols-1 gap-2 text-sm sm:grid-cols-2 animate-fade-in">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs animate-fade-in">
             <a
               href={`tel:${PHONE_PRIMARY}`}
-              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
+              className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/90 hover:text-[var(--gold)]"
             >
-              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <Phone className="h-3 w-3 text-[var(--gold)]" />
               <span dir="ltr">{PHONE_PRIMARY}</span>
             </a>
             <a
               href={`tel:${PHONE_SECONDARY}`}
-              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
+              className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/90 hover:text-[var(--gold)]"
             >
-              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <Phone className="h-3 w-3 text-[var(--gold)]" />
               <span dir="ltr">{PHONE_SECONDARY}</span>
             </a>
-            <div className="glass-card sm:col-span-2 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/85">
-              <MapPin className="h-4 w-4 text-[var(--gold)]" />
+            <div className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/85">
+              <MapPin className="h-3 w-3 text-[var(--gold)]" />
               <span>{ADDRESS_FULL}</span>
             </div>
           </div>
@@ -395,8 +421,11 @@ function HomePage() {
           <div className="text-center">
             <span className="text-xs uppercase tracking-widest text-[var(--gold)]">قائمتنا الفاخرة</span>
             <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
-              <span className="gold-text">أقسام</span> المطعم
+              <span className="gold-text">أقسام</span> المنيو
             </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-loose text-foreground/80 md:text-base">
+              من قلب أبي الخصيب، نجمع بين النكهات الغربية الفاخرة واللمسات الشرقية الدافئة، لنخلق قائمة طعام متكاملة تناسب جميع الأذواق.
+            </p>
           </div>
 
           {/* Collapsible categories */}
@@ -443,14 +472,8 @@ function HomePage() {
                   </button>
 
                   {isOpen && (
-                    <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] px-3 py-5 md:px-5">
-                      <div className="mb-5 flex w-full items-center gap-3">
-                        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
-                        <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
-                        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--gold)_55%,transparent)] to-transparent" />
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="px-3 py-4 md:px-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {catItems.map((item) => {
                           const key = item.id;
                           const qty = getPending(key);
@@ -461,46 +484,44 @@ function HomePage() {
                           return (
                             <article
                               key={key}
-                              className="glass-card group flex flex-col gap-4 overflow-hidden rounded-3xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
+                              className="glass-card group flex flex-col gap-2 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
                             >
-                              <div className="relative aspect-[16/9] w-full overflow-hidden">
+                              <div className="relative aspect-[4/3] w-full overflow-hidden">
                                 <img
                                   src={item.image_url || ITEM_PLACEHOLDER}
                                   alt={item.name}
-                                  width={800}
-                                  height={450}
                                   loading="lazy"
                                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
                                 {hasDiscount && (
-                                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
-                                    <Sparkles className="h-3 w-3" /> عرض
+                                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                                    <Sparkles className="h-2.5 w-2.5" /> عرض
                                   </span>
                                 )}
                               </div>
 
-                              <div className="flex flex-col gap-4 p-5 pt-0 md:p-6 md:pt-0">
-                                <div className="flex items-start justify-between gap-3">
+                              <div className="flex flex-col gap-2 p-3">
+                                <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0 flex-1">
-                                    <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
+                                    <h4 className="font-display text-sm font-bold text-foreground md:text-base">
                                       {item.name}
                                     </h4>
                                     {item.description && (
-                                      <p className="mt-1 text-sm leading-relaxed text-foreground/65">
+                                      <p className="mt-0.5 text-[11px] leading-snug text-foreground/65">
                                         {item.description}
                                       </p>
                                     )}
                                   </div>
                                   <div className="shrink-0 text-end">
-                                    <div className="gold-text font-display text-xl font-bold md:text-2xl">
+                                    <div className="gold-text font-display text-sm font-bold md:text-base">
                                       {price.toLocaleString()}
                                     </div>
                                     {hasDiscount && (
-                                      <div className="text-[11px] text-foreground/50 line-through">
+                                      <div className="text-[10px] text-foreground/50 line-through">
                                         {item.price.toLocaleString()}
                                       </div>
                                     )}
-                                    <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
+                                    <div className="text-[9px] uppercase tracking-widest text-[var(--gold)]/70">
                                       د.ع
                                     </div>
                                   </div>
@@ -513,41 +534,41 @@ function HomePage() {
                                     setNotes((n) => ({ ...n, [key]: e.target.value }))
                                   }
                                   placeholder="ملاحظات (مثلاً: بدون مخلل)"
-                                  className="w-full rounded-2xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                                  className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-3 py-1.5 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
                                 />
 
-                                <div className="flex items-center justify-between gap-3 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
-                                  <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                                <div className="flex items-center justify-between gap-2 pt-1">
+                                  <div className="flex items-center gap-1 rounded-full gold-border p-0.5">
                                     <button
                                       onClick={() => setPending(key, -1)}
-                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      className="grid h-6 w-6 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                                       aria-label="إنقاص"
                                     >
-                                      <Minus className="h-4 w-4" />
+                                      <Minus className="h-3 w-3" />
                                     </button>
-                                    <span className="w-7 text-center font-bold tabular-nums">{qty}</span>
+                                    <span className="w-5 text-center text-xs font-bold tabular-nums">{qty}</span>
                                     <button
                                       onClick={() => setPending(key, +1)}
-                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      className="grid h-6 w-6 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                                       aria-label="زيادة"
                                     >
-                                      <Plus className="h-4 w-4" />
+                                      <Plus className="h-3 w-3" />
                                     </button>
                                   </div>
                                   <button
                                     onClick={() => addToCart(key)}
-                                    className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:scale-[1.02] ${
+                                    className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all hover:scale-[1.02] ${
                                       justAdded === key
                                         ? "bg-[#25D366] text-white"
                                         : "bg-[var(--gold)] text-[var(--forest-deep)]"
                                     }`}
                                   >
-                                    <ShoppingBag className="h-4 w-4" />
+                                    <ShoppingBag className="h-3.5 w-3.5" />
                                     {justAdded === key
                                       ? "تمت الإضافة ✓"
                                       : inCart > 0
-                                        ? `إضافة (${inCart} في السلة)`
-                                        : "أضف إلى السلة"}
+                                        ? `إضافة (${inCart})`
+                                        : "أضف"}
                                   </button>
                                 </div>
                               </div>
@@ -628,9 +649,9 @@ function HomePage() {
               },
               {
                 icon: MessageCircle,
-                title: "واتساب",
-                lines: ["تواصل مباشر"],
-                href: WHATSAPP,
+                title: "تيك توك",
+                lines: ["@jeepl25"],
+                href: TIKTOK_URL,
               },
             ].map((c) => (
               <a
@@ -656,30 +677,31 @@ function HomePage() {
       </section>
 
       {/* ============ FOOTER ============ */}
-      <footer className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)] px-4 py-10 text-center">
+      <footer className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] px-4 py-10 text-center">
         <div className="mx-auto max-w-3xl">
           <img src={logoImg} alt="مطعم جبل" width={56} height={56} className="mx-auto h-14 w-14 rounded-full" />
           <p className="mt-5 text-sm leading-loose text-foreground/75">
             هنا تجد الطعم كما لم تذقه من قبل <span className="text-red-400">❤️</span>
           </p>
-          <a
-            href="/admin"
-            className="mt-4 inline-block text-[10px] uppercase tracking-widest text-foreground/30 hover:text-[var(--gold)]"
-          >
-            لوحة التحكم
-          </a>
+          <p className="mt-4 text-xs text-foreground/60">
+            مطعم جبل 2026 — جميع الحقوق محفوظة
+          </p>
+          <a href="/admin" aria-label="admin" className="mt-3 inline-block h-2 w-2 rounded-full bg-foreground/10 hover:bg-[var(--gold)]" />
         </div>
       </footer>
 
       {/* ============ FLOATING ACTIONS ============ */}
       <a
-        href={WHATSAPP}
+        href={TIKTOK_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="واتساب"
-        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_40px_-10px_rgba(37,211,102,0.7)] transition-transform hover:scale-110"
+        aria-label="تيك توك"
+        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-black text-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.7)] transition-transform hover:scale-110"
       >
-        <MessageCircle className="h-6 w-6" />
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden="true">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.59A8.16 8.16 0 0 0 22 10.13V6.71a4.79 4.79 0 0 1-2.41-.02z"/>
+        </svg>
+        <span className="absolute -bottom-1 -right-1 rounded-full bg-[var(--gold)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--forest-deep)]">@jeepl25</span>
       </a>
 
       <button
