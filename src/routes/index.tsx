@@ -649,9 +649,9 @@ function HomePage() {
               },
               {
                 icon: MessageCircle,
-                title: "واتساب",
-                lines: ["تواصل مباشر"],
-                href: WHATSAPP,
+                title: "تيك توك",
+                lines: ["@jeepl25"],
+                href: TIKTOK_URL,
               },
             ].map((c) => (
               <a
