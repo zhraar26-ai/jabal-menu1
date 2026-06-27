@@ -21,6 +21,7 @@ import {
 
 import heroImg from "@/assets/hero.jpg";
 import logoImg from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Category,
   MenuItem,
