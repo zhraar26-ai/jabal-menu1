@@ -359,33 +359,23 @@ function HomePage() {
             {heroSubtitle}
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-fade-in">
-            <a
-              href="#menu"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-7 py-3.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
-            >
-              <UtensilsCrossed className="h-4 w-4" />
-              تصفح المنيو
-            </a>
-          </div>
-
-          <div className="mt-7 grid w-full max-w-2xl grid-cols-1 gap-2 text-sm sm:grid-cols-2 animate-fade-in">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs animate-fade-in">
             <a
               href={`tel:${PHONE_PRIMARY}`}
-              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
+              className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/90 hover:text-[var(--gold)]"
             >
-              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <Phone className="h-3 w-3 text-[var(--gold)]" />
               <span dir="ltr">{PHONE_PRIMARY}</span>
             </a>
             <a
               href={`tel:${PHONE_SECONDARY}`}
-              className="glass-card flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/90 hover:text-[var(--gold)]"
+              className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/90 hover:text-[var(--gold)]"
             >
-              <Phone className="h-4 w-4 text-[var(--gold)]" />
+              <Phone className="h-3 w-3 text-[var(--gold)]" />
               <span dir="ltr">{PHONE_SECONDARY}</span>
             </a>
-            <div className="glass-card sm:col-span-2 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-foreground/85">
-              <MapPin className="h-4 w-4 text-[var(--gold)]" />
+            <div className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/85">
+              <MapPin className="h-3 w-3 text-[var(--gold)]" />
               <span>{ADDRESS_FULL}</span>
             </div>
           </div>
