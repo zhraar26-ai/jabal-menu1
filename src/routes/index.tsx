@@ -421,8 +421,11 @@ function HomePage() {
           <div className="text-center">
             <span className="text-xs uppercase tracking-widest text-[var(--gold)]">قائمتنا الفاخرة</span>
             <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
-              <span className="gold-text">أقسام</span> المطعم
+              <span className="gold-text">أقسام</span> المنيو
             </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-loose text-foreground/80 md:text-base">
+              من قلب أبي الخصيب، نجمع بين النكهات الغربية الفاخرة واللمسات الشرقية الدافئة، لنخلق قائمة طعام متكاملة تناسب جميع الأذواق.
+            </p>
           </div>
 
           {/* Collapsible categories */}
