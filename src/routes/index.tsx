@@ -11,7 +11,6 @@ import {
   ShoppingCart,
   Menu as MenuIcon,
   X,
-  Star,
   UtensilsCrossed,
   Trash2,
   Sparkles,
