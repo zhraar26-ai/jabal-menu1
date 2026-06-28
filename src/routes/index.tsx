@@ -496,7 +496,7 @@ function HomePage() {
                                 )}
                               </div>
 
-                              <div className="flex flex-col gap-2 p-3">
+                              <div className="flex flex-col gap-1.5 p-2">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0 flex-1">
                                     <h4 className="font-display text-sm font-bold text-foreground md:text-base">
