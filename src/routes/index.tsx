@@ -482,7 +482,7 @@ function HomePage() {
                               key={key}
                               className="glass-card group flex flex-col gap-2 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
                             >
-                              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                              <div className="relative aspect-square w-full overflow-hidden">
                                 <img
                                   src={item.image_url || ITEM_PLACEHOLDER}
                                   alt={item.name}
@@ -490,8 +490,8 @@ function HomePage() {
                                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
                                 {hasDiscount && (
-                                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                                    <Sparkles className="h-2.5 w-2.5" /> عرض
+                                  <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                                    <Sparkles className="h-2 w-2" /> عرض
                                   </span>
                                 )}
                               </div>
