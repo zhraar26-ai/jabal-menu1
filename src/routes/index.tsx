@@ -602,11 +602,11 @@ function HomePage() {
             ].map((s) => (
               <div
                 key={s.label}
-                className="glass-card flex flex-col items-center gap-1 rounded-2xl p-3 transition-transform hover:-translate-y-1 sm:p-4"
+                className="glass-card flex flex-col items-center gap-0.5 rounded-xl p-2 transition-transform hover:-translate-y-1 sm:p-3"
               >
-                <s.icon className="h-5 w-5 text-[var(--gold)]" />
-                <div className="gold-text font-display text-xl font-bold sm:text-2xl">{s.value}</div>
-                <div className="text-[11px] text-foreground/75 sm:text-xs">{s.label}</div>
+                <s.icon className="h-3.5 w-3.5 text-[var(--gold)] sm:h-4 sm:w-4" />
+                <div className="gold-text font-display text-base font-bold sm:text-lg">{s.value}</div>
+                <div className="text-[10px] text-foreground/75 sm:text-xs">{s.label}</div>
               </div>
             ))}
           </div>
