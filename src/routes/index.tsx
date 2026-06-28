@@ -89,13 +89,9 @@ function HomePage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
-  const [openCats, setOpenCats] = useState<Set<string>>(new Set());
+  const [openCat, setOpenCat] = useState<string | null>(null);
   const toggleCat = (id: string) =>
-    setOpenCats((s) => {
-      const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
+    setOpenCat((cur) => (cur === id ? null : id));
 
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
