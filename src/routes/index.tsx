@@ -429,7 +429,7 @@ function HomePage() {
             {categories.map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
               if (catItems.length === 0) return null;
-              const isOpen = openCats.has(c.id);
+              const isOpen = openCat === c.id;
               return (
                 <div
                   key={c.id}
