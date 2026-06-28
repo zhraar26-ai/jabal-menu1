@@ -89,13 +89,9 @@ function HomePage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
-  const [openCats, setOpenCats] = useState<Set<string>>(new Set());
+  const [openCat, setOpenCat] = useState<string | null>(null);
   const toggleCat = (id: string) =>
-    setOpenCats((s) => {
-      const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
+    setOpenCat((cur) => (cur === id ? null : id));
 
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
@@ -433,7 +429,7 @@ function HomePage() {
             {categories.map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
               if (catItems.length === 0) return null;
-              const isOpen = openCats.has(c.id);
+              const isOpen = openCat === c.id;
               return (
                 <div
                   key={c.id}
@@ -473,7 +469,7 @@ function HomePage() {
 
                   {isOpen && (
                     <div className="px-3 py-4 md:px-4">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                         {catItems.map((item) => {
                           const key = item.id;
                           const qty = getPending(key);
@@ -486,7 +482,7 @@ function HomePage() {
                               key={key}
                               className="glass-card group flex flex-col gap-2 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
                             >
-                              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                              <div className="relative aspect-square w-full overflow-hidden">
                                 <img
                                   src={item.image_url || ITEM_PLACEHOLDER}
                                   alt={item.name}
@@ -494,13 +490,13 @@ function HomePage() {
                                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
                                 {hasDiscount && (
-                                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                                    <Sparkles className="h-2.5 w-2.5" /> عرض
+                                  <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                                    <Sparkles className="h-2 w-2" /> عرض
                                   </span>
                                 )}
                               </div>
 
-                              <div className="flex flex-col gap-2 p-3">
+                              <div className="flex flex-col gap-1.5 p-2">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0 flex-1">
                                     <h4 className="font-display text-sm font-bold text-foreground md:text-base">
@@ -606,11 +602,11 @@ function HomePage() {
             ].map((s) => (
               <div
                 key={s.label}
-                className="glass-card flex flex-col items-center gap-1 rounded-2xl p-3 transition-transform hover:-translate-y-1 sm:p-4"
+                className="glass-card flex flex-col items-center gap-0.5 rounded-xl p-2 transition-transform hover:-translate-y-1 sm:p-3"
               >
-                <s.icon className="h-5 w-5 text-[var(--gold)]" />
-                <div className="gold-text font-display text-xl font-bold sm:text-2xl">{s.value}</div>
-                <div className="text-[11px] text-foreground/75 sm:text-xs">{s.label}</div>
+                <s.icon className="h-3.5 w-3.5 text-[var(--gold)] sm:h-4 sm:w-4" />
+                <div className="gold-text font-display text-base font-bold sm:text-lg">{s.value}</div>
+                <div className="text-[10px] text-foreground/75 sm:text-xs">{s.label}</div>
               </div>
             ))}
           </div>
@@ -692,16 +688,15 @@ function HomePage() {
 
       {/* ============ FLOATING ACTIONS ============ */}
       <a
-        href={TIKTOK_URL}
+        href={WHATSAPP}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="تيك توك"
-        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-black text-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.7)] transition-transform hover:scale-110"
+        aria-label="واتساب"
+        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_40px_-10px_rgba(37,211,102,0.7)] transition-transform hover:scale-110"
       >
         <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden="true">
-          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.59A8.16 8.16 0 0 0 22 10.13V6.71a4.79 4.79 0 0 1-2.41-.02z"/>
+          <path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
         </svg>
-        <span className="absolute -bottom-1 -right-1 rounded-full bg-[var(--gold)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--forest-deep)]">@jeepl25</span>
       </a>
 
       <button
