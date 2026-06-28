@@ -13,7 +13,6 @@ import {
   X,
   Star,
   UtensilsCrossed,
-  ChefHat,
   Trash2,
   Sparkles,
   ChevronDown,
@@ -596,15 +595,14 @@ function HomePage() {
 
           <div className="mt-10 grid grid-cols-3 gap-2 sm:gap-4">
             {[
-              { icon: UtensilsCrossed, value: `+${categories.length}`, label: "قسم" },
-              { icon: ChefHat, value: `+${items.length}`, label: "طبق مميّز" },
-              { icon: Star, value: "5.0", label: "تقييم" },
+              { value: `+${categories.length}`, label: "قسم" },
+              { value: `+${items.length}`, label: "طبق مميّز" },
+              { value: "5.0", label: "تقييم" },
             ].map((s) => (
               <div
                 key={s.label}
-                className="glass-card flex flex-col items-center gap-0.5 rounded-xl p-2 transition-transform hover:-translate-y-1 sm:p-3"
+                className="flex flex-col items-center gap-0.5 p-1 text-center"
               >
-                <s.icon className="h-3.5 w-3.5 text-[var(--gold)] sm:h-4 sm:w-4" />
                 <div className="gold-text font-display text-base font-bold sm:text-lg">{s.value}</div>
                 <div className="text-[10px] text-foreground/75 sm:text-xs">{s.label}</div>
               </div>
