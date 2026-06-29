@@ -5,7 +5,10 @@ export type Category = {
   name: string;
   tag: string | null;
   sort_order: number;
+  visible: boolean;
+  image_url: string | null;
 };
+
 
 export type MenuItem = {
   id: string;
