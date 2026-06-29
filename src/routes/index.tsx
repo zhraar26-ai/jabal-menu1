@@ -598,7 +598,7 @@ function HomePage() {
             نختار مكوناتنا بعناية، ونحضّر أطباقنا بحب، لنقدّم لك تجربة لا تُنسى مع كل لقمة.
           </p>
 
-          <div className="mt-10 grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-4">
             {[
               { value: `+${categories.length}`, label: "قسم" },
               { value: `+${items.length}`, label: "طبق مميّز" },
@@ -606,13 +606,14 @@ function HomePage() {
             ].map((s) => (
               <div
                 key={s.label}
-                className="flex flex-col items-center gap-0.5 p-1 text-center"
+                className="glass-card flex flex-col items-center gap-1 rounded-2xl p-3 text-center sm:p-4"
               >
-                <div className="gold-text font-display text-base font-bold sm:text-lg">{s.value}</div>
-                <div className="text-[10px] text-foreground/75 sm:text-xs">{s.label}</div>
+                <div className="gold-text font-display text-xl font-bold sm:text-2xl">{s.value}</div>
+                <div className="text-xs text-foreground/75 sm:text-sm">{s.label}</div>
               </div>
             ))}
           </div>
+
         </div>
       </section>
 
