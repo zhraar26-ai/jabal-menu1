@@ -133,6 +133,7 @@ export type Database = {
           hero_subtitle: string | null
           hero_title: string | null
           id: number
+          location_url: string
         }
         Insert: {
           background_style?: string
@@ -145,6 +146,7 @@ export type Database = {
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: number
+          location_url?: string
         }
         Update: {
           background_style?: string
@@ -157,6 +159,7 @@ export type Database = {
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: number
+          location_url?: string
         }
         Relationships: []
       }
