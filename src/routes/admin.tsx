@@ -888,6 +888,16 @@ function ThemeTab() {
         />
       </div>
 
+      <div>
+        <label className="text-xs text-foreground/70">رابط الموقع على الخريطة (Google Maps)</label>
+        <input
+          value={(t as any).location_url ?? ""}
+          onChange={(e) => setT({ ...t, location_url: e.target.value } as any)}
+          placeholder="https://maps.google.com/?q=..."
+          dir="ltr"
+          className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+        />
+      </div>
 
       <div>
         <label className="text-xs text-foreground/70">صورة الهيرو</label>

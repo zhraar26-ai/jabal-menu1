@@ -633,7 +633,7 @@ function HomePage() {
                 icon: MapPin,
                 title: "العنوان",
                 lines: ["أبي الخصيب - فلكة التجنيد"],
-                href: "https://maps.google.com/?q=Abi+Al-Khasib+Basra",
+                href: theme?.location_url || "https://maps.google.com/?q=Abi+Al-Khasib+Basra",
               },
               {
                 icon: Phone,
