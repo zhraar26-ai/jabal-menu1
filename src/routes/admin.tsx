@@ -879,6 +879,17 @@ function ThemeTab() {
       </div>
 
       <div>
+        <label className="text-xs text-foreground/70">نص التذييل (Footer)</label>
+        <input
+          value={t.footer_text ?? ""}
+          onChange={(e) => setT({ ...t, footer_text: e.target.value })}
+          placeholder="مثال: مطعم جبل 2026 — جميع الحقوق محفوظة"
+          className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+        />
+      </div>
+
+
+      <div>
         <label className="text-xs text-foreground/70">صورة الهيرو</label>
         <div className="mt-1 flex items-center gap-3">
           <label className="inline-flex cursor-pointer items-center gap-1 rounded-full gold-border px-3 py-2 text-xs text-[var(--gold)]">
