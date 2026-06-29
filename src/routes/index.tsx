@@ -683,9 +683,10 @@ function HomePage() {
           <p className="mt-5 text-sm leading-loose text-foreground/75">
             هنا تجد الطعم كما لم تذقه من قبل <span className="text-red-400">❤️</span>
           </p>
-          <p className="mt-4 text-xs text-foreground/60">
-            مطعم جبل 2026 — جميع الحقوق محفوظة
+          <p className="mt-4 text-[10px] text-foreground/50">
+            {theme?.footer_text ?? "مطعم جبل 2026 — جميع الحقوق محفوظة"}
           </p>
+
           <a href="/admin" aria-label="admin" className="mt-3 inline-block h-2 w-2 rounded-full bg-foreground/10 hover:bg-[var(--gold)]" />
         </div>
       </footer>
