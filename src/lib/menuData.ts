@@ -42,6 +42,7 @@ export type ThemeSettings = {
   background_style: string;
   font_family: string;
   footer_text: string;
+  location_url: string;
 };
 
 

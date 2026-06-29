@@ -1,0 +1,1 @@
+ALTER TABLE public.theme_settings ADD COLUMN IF NOT EXISTS location_url text NOT NULL DEFAULT 'https://maps.google.com/?q=Abu+Al-Khaseeb+Basra';
