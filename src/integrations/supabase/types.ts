@@ -18,23 +18,29 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           name: string
           sort_order: number
           tag: string | null
+          visible: boolean
         }
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           name: string
           sort_order?: number
           tag?: string | null
+          visible?: boolean
         }
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           name?: string
           sort_order?: number
           tag?: string | null
+          visible?: boolean
         }
         Relationships: []
       }
@@ -119,6 +125,7 @@ export type Database = {
         Row: {
           background_style: string
           font_family: string
+          footer_text: string
           forest_color: string
           forest_deep_color: string
           gold_color: string
@@ -130,6 +137,7 @@ export type Database = {
         Insert: {
           background_style?: string
           font_family?: string
+          footer_text?: string
           forest_color?: string
           forest_deep_color?: string
           gold_color?: string
@@ -141,6 +149,7 @@ export type Database = {
         Update: {
           background_style?: string
           font_family?: string
+          footer_text?: string
           forest_color?: string
           forest_deep_color?: string
           gold_color?: string
