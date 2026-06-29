@@ -327,9 +327,46 @@ function CategoryRow({
   const [name, setName] = useState(c.name);
   const [tag, setTag] = useState(c.tag ?? "");
   const [sort, setSort] = useState(c.sort_order);
+  const [visible, setVisible] = useState(c.visible !== false);
+  const [imageUrl, setImageUrl] = useState<string | null>(c.image_url ?? null);
+  const [uploading, setUploading] = useState(false);
+
+  const uploadImg = async (file: File) => {
+    setUploading(true);
+    const path = `categories/${c.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+    const { error } = await sb.storage.from("menu-images").upload(path, file, { upsert: true });
+    if (error) {
+      alert("فشل الرفع: " + error.message);
+      setUploading(false);
+      return;
+    }
+    const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
+    setImageUrl(pub.publicUrl);
+    setUploading(false);
+  };
 
   return (
     <div className="glass-card flex flex-wrap items-end gap-3 rounded-2xl p-3">
+      {imageUrl ? (
+        <img src={imageUrl} alt={name} className="h-14 w-14 rounded-xl object-cover" />
+      ) : (
+        <div className="grid h-14 w-14 place-items-center rounded-xl gold-border text-[10px] text-foreground/50">بدون صورة</div>
+      )}
+      <label className="inline-flex cursor-pointer items-center gap-1 rounded-full gold-border px-3 py-1.5 text-xs text-[var(--gold)]">
+        <Upload className="h-3.5 w-3.5" />
+        {uploading ? "جاري الرفع..." : "صورة القسم"}
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && uploadImg(e.target.files[0])}
+        />
+      </label>
+      {imageUrl && (
+        <button onClick={() => setImageUrl(null)} className="text-xs text-red-400 hover:underline">
+          إزالة الصورة
+        </button>
+      )}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -347,9 +384,23 @@ function CategoryRow({
         onChange={(e) => setSort(Number(e.target.value))}
         className="w-20 rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
       />
+      <label className="inline-flex items-center gap-1.5 rounded-full gold-border px-3 py-1.5 text-xs text-foreground/80">
+        <input
+          type="checkbox"
+          checked={visible}
+          onChange={(e) => setVisible(e.target.checked)}
+        />
+        {visible ? "ظاهر في الموقع" : "مخفي"}
+      </label>
       <button
         onClick={async () => {
-          await onSave(c.id, { name, tag: tag || null, sort_order: sort });
+          await onSave(c.id, {
+            name,
+            tag: tag || null,
+            sort_order: sort,
+            visible,
+            image_url: imageUrl,
+          });
           onMoved();
         }}
         className="inline-flex items-center gap-1 rounded-full bg-[var(--gold)] px-3 py-2 text-xs font-bold text-[var(--forest-deep)]"
@@ -365,6 +416,7 @@ function CategoryRow({
     </div>
   );
 }
+
 
 /* ============ ITEMS ============ */
 
