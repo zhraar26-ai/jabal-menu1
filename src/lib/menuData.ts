@@ -5,7 +5,10 @@ export type Category = {
   name: string;
   tag: string | null;
   sort_order: number;
+  visible: boolean;
+  image_url: string | null;
 };
+
 
 export type MenuItem = {
   id: string;
@@ -38,7 +41,9 @@ export type ThemeSettings = {
   hero_subtitle: string | null;
   background_style: string;
   font_family: string;
+  footer_text: string;
 };
+
 
 const sb = supabase as any;
 
