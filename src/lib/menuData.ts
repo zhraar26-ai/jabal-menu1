@@ -41,7 +41,9 @@ export type ThemeSettings = {
   hero_subtitle: string | null;
   background_style: string;
   font_family: string;
+  footer_text: string;
 };
+
 
 const sb = supabase as any;
 
