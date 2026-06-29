@@ -424,7 +424,7 @@ function HomePage() {
 
           {/* Collapsible categories */}
           <div className="mx-auto mt-10 max-w-5xl space-y-4">
-            {categories.map((c) => {
+            {categories.filter((c) => c.visible !== false).map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
               if (catItems.length === 0) return null;
               const isOpen = openCat === c.id;
@@ -441,9 +441,13 @@ function HomePage() {
                     className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-7 md:py-5"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)]">
-                        <UtensilsCrossed className="h-4 w-4" />
-                      </span>
+                      {c.image_url ? (
+                        <img src={c.image_url} alt={c.name} className="h-12 w-12 rounded-full object-cover gold-border" />
+                      ) : (
+                        <span className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)]">
+                          <UtensilsCrossed className="h-4 w-4" />
+                        </span>
+                      )}
                       <div className="text-right">
                         {c.tag && (
                           <span className="block text-[10px] uppercase tracking-widest text-[var(--gold)]/80">
@@ -464,6 +468,7 @@ function HomePage() {
                       />
                     </div>
                   </button>
+
 
                   {isOpen && (
                     <div className="px-3 py-4 md:px-4">
