@@ -71,7 +71,6 @@ const NAV_LINKS = [
   { href: "#contact", label: "تواصل" },
 ];
 
-type CartLine = { qty: number; note: string };
 
 type CartLine = {
   itemId: string;
