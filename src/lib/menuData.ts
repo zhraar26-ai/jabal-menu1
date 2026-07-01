@@ -74,6 +74,15 @@ export async function fetchMenuItems(): Promise<MenuItem[]> {
   return data ?? [];
 }
 
+export async function fetchMenuItemOptions(): Promise<MenuItemOption[]> {
+  const { data, error } = await sb
+    .from("menu_item_options")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function fetchOffers(activeOnly = false): Promise<Offer[]> {
   let q = sb.from("offers").select("*").order("sort_order", { ascending: true });
   if (activeOnly) q = q.eq("active", true);
