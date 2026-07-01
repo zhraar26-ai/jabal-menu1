@@ -11,8 +11,10 @@ import {
   applyTheme,
   fetchCategories,
   fetchMenuItems,
+  fetchMenuItemOptions,
   fetchOffers,
   fetchTheme,
+  MenuItemOption,
 } from "@/lib/menuData";
 import { LogOut, Plus, Save, Trash2, Upload } from "lucide-react";
 
