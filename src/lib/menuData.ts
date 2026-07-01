@@ -31,6 +31,14 @@ export type Offer = {
   sort_order: number;
 };
 
+export type MenuItemOption = {
+  id: string;
+  menu_item_id: string;
+  name: string;
+  price: number;
+  sort_order: number;
+};
+
 export type ThemeSettings = {
   id: number;
   forest_color: string;
