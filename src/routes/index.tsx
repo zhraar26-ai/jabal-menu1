@@ -838,9 +838,16 @@ function HomePage() {
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold">{e.item.name}</div>
+                          <div className="font-bold">
+                            {e.item.name}
+                            {e.line.optionName && (
+                              <span className="ms-2 text-xs text-[var(--gold)]">
+                                ({e.line.optionName})
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-foreground/60">
-                            {effectivePrice(e.item).toLocaleString()} د.ع × {e.qty}
+                            {e.line.unitPrice.toLocaleString()} د.ع × {e.line.qty}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 rounded-full gold-border p-1">
@@ -851,7 +858,7 @@ function HomePage() {
                           >
                             <Minus className="h-3.5 w-3.5" />
                           </button>
-                          <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
+                          <span className="w-6 text-center text-sm font-bold tabular-nums">{e.line.qty}</span>
                           <button
                             onClick={() => setCartQty(e.key, +1)}
                             className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
@@ -870,7 +877,7 @@ function HomePage() {
                       </div>
                       <input
                         type="text"
-                        value={e.note}
+                        value={e.line.note}
                         onChange={(ev) => setCartNote(e.key, ev.target.value)}
                         placeholder="✏️ أضف أو عدّل ملاحظة (مثلاً: بدون مخلل)"
                         className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/60 px-3 py-2 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
