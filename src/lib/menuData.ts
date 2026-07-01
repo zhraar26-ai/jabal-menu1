@@ -31,6 +31,14 @@ export type Offer = {
   sort_order: number;
 };
 
+export type MenuItemOption = {
+  id: string;
+  menu_item_id: string;
+  name: string;
+  price: number;
+  sort_order: number;
+};
+
 export type ThemeSettings = {
   id: number;
   forest_color: string;
@@ -60,6 +68,15 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function fetchMenuItems(): Promise<MenuItem[]> {
   const { data, error } = await sb
     .from("menu_items")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchMenuItemOptions(): Promise<MenuItemOption[]> {
+  const { data, error } = await sb
+    .from("menu_item_options")
     .select("*")
     .order("sort_order", { ascending: true });
   if (error) throw error;

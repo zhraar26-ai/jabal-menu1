@@ -11,8 +11,10 @@ import {
   applyTheme,
   fetchCategories,
   fetchMenuItems,
+  fetchMenuItemOptions,
   fetchOffers,
   fetchTheme,
+  MenuItemOption,
 } from "@/lib/menuData";
 import { LogOut, Plus, Save, Trash2, Upload } from "lucide-react";
 
@@ -611,6 +613,8 @@ function ItemCard({
           />
         </div>
       </div>
+      <OptionsEditor itemId={m.id} />
+
       <label className="flex items-center gap-2 text-xs text-foreground/80">
         <input
           type="checkbox"
@@ -636,6 +640,115 @@ function ItemCard({
           <span className="text-xs text-green-400">تم الحفظ ✓</span>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ============ MENU ITEM OPTIONS ============ */
+
+function OptionsEditor({ itemId }: { itemId: string }) {
+  const [opts, setOpts] = useState<MenuItemOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    fetchMenuItemOptions()
+      .then((all) => setOpts(all.filter((o) => o.menu_item_id === itemId)))
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, [itemId]);
+
+  const add = async () => {
+    const { error } = await sb.from("menu_item_options").insert({
+      menu_item_id: itemId,
+      name: "",
+      price: 0,
+      sort_order: opts.length + 1,
+    });
+    if (error) return alert("فشل الإضافة: " + error.message);
+    load();
+  };
+
+  const save = async (id: string, patch: Partial<MenuItemOption>) => {
+    const { error } = await sb.from("menu_item_options").update(patch).eq("id", id);
+    if (error) alert("فشل الحفظ: " + error.message);
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await sb.from("menu_item_options").delete().eq("id", id);
+    if (error) return alert("فشل الحذف: " + error.message);
+    load();
+  };
+
+  return (
+    <div className="rounded-xl border border-[color-mix(in_oklab,var(--gold)_20%,transparent)] p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-bold text-[var(--gold)]">
+          خيارات المنتج (مثل: صغير، وسط، كبير)
+        </span>
+        <button
+          onClick={add}
+          className="inline-flex items-center gap-1 rounded-full bg-[var(--gold)] px-2.5 py-1 text-[11px] font-bold text-[var(--forest-deep)]"
+        >
+          <Plus className="h-3 w-3" /> إضافة خيار
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-xs text-foreground/60">جاري التحميل…</div>
+      ) : opts.length === 0 ? (
+        <div className="text-[11px] text-foreground/50">
+          لا توجد خيارات. اضغط "إضافة خيار" لإضافة صغير/وسط/كبير أو أي مقاسات تريد.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {opts.map((o) => (
+            <OptionRow key={o.id} opt={o} onSave={save} onDelete={remove} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OptionRow({
+  opt,
+  onSave,
+  onDelete,
+}: {
+  opt: MenuItemOption;
+  onSave: (id: string, patch: Partial<MenuItemOption>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [name, setName] = useState(opt.name);
+  const [price, setPrice] = useState(opt.price);
+  const commit = () => onSave(opt.id, { name, price });
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onBlur={commit}
+        placeholder="اسم الخيار"
+        className="flex-1 rounded-lg bg-[var(--forest-deep)] px-2.5 py-1.5 text-xs gold-border"
+      />
+      <input
+        type="number"
+        value={price}
+        onChange={(e) => setPrice(Number(e.target.value))}
+        onBlur={commit}
+        placeholder="السعر"
+        className="w-24 rounded-lg bg-[var(--forest-deep)] px-2.5 py-1.5 text-xs gold-border"
+      />
+      <span className="text-[10px] text-[var(--gold)]/70">د.ع</span>
+      <button
+        onClick={() => onDelete(opt.id)}
+        className="grid h-7 w-7 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
+        aria-label="حذف"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }

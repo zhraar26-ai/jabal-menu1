@@ -23,11 +23,13 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Category,
   MenuItem,
+  MenuItemOption,
   Offer,
   ThemeSettings,
   applyTheme,
   fetchCategories,
   fetchMenuItems,
+  fetchMenuItemOptions,
   fetchOffers,
   fetchTheme,
 } from "@/lib/menuData";
@@ -69,16 +71,27 @@ const NAV_LINKS = [
   { href: "#contact", label: "تواصل" },
 ];
 
-type CartLine = { qty: number; note: string };
+
+type CartLine = {
+  itemId: string;
+  optionId: string | null;
+  optionName: string | null;
+  unitPrice: number;
+  qty: number;
+  note: string;
+};
 
 function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [options, setOptions] = useState<MenuItemOption[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [theme, setTheme] = useState<ThemeSettings | null>(null);
 
   const [pendingQty, setPendingQty] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+  // per item: selected option id (or "" = base price)
+  const [selectedOption, setSelectedOption] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<Record<string, CartLine>>({});
 
   const [navOpen, setNavOpen] = useState(false);
@@ -94,6 +107,7 @@ function HomePage() {
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
     fetchMenuItems().then(setItems).catch(console.error);
+    fetchMenuItemOptions().then(setOptions).catch(console.error);
     fetchOffers(true).then(setOffers).catch(console.error);
     fetchTheme()
       .then((t) => {
@@ -116,6 +130,9 @@ function HomePage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, () =>
         fetchMenuItems().then(setItems).catch(console.error),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_item_options" }, () =>
+        fetchMenuItemOptions().then(setOptions).catch(console.error),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "offers" }, () =>
         fetchOffers(true).then(setOffers).catch(console.error),
       )
@@ -135,6 +152,12 @@ function HomePage() {
     };
   }, []);
 
+  const optionsByItem = useMemo(() => {
+    const m: Record<string, MenuItemOption[]> = {};
+    for (const o of options) (m[o.menu_item_id] ||= []).push(o);
+    return m;
+  }, [options]);
+
   const itemsByCat = useMemo(() => {
     const m: Record<string, MenuItem[]> = {};
     for (const c of categories) m[c.id] = [];
@@ -151,12 +174,25 @@ function HomePage() {
     return m;
   }, [items]);
 
-  const effectivePrice = (it: MenuItem) =>
+  const basePrice = (it: MenuItem) =>
     it.discount_price != null && it.discount_price < it.price ? it.discount_price : it.price;
+
+  const priceForSelection = (it: MenuItem) => {
+    const opts = optionsByItem[it.id] ?? [];
+    const selId = selectedOption[it.id];
+    if (opts.length > 0) {
+      const chosen = opts.find((o) => o.id === selId) ?? opts[0];
+      return { price: chosen.price, option: chosen };
+    }
+    return { price: basePrice(it), option: null as MenuItemOption | null };
+  };
 
   const getPending = (key: string) => pendingQty[key] ?? 1;
   const setPending = (key: string, delta: number) =>
     setPendingQty((q) => ({ ...q, [key]: Math.max(1, (q[key] ?? 1) + delta) }));
+
+  const cartKey = (itemId: string, optionId: string | null) =>
+    `${itemId}__${optionId ?? "base"}`;
 
   const setCartQty = (key: string, delta: number) =>
     setCart((c) => {
@@ -189,35 +225,41 @@ function HomePage() {
   );
 
   const cartEntries = useMemo(() => {
-    const entries: { key: string; item: MenuItem; qty: number; note: string }[] = [];
+    const entries: { key: string; item: MenuItem; line: CartLine }[] = [];
     for (const [key, line] of Object.entries(cart)) {
-      const it = itemById[key];
-      if (it && line.qty > 0) entries.push({ key, item: it, qty: line.qty, note: line.note });
+      const it = itemById[line.itemId];
+      if (it && line.qty > 0) entries.push({ key, item: it, line });
     }
     return entries;
   }, [cart, itemById]);
 
   const cartTotal = useMemo(
-    () => cartEntries.reduce((s, e) => s + effectivePrice(e.item) * e.qty, 0),
+    () => cartEntries.reduce((s, e) => s + e.line.unitPrice * e.line.qty, 0),
     [cartEntries],
   );
 
-  const addToCart = (itemId: string) => {
-    const qty = getPending(itemId);
-    const note = (notes[itemId] ?? "").trim();
+  const addToCart = (item: MenuItem) => {
+    const qty = getPending(item.id);
+    const note = (notes[item.id] ?? "").trim();
+    const { price, option } = priceForSelection(item);
+    const key = cartKey(item.id, option?.id ?? null);
     setCart((c) => {
-      const existing = c[itemId];
+      const existing = c[key];
       return {
         ...c,
-        [itemId]: {
+        [key]: {
+          itemId: item.id,
+          optionId: option?.id ?? null,
+          optionName: option?.name ?? null,
+          unitPrice: price,
           qty: (existing?.qty ?? 0) + qty,
           note: note || existing?.note || "",
         },
       };
     });
-    setPendingQty((q) => ({ ...q, [itemId]: 1 }));
-    setJustAdded(itemId);
-    setTimeout(() => setJustAdded((j) => (j === itemId ? null : j)), 1200);
+    setPendingQty((q) => ({ ...q, [item.id]: 1 }));
+    setJustAdded(item.id);
+    setTimeout(() => setJustAdded((j) => (j === item.id ? null : j)), 1200);
   };
 
   const sendCartToWhatsapp = () => {
@@ -225,12 +267,11 @@ function HomePage() {
       setShowCheckoutWarning(true);
       return;
     }
-    const lines = cartEntries.map(
-      (e) =>
-        `• ${e.item.name} × ${e.qty} = ${(effectivePrice(e.item) * e.qty).toLocaleString()} د.ع${
-          e.note ? `\n   ملاحظة: ${e.note}` : ""
-        }`,
-    );
+    const lines = cartEntries.map((e) => {
+      const label = e.line.optionName ? `${e.item.name} (${e.line.optionName})` : e.item.name;
+      const noteLine = e.line.note ? `\n   ملاحظة: ${e.line.note}` : "";
+      return `• ${label} × ${e.line.qty} = ${(e.line.unitPrice * e.line.qty).toLocaleString()} د.ع${noteLine}`;
+    });
     const text =
       `مرحبا، طلب جديد من منيو جبل الإلكتروني:\n\n${lines.join("\n")}\n\n` +
       `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
@@ -476,10 +517,21 @@ function HomePage() {
                         {catItems.map((item) => {
                           const key = item.id;
                           const qty = getPending(key);
-                          const inCart = cart[key]?.qty ?? 0;
+                          const itemOpts = optionsByItem[item.id] ?? [];
+                          const selId =
+                            selectedOption[item.id] ??
+                            (itemOpts[0]?.id ?? "");
                           const hasDiscount =
                             item.discount_price != null && item.discount_price < item.price;
-                          const price = hasDiscount ? item.discount_price! : item.price;
+                          const displayPrice =
+                            itemOpts.length > 0
+                              ? (itemOpts.find((o) => o.id === selId) ?? itemOpts[0]).price
+                              : hasDiscount
+                                ? item.discount_price!
+                                : item.price;
+                          const inCartCount = Object.values(cart)
+                            .filter((l) => l.itemId === item.id)
+                            .reduce((a, b) => a + b.qty, 0);
                           return (
                             <article
                               key={key}
@@ -492,7 +544,7 @@ function HomePage() {
                                   loading="lazy"
                                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
-                                {hasDiscount && (
+                                {hasDiscount && itemOpts.length === 0 && (
                                   <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
                                     <Sparkles className="h-2.5 w-2.5" /> عرض
                                   </span>
@@ -513,9 +565,9 @@ function HomePage() {
                                   </div>
                                   <div className="shrink-0 text-end">
                                     <div className="gold-text font-display text-base font-bold md:text-lg">
-                                      {price.toLocaleString()}
+                                      {displayPrice.toLocaleString()}
                                     </div>
-                                    {hasDiscount && (
+                                    {hasDiscount && itemOpts.length === 0 && (
                                       <div className="text-[10px] text-foreground/50 line-through">
                                         {item.price.toLocaleString()}
                                       </div>
@@ -525,6 +577,33 @@ function HomePage() {
                                     </div>
                                   </div>
                                 </div>
+
+                                {itemOpts.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {itemOpts.map((o) => {
+                                      const active = selId === o.id;
+                                      return (
+                                        <button
+                                          key={o.id}
+                                          type="button"
+                                          onClick={() =>
+                                            setSelectedOption((s) => ({ ...s, [item.id]: o.id }))
+                                          }
+                                          className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                                            active
+                                              ? "bg-[var(--gold)] text-[var(--forest-deep)]"
+                                              : "gold-border text-foreground/80 hover:text-[var(--gold)]"
+                                          }`}
+                                        >
+                                          {o.name}
+                                          <span className="ms-1 opacity-70">
+                                            · {o.price.toLocaleString()}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
 
                                 <input
                                   type="text"
@@ -555,7 +634,7 @@ function HomePage() {
                                     </button>
                                   </div>
                                   <button
-                                    onClick={() => addToCart(key)}
+                                    onClick={() => addToCart(item)}
                                     className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
                                       justAdded === key
                                         ? "bg-[#25D366] text-white"
@@ -565,8 +644,8 @@ function HomePage() {
                                     <ShoppingBag className="h-3.5 w-3.5" />
                                     {justAdded === key
                                       ? "تمت الإضافة ✓"
-                                      : inCart > 0
-                                        ? `إضافة إلى السلة (${inCart})`
+                                      : inCartCount > 0
+                                        ? `إضافة إلى السلة (${inCartCount})`
                                         : "إضافة إلى السلة"}
                                   </button>
                                 </div>
@@ -759,9 +838,16 @@ function HomePage() {
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold">{e.item.name}</div>
+                          <div className="font-bold">
+                            {e.item.name}
+                            {e.line.optionName && (
+                              <span className="ms-2 text-xs text-[var(--gold)]">
+                                ({e.line.optionName})
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-foreground/60">
-                            {effectivePrice(e.item).toLocaleString()} د.ع × {e.qty}
+                            {e.line.unitPrice.toLocaleString()} د.ع × {e.line.qty}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 rounded-full gold-border p-1">
@@ -772,7 +858,7 @@ function HomePage() {
                           >
                             <Minus className="h-3.5 w-3.5" />
                           </button>
-                          <span className="w-6 text-center text-sm font-bold tabular-nums">{e.qty}</span>
+                          <span className="w-6 text-center text-sm font-bold tabular-nums">{e.line.qty}</span>
                           <button
                             onClick={() => setCartQty(e.key, +1)}
                             className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
@@ -791,7 +877,7 @@ function HomePage() {
                       </div>
                       <input
                         type="text"
-                        value={e.note}
+                        value={e.line.note}
                         onChange={(ev) => setCartNote(e.key, ev.target.value)}
                         placeholder="✏️ أضف أو عدّل ملاحظة (مثلاً: بدون مخلل)"
                         className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/60 px-3 py-2 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
