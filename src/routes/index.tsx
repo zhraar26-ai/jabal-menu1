@@ -644,8 +644,8 @@ function HomePage() {
                                     <ShoppingBag className="h-3.5 w-3.5" />
                                     {justAdded === key
                                       ? "تمت الإضافة ✓"
-                                      : inCart > 0
-                                        ? `إضافة إلى السلة (${inCart})`
+                                      : inCartCount > 0
+                                        ? `إضافة إلى السلة (${inCartCount})`
                                         : "إضافة إلى السلة"}
                                   </button>
                                 </div>
