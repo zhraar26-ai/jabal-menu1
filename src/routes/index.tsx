@@ -517,10 +517,21 @@ function HomePage() {
                         {catItems.map((item) => {
                           const key = item.id;
                           const qty = getPending(key);
-                          const inCart = cart[key]?.qty ?? 0;
+                          const itemOpts = optionsByItem[item.id] ?? [];
+                          const selId =
+                            selectedOption[item.id] ??
+                            (itemOpts[0]?.id ?? "");
                           const hasDiscount =
                             item.discount_price != null && item.discount_price < item.price;
-                          const price = hasDiscount ? item.discount_price! : item.price;
+                          const displayPrice =
+                            itemOpts.length > 0
+                              ? (itemOpts.find((o) => o.id === selId) ?? itemOpts[0]).price
+                              : hasDiscount
+                                ? item.discount_price!
+                                : item.price;
+                          const inCartCount = Object.values(cart)
+                            .filter((l) => l.itemId === item.id)
+                            .reduce((a, b) => a + b.qty, 0);
                           return (
                             <article
                               key={key}
@@ -533,7 +544,7 @@ function HomePage() {
                                   loading="lazy"
                                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
-                                {hasDiscount && (
+                                {hasDiscount && itemOpts.length === 0 && (
                                   <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
                                     <Sparkles className="h-2.5 w-2.5" /> عرض
                                   </span>
@@ -554,9 +565,9 @@ function HomePage() {
                                   </div>
                                   <div className="shrink-0 text-end">
                                     <div className="gold-text font-display text-base font-bold md:text-lg">
-                                      {price.toLocaleString()}
+                                      {displayPrice.toLocaleString()}
                                     </div>
-                                    {hasDiscount && (
+                                    {hasDiscount && itemOpts.length === 0 && (
                                       <div className="text-[10px] text-foreground/50 line-through">
                                         {item.price.toLocaleString()}
                                       </div>
@@ -566,6 +577,33 @@ function HomePage() {
                                     </div>
                                   </div>
                                 </div>
+
+                                {itemOpts.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {itemOpts.map((o) => {
+                                      const active = selId === o.id;
+                                      return (
+                                        <button
+                                          key={o.id}
+                                          type="button"
+                                          onClick={() =>
+                                            setSelectedOption((s) => ({ ...s, [item.id]: o.id }))
+                                          }
+                                          className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                                            active
+                                              ? "bg-[var(--gold)] text-[var(--forest-deep)]"
+                                              : "gold-border text-foreground/80 hover:text-[var(--gold)]"
+                                          }`}
+                                        >
+                                          {o.name}
+                                          <span className="ms-1 opacity-70">
+                                            · {o.price.toLocaleString()}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
 
                                 <input
                                   type="text"
@@ -596,7 +634,7 @@ function HomePage() {
                                     </button>
                                   </div>
                                   <button
-                                    onClick={() => addToCart(key)}
+                                    onClick={() => addToCart(item)}
                                     className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
                                       justAdded === key
                                         ? "bg-[#25D366] text-white"
