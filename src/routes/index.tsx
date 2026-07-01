@@ -174,12 +174,25 @@ function HomePage() {
     return m;
   }, [items]);
 
-  const effectivePrice = (it: MenuItem) =>
+  const basePrice = (it: MenuItem) =>
     it.discount_price != null && it.discount_price < it.price ? it.discount_price : it.price;
+
+  const priceForSelection = (it: MenuItem) => {
+    const opts = optionsByItem[it.id] ?? [];
+    const selId = selectedOption[it.id];
+    if (opts.length > 0) {
+      const chosen = opts.find((o) => o.id === selId) ?? opts[0];
+      return { price: chosen.price, option: chosen };
+    }
+    return { price: basePrice(it), option: null as MenuItemOption | null };
+  };
 
   const getPending = (key: string) => pendingQty[key] ?? 1;
   const setPending = (key: string, delta: number) =>
     setPendingQty((q) => ({ ...q, [key]: Math.max(1, (q[key] ?? 1) + delta) }));
+
+  const cartKey = (itemId: string, optionId: string | null) =>
+    `${itemId}__${optionId ?? "base"}`;
 
   const setCartQty = (key: string, delta: number) =>
     setCart((c) => {
@@ -212,35 +225,41 @@ function HomePage() {
   );
 
   const cartEntries = useMemo(() => {
-    const entries: { key: string; item: MenuItem; qty: number; note: string }[] = [];
+    const entries: { key: string; item: MenuItem; line: CartLine }[] = [];
     for (const [key, line] of Object.entries(cart)) {
-      const it = itemById[key];
-      if (it && line.qty > 0) entries.push({ key, item: it, qty: line.qty, note: line.note });
+      const it = itemById[line.itemId];
+      if (it && line.qty > 0) entries.push({ key, item: it, line });
     }
     return entries;
   }, [cart, itemById]);
 
   const cartTotal = useMemo(
-    () => cartEntries.reduce((s, e) => s + effectivePrice(e.item) * e.qty, 0),
+    () => cartEntries.reduce((s, e) => s + e.line.unitPrice * e.line.qty, 0),
     [cartEntries],
   );
 
-  const addToCart = (itemId: string) => {
-    const qty = getPending(itemId);
-    const note = (notes[itemId] ?? "").trim();
+  const addToCart = (item: MenuItem) => {
+    const qty = getPending(item.id);
+    const note = (notes[item.id] ?? "").trim();
+    const { price, option } = priceForSelection(item);
+    const key = cartKey(item.id, option?.id ?? null);
     setCart((c) => {
-      const existing = c[itemId];
+      const existing = c[key];
       return {
         ...c,
-        [itemId]: {
+        [key]: {
+          itemId: item.id,
+          optionId: option?.id ?? null,
+          optionName: option?.name ?? null,
+          unitPrice: price,
           qty: (existing?.qty ?? 0) + qty,
           note: note || existing?.note || "",
         },
       };
     });
-    setPendingQty((q) => ({ ...q, [itemId]: 1 }));
-    setJustAdded(itemId);
-    setTimeout(() => setJustAdded((j) => (j === itemId ? null : j)), 1200);
+    setPendingQty((q) => ({ ...q, [item.id]: 1 }));
+    setJustAdded(item.id);
+    setTimeout(() => setJustAdded((j) => (j === item.id ? null : j)), 1200);
   };
 
   const sendCartToWhatsapp = () => {
@@ -248,12 +267,11 @@ function HomePage() {
       setShowCheckoutWarning(true);
       return;
     }
-    const lines = cartEntries.map(
-      (e) =>
-        `• ${e.item.name} × ${e.qty} = ${(effectivePrice(e.item) * e.qty).toLocaleString()} د.ع${
-          e.note ? `\n   ملاحظة: ${e.note}` : ""
-        }`,
-    );
+    const lines = cartEntries.map((e) => {
+      const label = e.line.optionName ? `${e.item.name} (${e.line.optionName})` : e.item.name;
+      const noteLine = e.line.note ? `\n   ملاحظة: ${e.line.note}` : "";
+      return `• ${label} × ${e.line.qty} = ${(e.line.unitPrice * e.line.qty).toLocaleString()} د.ع${noteLine}`;
+    });
     const text =
       `مرحبا، طلب جديد من منيو جبل الإلكتروني:\n\n${lines.join("\n")}\n\n` +
       `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
