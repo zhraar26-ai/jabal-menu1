@@ -73,14 +73,26 @@ const NAV_LINKS = [
 
 type CartLine = { qty: number; note: string };
 
+type CartLine = {
+  itemId: string;
+  optionId: string | null;
+  optionName: string | null;
+  unitPrice: number;
+  qty: number;
+  note: string;
+};
+
 function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [options, setOptions] = useState<MenuItemOption[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [theme, setTheme] = useState<ThemeSettings | null>(null);
 
   const [pendingQty, setPendingQty] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+  // per item: selected option id (or "" = base price)
+  const [selectedOption, setSelectedOption] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<Record<string, CartLine>>({});
 
   const [navOpen, setNavOpen] = useState(false);
@@ -96,6 +108,7 @@ function HomePage() {
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
     fetchMenuItems().then(setItems).catch(console.error);
+    fetchMenuItemOptions().then(setOptions).catch(console.error);
     fetchOffers(true).then(setOffers).catch(console.error);
     fetchTheme()
       .then((t) => {
@@ -118,6 +131,9 @@ function HomePage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, () =>
         fetchMenuItems().then(setItems).catch(console.error),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_item_options" }, () =>
+        fetchMenuItemOptions().then(setOptions).catch(console.error),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "offers" }, () =>
         fetchOffers(true).then(setOffers).catch(console.error),
       )
@@ -136,6 +152,12 @@ function HomePage() {
       sb.removeChannel(channel);
     };
   }, []);
+
+  const optionsByItem = useMemo(() => {
+    const m: Record<string, MenuItemOption[]> = {};
+    for (const o of options) (m[o.menu_item_id] ||= []).push(o);
+    return m;
+  }, [options]);
 
   const itemsByCat = useMemo(() => {
     const m: Record<string, MenuItem[]> = {};
