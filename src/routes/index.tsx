@@ -23,11 +23,13 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Category,
   MenuItem,
+  MenuItemOption,
   Offer,
   ThemeSettings,
   applyTheme,
   fetchCategories,
   fetchMenuItems,
+  fetchMenuItemOptions,
   fetchOffers,
   fetchTheme,
 } from "@/lib/menuData";
