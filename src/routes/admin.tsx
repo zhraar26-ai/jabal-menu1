@@ -613,6 +613,8 @@ function ItemCard({
           />
         </div>
       </div>
+      <OptionsEditor itemId={m.id} />
+
       <label className="flex items-center gap-2 text-xs text-foreground/80">
         <input
           type="checkbox"
