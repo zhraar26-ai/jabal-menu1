@@ -1056,3 +1056,258 @@ function ThemeTab() {
     </div>
   );
 }
+
+/* ============ DIAGNOSTICS ============ */
+
+type UrlCheck = {
+  source: string;
+  name: string;
+  path: string | null;
+  publicUrl: string | null;
+  status: number | string;
+  ok: boolean;
+};
+
+function extractStoragePath(url: string | null): string | null {
+  if (!url) return null;
+  const m = url.match(/\/menu-images\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+async function checkUrl(url: string): Promise<{ status: number | string; ok: boolean }> {
+  try {
+    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    return { status: res.status, ok: res.ok };
+  } catch (e: any) {
+    return { status: e?.message || "network error", ok: false };
+  }
+}
+
+function DiagnosticsTab() {
+  const [loading, setLoading] = useState(false);
+  const [bucketListStatus, setBucketListStatus] = useState<string>("—");
+  const [bucketFiles, setBucketFiles] = useState<string[]>([]);
+  const [isPublic, setIsPublic] = useState<boolean | null>(null);
+  const [checks, setChecks] = useState<UrlCheck[]>([]);
+  const [uploadTest, setUploadTest] = useState<string>("—");
+
+  const runDiagnostics = async () => {
+    setLoading(true);
+    setChecks([]);
+    setBucketFiles([]);
+    setBucketListStatus("جاري الفحص…");
+    setIsPublic(null);
+    setUploadTest("—");
+
+    // 1) List bucket files
+    const { data: listData, error: listErr } = await sb.storage
+      .from("menu-images")
+      .list("", { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+    if (listErr) {
+      setBucketListStatus(`❌ خطأ في القراءة: ${listErr.message}`);
+    } else {
+      setBucketListStatus(`✅ عدد الملفات: ${listData?.length ?? 0}`);
+      setBucketFiles((listData ?? []).map((f: any) => f.name));
+    }
+
+    // 2) Test public access via a sample file (if any)
+    if (listData && listData.length > 0) {
+      const sample = listData[0].name;
+      const { data: pub } = sb.storage.from("menu-images").getPublicUrl(sample);
+      const res = await checkUrl(pub.publicUrl);
+      setIsPublic(res.ok);
+    }
+
+    // 3) Collect DB image_urls
+    const [cats, items, offers] = await Promise.all([
+      sb.from("categories").select("id,name,image_url"),
+      sb.from("menu_items").select("id,name,image_url"),
+      sb.from("offers").select("id,title"),
+    ]);
+
+    const rows: UrlCheck[] = [];
+    for (const c of cats.data ?? []) {
+      if (!c.image_url) continue;
+      const r = await checkUrl(c.image_url);
+      rows.push({
+        source: "قسم",
+        name: c.name,
+        path: extractStoragePath(c.image_url),
+        publicUrl: c.image_url,
+        status: r.status,
+        ok: r.ok,
+      });
+    }
+    for (const it of items.data ?? []) {
+      if (!it.image_url) continue;
+      const r = await checkUrl(it.image_url);
+      rows.push({
+        source: "أكلة",
+        name: it.name,
+        path: extractStoragePath(it.image_url),
+        publicUrl: it.image_url,
+        status: r.status,
+        ok: r.ok,
+      });
+    }
+    setChecks(rows);
+    setLoading(false);
+  };
+
+  const runUploadTest = async () => {
+    setUploadTest("جاري الرفع…");
+    try {
+      const blob = new Blob(
+        [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])],
+        { type: "image/png" },
+      );
+      const path = `diagnostics/test-${Date.now()}.png`;
+      const { error } = await sb.storage
+        .from("menu-images")
+        .upload(path, blob, { upsert: true, contentType: "image/png" });
+      if (error) {
+        setUploadTest(`❌ فشل الرفع: ${error.message}`);
+        return;
+      }
+      const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
+      const r = await checkUrl(pub.publicUrl);
+      setUploadTest(
+        r.ok
+          ? `✅ الرفع والقراءة العامة يعملان (${pub.publicUrl})`
+          : `⚠️ تم الرفع لكن الرابط العام غير متاح — الحالة: ${r.status}. الـ bucket على الأرجح Private.`,
+      );
+    } catch (e: any) {
+      setUploadTest(`❌ خطأ: ${e?.message ?? e}`);
+    }
+  };
+
+  useEffect(() => {
+    runDiagnostics();
+  }, []);
+
+  const brokenCount = checks.filter((c) => !c.ok).length;
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl gold-border p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-display text-lg font-bold text-[var(--gold)]">
+            حالة تخزين الصور (menu-images)
+          </h3>
+          <div className="flex gap-2">
+            <button
+              onClick={runDiagnostics}
+              disabled={loading}
+              className="rounded-full bg-[var(--gold)] px-4 py-1.5 text-xs font-bold text-[var(--forest-deep)] disabled:opacity-50"
+            >
+              {loading ? "جاري…" : "إعادة الفحص"}
+            </button>
+            <button
+              onClick={runUploadTest}
+              className="rounded-full gold-border px-4 py-1.5 text-xs font-bold text-[var(--gold)]"
+            >
+              اختبار رفع
+            </button>
+          </div>
+        </div>
+        <ul className="space-y-1.5 text-sm text-foreground/80">
+          <li>
+            <span className="text-foreground/60">قراءة الـ bucket:</span> {bucketListStatus}
+          </li>
+          <li>
+            <span className="text-foreground/60">هل الـ bucket Public؟</span>{" "}
+            {isPublic === null
+              ? "— (لا توجد ملفات للاختبار)"
+              : isPublic
+                ? "✅ نعم — الروابط العامة تعمل"
+                : "❌ لا — getPublicUrl لا يفتح؛ فعّل الـ bucket كـ Public"}
+          </li>
+          <li>
+            <span className="text-foreground/60">اختبار الرفع:</span> {uploadTest}
+          </li>
+        </ul>
+      </div>
+
+      <div className="rounded-2xl gold-border p-4">
+        <h3 className="mb-3 font-display text-lg font-bold text-[var(--gold)]">
+          روابط الصور في قاعدة البيانات ({checks.length})
+          {brokenCount > 0 && (
+            <span className="ms-2 text-sm text-red-400">— {brokenCount} معطوبة</span>
+          )}
+        </h3>
+        {checks.length === 0 && !loading && (
+          <p className="text-sm text-foreground/60">لا توجد صور مرتبطة بعد.</p>
+        )}
+        <div className="space-y-2">
+          {checks.map((c, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 rounded-xl bg-black/20 p-2 text-xs"
+            >
+              <div
+                className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border ${
+                  c.ok ? "border-green-500/40" : "border-red-500/40"
+                }`}
+              >
+                {c.publicUrl && (
+                  <img
+                    src={c.publicUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.opacity = "0.2";
+                    }}
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-[var(--gold)]/20 px-2 py-0.5 text-[10px] text-[var(--gold)]">
+                    {c.source}
+                  </span>
+                  <span className="truncate font-bold text-foreground">{c.name}</span>
+                  <span
+                    className={`ms-auto rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                      c.ok ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                    }`}
+                  >
+                    {c.ok ? "OK" : `FAIL ${c.status}`}
+                  </span>
+                </div>
+                <div className="mt-0.5 truncate text-foreground/50" title={c.publicUrl ?? ""}>
+                  {c.path ?? c.publicUrl}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl gold-border p-4">
+        <h3 className="mb-2 font-display text-lg font-bold text-[var(--gold)]">
+          آخر الملفات في الـ bucket
+        </h3>
+        {bucketFiles.length === 0 ? (
+          <p className="text-sm text-foreground/60">لا توجد ملفات.</p>
+        ) : (
+          <ul className="grid grid-cols-2 gap-1 text-xs text-foreground/70 md:grid-cols-3">
+            {bucketFiles.slice(0, 30).map((n) => (
+              <li key={n} className="truncate rounded bg-black/20 px-2 py-1" title={n}>
+                {n}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 p-4 text-xs text-foreground/80">
+        <p className="mb-1 font-bold text-[var(--gold)]">ملاحظة</p>
+        <p>
+          إذا ظهرت الحالة FAIL 400/403 أو كانت "هل الـ bucket Public؟" = لا، فذلك يعني أن الـ
+          bucket لا يزال Private. الحل: تفعيل خيار Allow public buckets في إعدادات الـ Workspace
+          (Privacy & Security) ثم تحويل bucket menu-images إلى Public.
+        </p>
+      </div>
+    </div>
+  );
+}
