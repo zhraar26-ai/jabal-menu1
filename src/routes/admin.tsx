@@ -211,6 +211,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
               ["items", "الأكلات"],
               ["offers", "العروض"],
               ["theme", "المظهر"],
+              ["diagnostics", "تشخيص الصور"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -231,6 +232,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         {tab === "items" && <ItemsTab />}
         {tab === "offers" && <OffersTab />}
         {tab === "theme" && <ThemeTab />}
+        {tab === "diagnostics" && <DiagnosticsTab />}
       </div>
     </div>
   );
