@@ -100,9 +100,7 @@ function HomePage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
-  const [openCat, setOpenCat] = useState<string | null>(null);
-  const toggleCat = (id: string) =>
-    setOpenCat((cur) => (cur === id ? null : id));
+  const [activeCat, setActiveCat] = useState<string | null>(null);
 
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
