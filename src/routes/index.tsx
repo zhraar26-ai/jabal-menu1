@@ -166,6 +166,14 @@ function HomePage() {
     return m;
   }, [categories, items]);
 
+  useEffect(() => {
+    if (activeCat) return;
+    const first = categories
+      .filter((c) => c.visible !== false)
+      .find((c) => (itemsByCat[c.id] ?? []).length > 0);
+    if (first) setActiveCat(first.id);
+  }, [categories, itemsByCat, activeCat]);
+
   const itemById = useMemo(() => {
     const m: Record<string, MenuItem> = {};
     for (const it of items) m[it.id] = it;
