@@ -14,7 +14,6 @@ import {
   UtensilsCrossed,
   Trash2,
   Sparkles,
-  ChevronDown,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -100,9 +99,7 @@ function HomePage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
-  const [openCat, setOpenCat] = useState<string | null>(null);
-  const toggleCat = (id: string) =>
-    setOpenCat((cur) => (cur === id ? null : id));
+  const [activeCat, setActiveCat] = useState<string | null>(null);
 
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
@@ -167,6 +164,14 @@ function HomePage() {
     }
     return m;
   }, [categories, items]);
+
+  useEffect(() => {
+    if (activeCat) return;
+    const first = categories
+      .filter((c) => c.visible !== false)
+      .find((c) => (itemsByCat[c.id] ?? []).length > 0);
+    if (first) setActiveCat(first.id);
+  }, [categories, itemsByCat, activeCat]);
 
   const itemById = useMemo(() => {
     const m: Record<string, MenuItem> = {};
@@ -463,203 +468,261 @@ function HomePage() {
             </p>
           </div>
 
-          {/* Collapsible categories */}
-          <div className="mx-auto mt-10 max-w-5xl space-y-4">
-            {categories.filter((c) => c.visible !== false).map((c) => {
-              const catItems = itemsByCat[c.id] ?? [];
-              if (catItems.length === 0) return null;
-              const isOpen = openCat === c.id;
-              return (
-                <div
-                  key={c.id}
-                  id={`cat-${c.id}`}
-                  className="glass-card overflow-hidden rounded-3xl scroll-mt-24"
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleCat(c.id)}
-                    aria-expanded={isOpen}
-                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-7 md:py-5"
-                  >
-                    <div className="flex items-center gap-3">
+          {/* Horizontal category tabs */}
+          <div className="mx-auto mt-10 max-w-5xl">
+            {/* Tabs bar */}
+            <div
+              className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide"
+              dir="rtl"
+            >
+              {categories
+                .filter((c) => c.visible !== false)
+                .map((c) => {
+                  const catItems = itemsByCat[c.id] ?? [];
+                  if (catItems.length === 0) return null;
+                  const active = activeCat === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setActiveCat(c.id)}
+                      className={`group relative flex shrink-0 items-center gap-2.5 rounded-full px-4 py-2.5 text-right transition-all md:px-5 md:py-3 ${
+                        active
+                          ? "bg-[var(--gold)] text-[var(--forest-deep)] shadow-gold"
+                          : "glass-card text-foreground hover:text-[var(--gold)]"
+                      }`}
+                    >
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} className="h-12 w-12 rounded-full object-cover gold-border" />
+                        <img
+                          src={c.image_url}
+                          alt={c.name}
+                          className={`h-9 w-9 rounded-full object-cover md:h-10 md:w-10 ${
+                            active ? "border border-[var(--forest-deep)]/30" : "gold-border"
+                          }`}
+                        />
                       ) : (
-                        <span className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)]">
+                        <span
+                          className={`grid h-9 w-9 place-items-center rounded-full md:h-10 md:w-10 ${
+                            active
+                              ? "bg-[var(--forest-deep)]/20 text-[var(--forest-deep)]"
+                              : "gold-border text-[var(--gold)]"
+                          }`}
+                        >
                           <UtensilsCrossed className="h-4 w-4" />
                         </span>
                       )}
-                      <div className="text-right">
+                      <div className="flex flex-col items-start">
                         {c.tag && (
-                          <span className="block text-[10px] uppercase tracking-widest text-[var(--gold)]/80">
+                          <span
+                            className={`text-[10px] uppercase tracking-widest ${
+                              active ? "text-[var(--forest-deep)]/70" : "text-[var(--gold)]/80"
+                            }`}
+                          >
                             {c.tag}
                           </span>
                         )}
-                        <span className="font-display text-lg font-bold md:text-2xl">
-                          <span className="gold-text">{c.name}</span>
+                        <span className="whitespace-nowrap font-display text-sm font-bold md:text-base">
+                          {c.name}
                         </span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="hidden rounded-full bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-3 py-1 text-xs text-[var(--gold)] sm:inline-block">
-                        {catItems.length} طبق
+                      <span
+                        className={`hidden rounded-full px-2 py-0.5 text-[10px] font-bold sm:inline-block ${
+                          active
+                            ? "bg-[var(--forest-deep)]/15 text-[var(--forest-deep)]"
+                            : "bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] text-[var(--gold)]"
+                        }`}
+                      >
+                        {catItems.length}
                       </span>
-                      <ChevronDown
-                        className={`h-5 w-5 text-[var(--gold)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Active category items */}
+            {(() => {
+              const c = categories.find((c) => c.id === activeCat);
+              const catItems = c ? itemsByCat[c.id] ?? [] : [];
+              if (!c || catItems.length === 0) {
+                return (
+                  <div className="mt-8 text-center text-foreground/60">
+                    اختر قسماً لعرض أكلاته
+                  </div>
+                );
+              }
+              return (
+                <div className="mt-6">
+                  <div className="mb-4 flex items-center gap-3">
+                    {c.image_url ? (
+                      <img
+                        src={c.image_url}
+                        alt={c.name}
+                        className="h-12 w-12 rounded-full object-cover gold-border"
                       />
+                    ) : (
+                      <span className="grid h-10 w-10 place-items-center rounded-full gold-border text-[var(--gold)]">
+                        <UtensilsCrossed className="h-5 w-5" />
+                      </span>
+                    )}
+                    <div>
+                      {c.tag && (
+                        <span className="text-[10px] uppercase tracking-widest text-[var(--gold)]/80">
+                          {c.tag}
+                        </span>
+                      )}
+                      <h3 className="font-display text-xl font-bold md:text-2xl">
+                        <span className="gold-text">{c.name}</span>
+                      </h3>
                     </div>
-                  </button>
+                    <span className="me-auto rounded-full bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-3 py-1 text-xs text-[var(--gold)]">
+                      {catItems.length} طبق
+                    </span>
+                  </div>
 
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {catItems.map((item) => {
+                      const key = item.id;
+                      const qty = getPending(key);
+                      const itemOpts = optionsByItem[item.id] ?? [];
+                      const selId =
+                        selectedOption[item.id] ??
+                        (itemOpts[0]?.id ?? "");
+                      const hasDiscount =
+                        item.discount_price != null && item.discount_price < item.price;
+                      const displayPrice =
+                        itemOpts.length > 0
+                          ? (itemOpts.find((o) => o.id === selId) ?? itemOpts[0]).price
+                          : hasDiscount
+                            ? item.discount_price!
+                            : item.price;
+                      const inCartCount = Object.values(cart)
+                        .filter((l) => l.itemId === item.id)
+                        .reduce((a, b) => a + b.qty, 0);
+                      return (
+                        <article
+                          key={key}
+                          className="glass-card group flex flex-col gap-2 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
+                        >
+                          <div className="relative aspect-[4/3] w-full overflow-hidden">
+                            <img
+                              src={item.image_url || ITEM_PLACEHOLDER}
+                              alt={item.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                            {hasDiscount && itemOpts.length === 0 && (
+                              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                                <Sparkles className="h-2.5 w-2.5" /> عرض
+                              </span>
+                            )}
+                          </div>
 
-                  {isOpen && (
-                    <div className="px-3 py-4 md:px-4">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {catItems.map((item) => {
-                          const key = item.id;
-                          const qty = getPending(key);
-                          const itemOpts = optionsByItem[item.id] ?? [];
-                          const selId =
-                            selectedOption[item.id] ??
-                            (itemOpts[0]?.id ?? "");
-                          const hasDiscount =
-                            item.discount_price != null && item.discount_price < item.price;
-                          const displayPrice =
-                            itemOpts.length > 0
-                              ? (itemOpts.find((o) => o.id === selId) ?? itemOpts[0]).price
-                              : hasDiscount
-                                ? item.discount_price!
-                                : item.price;
-                          const inCartCount = Object.values(cart)
-                            .filter((l) => l.itemId === item.id)
-                            .reduce((a, b) => a + b.qty, 0);
-                          return (
-                            <article
-                              key={key}
-                              className="glass-card group flex flex-col gap-2 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
-                            >
-                              <div className="relative aspect-[4/3] w-full overflow-hidden">
-                                <img
-                                  src={item.image_url || ITEM_PLACEHOLDER}
-                                  alt={item.name}
-                                  loading="lazy"
-                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
+                          <div className="flex flex-col gap-2 p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-display text-base font-bold text-foreground md:text-lg">
+                                  {item.name}
+                                </h4>
+                                {item.description && (
+                                  <p className="mt-0.5 text-xs leading-snug text-foreground/65">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="shrink-0 text-end">
+                                <div className="gold-text font-display text-base font-bold md:text-lg">
+                                  {displayPrice.toLocaleString()}
+                                </div>
                                 {hasDiscount && itemOpts.length === 0 && (
-                                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                                    <Sparkles className="h-2.5 w-2.5" /> عرض
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="flex flex-col gap-2 p-3">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0 flex-1">
-                                    <h4 className="font-display text-base font-bold text-foreground md:text-lg">
-                                      {item.name}
-                                    </h4>
-                                    {item.description && (
-                                      <p className="mt-0.5 text-xs leading-snug text-foreground/65">
-                                        {item.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="shrink-0 text-end">
-                                    <div className="gold-text font-display text-base font-bold md:text-lg">
-                                      {displayPrice.toLocaleString()}
-                                    </div>
-                                    {hasDiscount && itemOpts.length === 0 && (
-                                      <div className="text-[10px] text-foreground/50 line-through">
-                                        {item.price.toLocaleString()}
-                                      </div>
-                                    )}
-                                    <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
-                                      د.ع
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {itemOpts.length > 0 && (
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {itemOpts.map((o) => {
-                                      const active = selId === o.id;
-                                      return (
-                                        <button
-                                          key={o.id}
-                                          type="button"
-                                          onClick={() =>
-                                            setSelectedOption((s) => ({ ...s, [item.id]: o.id }))
-                                          }
-                                          className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
-                                            active
-                                              ? "bg-[var(--gold)] text-[var(--forest-deep)]"
-                                              : "gold-border text-foreground/80 hover:text-[var(--gold)]"
-                                          }`}
-                                        >
-                                          {o.name}
-                                          <span className="ms-1 opacity-70">
-                                            · {o.price.toLocaleString()}
-                                          </span>
-                                        </button>
-                                      );
-                                    })}
+                                  <div className="text-[10px] text-foreground/50 line-through">
+                                    {item.price.toLocaleString()}
                                   </div>
                                 )}
-
-                                <input
-                                  type="text"
-                                  value={notes[key] ?? ""}
-                                  onChange={(e) =>
-                                    setNotes((n) => ({ ...n, [key]: e.target.value }))
-                                  }
-                                  placeholder="ملاحظات (مثلاً: بدون مخلل)"
-                                  className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-3 py-1.5 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
-                                />
-
-                                <div className="flex flex-col items-stretch gap-2 pt-1">
-                                  <div className="flex items-center justify-center gap-2 rounded-full gold-border p-1">
-                                    <button
-                                      onClick={() => setPending(key, -1)}
-                                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                                      aria-label="إنقاص"
-                                    >
-                                      <Minus className="h-3.5 w-3.5" />
-                                    </button>
-                                    <span className="w-8 text-center text-sm font-bold tabular-nums">{qty}</span>
-                                    <button
-                                      onClick={() => setPending(key, +1)}
-                                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                                      aria-label="زيادة"
-                                    >
-                                      <Plus className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                  <button
-                                    onClick={() => addToCart(item)}
-                                    className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
-                                      justAdded === key
-                                        ? "bg-[#25D366] text-white"
-                                        : "bg-[var(--gold)] text-[var(--forest-deep)]"
-                                    }`}
-                                  >
-                                    <ShoppingBag className="h-3.5 w-3.5" />
-                                    {justAdded === key
-                                      ? "تمت الإضافة ✓"
-                                      : inCartCount > 0
-                                        ? `إضافة إلى السلة (${inCartCount})`
-                                        : "إضافة إلى السلة"}
-                                  </button>
+                                <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
+                                  د.ع
                                 </div>
                               </div>
-                            </article>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                            </div>
+
+                            {itemOpts.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {itemOpts.map((o) => {
+                                  const active = selId === o.id;
+                                  return (
+                                    <button
+                                      key={o.id}
+                                      type="button"
+                                      onClick={() =>
+                                        setSelectedOption((s) => ({ ...s, [item.id]: o.id }))
+                                      }
+                                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                                        active
+                                          ? "bg-[var(--gold)] text-[var(--forest-deep)]"
+                                          : "gold-border text-foreground/80 hover:text-[var(--gold)]"
+                                      }`}
+                                    >
+                                      {o.name}
+                                      <span className="ms-1 opacity-70">
+                                        · {o.price.toLocaleString()}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            <input
+                              type="text"
+                              value={notes[key] ?? ""}
+                              onChange={(e) =>
+                                setNotes((n) => ({ ...n, [key]: e.target.value }))
+                              }
+                              placeholder="ملاحظات (مثلاً: بدون مخلل)"
+                              className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-3 py-1.5 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                            />
+
+                            <div className="flex flex-col items-stretch gap-2 pt-1">
+                              <div className="flex items-center justify-center gap-2 rounded-full gold-border p-1">
+                                <button
+                                  onClick={() => setPending(key, -1)}
+                                  className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                  aria-label="إنقاص"
+                                >
+                                  <Minus className="h-3.5 w-3.5" />
+                                </button>
+                                <span className="w-8 text-center text-sm font-bold tabular-nums">{qty}</span>
+                                <button
+                                  onClick={() => setPending(key, +1)}
+                                  className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                  aria-label="زيادة"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => addToCart(item)}
+                                className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
+                                  justAdded === key
+                                    ? "bg-[#25D366] text-white"
+                                    : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                                }`}
+                              >
+                                <ShoppingBag className="h-3.5 w-3.5" />
+                                {justAdded === key
+                                  ? "تمت الإضافة ✓"
+                                  : inCartCount > 0
+                                    ? `إضافة إلى السلة (${inCartCount})`
+                                    : "إضافة إلى السلة"}
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
               );
-            })}
-
+            })()}
           </div>
         </div>
       </section>
