@@ -14,7 +14,6 @@ import {
   UtensilsCrossed,
   Trash2,
   Sparkles,
-  ChevronDown,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -472,47 +471,43 @@ function HomePage() {
                 <div
                   key={c.id}
                   id={`cat-${c.id}`}
-                  className="glass-card overflow-hidden rounded-2xl scroll-mt-24 md:rounded-3xl"
+                  className={`glass-card overflow-hidden rounded-2xl scroll-mt-24 md:rounded-3xl ${isOpen ? "col-span-2" : ""}`}
                 >
                   <button
                     type="button"
                     onClick={() => toggleCat(c.id)}
                     aria-expanded={isOpen}
-                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:flex md:items-center md:justify-between md:gap-4 md:px-5 md:py-4 lg:px-7 lg:py-5"
+                    className="flex w-full flex-col items-center justify-center gap-3 px-4 py-5 text-center transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-6 md:py-7"
                   >
-                    <div className="flex min-w-0 items-center gap-2 md:gap-3">
-                      {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} className="h-9 w-9 shrink-0 rounded-full object-cover gold-border md:h-12 md:w-12" />
-                      ) : (
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] md:h-9 md:w-9">
-                          <UtensilsCrossed className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                    {c.image_url ? (
+                      <img
+                        src={c.image_url}
+                        alt={c.name}
+                        className="h-16 w-16 shrink-0 rounded-full object-cover gold-border md:h-20 md:w-20"
+                      />
+                    ) : (
+                      <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] md:h-20 md:w-20">
+                        <UtensilsCrossed className="h-7 w-7 md:h-8 md:w-8" />
+                      </span>
+                    )}
+                    <div className="text-center">
+                      {c.tag && (
+                        <span className="block text-[10px] uppercase tracking-widest text-[var(--gold)]/80">
+                          {c.tag}
                         </span>
                       )}
-                      <div className="min-w-0 text-right">
-                        {c.tag && (
-                          <span className="block text-[9px] uppercase tracking-widest text-[var(--gold)]/80 md:text-[10px]">
-                            {c.tag}
-                          </span>
-                        )}
-                        <span className="block truncate font-display text-sm font-bold md:text-lg lg:text-2xl">
-                          <span className="gold-text">{c.name}</span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <span className="hidden rounded-full bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-2 py-0.5 text-[10px] text-[var(--gold)] sm:inline-block md:px-3 md:py-1 md:text-xs">
+                      <span className="font-display text-base font-bold md:text-xl lg:text-2xl">
+                        <span className="gold-text">{c.name}</span>
+                      </span>
+                      <span className="mt-1 block text-[10px] text-foreground/60 md:text-xs">
                         {catItems.length} طبق
                       </span>
-                      <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-[var(--gold)] transition-transform duration-300 md:h-5 md:w-5 ${isOpen ? "rotate-180" : ""}`}
-                      />
                     </div>
                   </button>
 
-
                   {isOpen && (
-                    <div className="px-3 py-4 md:px-4">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-4 py-5 md:px-6 md:py-7">
+                      <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4">
                         {catItems.map((item) => {
                           const key = item.id;
                           const qty = getPending(key);
@@ -534,51 +529,51 @@ function HomePage() {
                           return (
                             <article
                               key={key}
-                              className="glass-card group flex flex-col gap-2 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
+                              className="glass-card group flex flex-col gap-3 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
                             >
-                              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                              <div className="relative aspect-[16/10] w-full overflow-hidden">
                                 <img
                                   src={item.image_url || ITEM_PLACEHOLDER}
                                   alt={item.name}
                                   loading="lazy"
-                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
                                 {hasDiscount && itemOpts.length === 0 && (
-                                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                                    <Sparkles className="h-2.5 w-2.5" /> عرض
+                                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
+                                    <Sparkles className="h-3 w-3" /> عرض
                                   </span>
                                 )}
                               </div>
 
-                              <div className="flex flex-col gap-2 p-3">
-                                <div className="flex items-start justify-between gap-2">
+                              <div className="flex flex-col gap-3 p-4 md:p-5">
+                                <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0 flex-1">
-                                    <h4 className="font-display text-base font-bold text-foreground md:text-lg">
+                                    <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
                                       {item.name}
                                     </h4>
                                     {item.description && (
-                                      <p className="mt-0.5 text-xs leading-snug text-foreground/65">
+                                      <p className="mt-1 text-sm leading-relaxed text-foreground/65">
                                         {item.description}
                                       </p>
                                     )}
                                   </div>
                                   <div className="shrink-0 text-end">
-                                    <div className="gold-text font-display text-base font-bold md:text-lg">
+                                    <div className="gold-text font-display text-lg font-bold md:text-xl">
                                       {displayPrice.toLocaleString()}
                                     </div>
                                     {hasDiscount && itemOpts.length === 0 && (
-                                      <div className="text-[10px] text-foreground/50 line-through">
+                                      <div className="text-xs text-foreground/50 line-through">
                                         {item.price.toLocaleString()}
                                       </div>
                                     )}
-                                    <div className="text-[10px] uppercase tracking-widest text-[var(--gold)]/70">
+                                    <div className="text-xs uppercase tracking-widest text-[var(--gold)]/70">
                                       د.ع
                                     </div>
                                   </div>
                                 </div>
 
                                 {itemOpts.length > 0 && (
-                                  <div className="flex flex-wrap gap-1.5">
+                                  <div className="flex flex-wrap gap-2">
                                     {itemOpts.map((o) => {
                                       const active = selId === o.id;
                                       return (
@@ -588,7 +583,7 @@ function HomePage() {
                                           onClick={() =>
                                             setSelectedOption((s) => ({ ...s, [item.id]: o.id }))
                                           }
-                                          className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                                          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
                                             active
                                               ? "bg-[var(--gold)] text-[var(--forest-deep)]"
                                               : "gold-border text-foreground/80 hover:text-[var(--gold)]"
@@ -611,36 +606,36 @@ function HomePage() {
                                     setNotes((n) => ({ ...n, [key]: e.target.value }))
                                   }
                                   placeholder="ملاحظات (مثلاً: بدون مخلل)"
-                                  className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-3 py-1.5 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                                  className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
                                 />
 
-                                <div className="flex flex-col items-stretch gap-2 pt-1">
-                                  <div className="flex items-center justify-center gap-2 rounded-full gold-border p-1">
+                                <div className="flex flex-col items-stretch gap-3 pt-1">
+                                  <div className="flex items-center justify-center gap-3 rounded-full gold-border p-1.5">
                                     <button
                                       onClick={() => setPending(key, -1)}
-                                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                                       aria-label="إنقاص"
                                     >
-                                      <Minus className="h-3.5 w-3.5" />
+                                      <Minus className="h-4 w-4" />
                                     </button>
-                                    <span className="w-8 text-center text-sm font-bold tabular-nums">{qty}</span>
+                                    <span className="w-10 text-center text-base font-bold tabular-nums">{qty}</span>
                                     <button
                                       onClick={() => setPending(key, +1)}
-                                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                                      className="grid h-8 w-8 place-items-center rounded-full text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                                       aria-label="زيادة"
                                     >
-                                      <Plus className="h-3.5 w-3.5" />
+                                      <Plus className="h-4 w-4" />
                                     </button>
                                   </div>
                                   <button
                                     onClick={() => addToCart(item)}
-                                    className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
+                                    className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold transition-all hover:scale-[1.02] ${
                                       justAdded === key
                                         ? "bg-[#25D366] text-white"
                                         : "bg-[var(--gold)] text-[var(--forest-deep)]"
                                     }`}
                                   >
-                                    <ShoppingBag className="h-3.5 w-3.5" />
+                                    <ShoppingBag className="h-4 w-4" />
                                     {justAdded === key
                                       ? "تمت الإضافة ✓"
                                       : inCartCount > 0
