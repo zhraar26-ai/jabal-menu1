@@ -463,7 +463,7 @@ function HomePage() {
           </div>
 
           {/* Collapsible categories */}
-          <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="mx-auto mt-10 grid max-w-5xl grid-cols-2 gap-3 md:gap-4">
             {categories.filter((c) => c.visible !== false).map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
               if (catItems.length === 0) return null;
@@ -472,39 +472,39 @@ function HomePage() {
                 <div
                   key={c.id}
                   id={`cat-${c.id}`}
-                  className="glass-card overflow-hidden rounded-3xl scroll-mt-24"
+                  className="glass-card overflow-hidden rounded-2xl scroll-mt-24 md:rounded-3xl"
                 >
                   <button
                     type="button"
                     onClick={() => toggleCat(c.id)}
                     aria-expanded={isOpen}
-                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-7 md:py-5"
+                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:flex md:items-center md:justify-between md:gap-4 md:px-5 md:py-4 lg:px-7 lg:py-5"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-2 md:gap-3">
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} className="h-12 w-12 rounded-full object-cover gold-border" />
+                        <img src={c.image_url} alt={c.name} className="h-9 w-9 shrink-0 rounded-full object-cover gold-border md:h-12 md:w-12" />
                       ) : (
-                        <span className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)]">
-                          <UtensilsCrossed className="h-4 w-4" />
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] md:h-9 md:w-9">
+                          <UtensilsCrossed className="h-3.5 w-3.5 md:h-4 md:w-4" />
                         </span>
                       )}
-                      <div className="text-right">
+                      <div className="min-w-0 text-right">
                         {c.tag && (
-                          <span className="block text-[10px] uppercase tracking-widest text-[var(--gold)]/80">
+                          <span className="block text-[9px] uppercase tracking-widest text-[var(--gold)]/80 md:text-[10px]">
                             {c.tag}
                           </span>
                         )}
-                        <span className="font-display text-lg font-bold md:text-2xl">
+                        <span className="block truncate font-display text-sm font-bold md:text-lg lg:text-2xl">
                           <span className="gold-text">{c.name}</span>
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="hidden rounded-full bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-3 py-1 text-xs text-[var(--gold)] sm:inline-block">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <span className="hidden rounded-full bg-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-2 py-0.5 text-[10px] text-[var(--gold)] sm:inline-block md:px-3 md:py-1 md:text-xs">
                         {catItems.length} طبق
                       </span>
                       <ChevronDown
-                        className={`h-5 w-5 text-[var(--gold)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                        className={`h-4 w-4 shrink-0 text-[var(--gold)] transition-transform duration-300 md:h-5 md:w-5 ${isOpen ? "rotate-180" : ""}`}
                       />
                     </div>
                   </button>
