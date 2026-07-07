@@ -178,7 +178,7 @@ function LoginScreen() {
 
 /* ============ DASHBOARD ============ */
 
-type Tab = "categories" | "items" | "offers" | "theme" | "diagnostics";
+type Tab = "categories" | "items" | "offers" | "theme";
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("categories");
@@ -211,7 +211,6 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
               ["items", "الأكلات"],
               ["offers", "العروض"],
               ["theme", "المظهر"],
-              ["diagnostics", "تشخيص الصور"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -232,7 +231,6 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         {tab === "items" && <ItemsTab />}
         {tab === "offers" && <OffersTab />}
         {tab === "theme" && <ThemeTab />}
-        {tab === "diagnostics" && <DiagnosticsTab />}
       </div>
     </div>
   );
