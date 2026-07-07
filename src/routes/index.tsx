@@ -573,7 +573,7 @@ function HomePage() {
                                 </div>
 
                                 {itemOpts.length > 0 && (
-                                  <div className="flex flex-wrap gap-2">
+                                  <div className="flex flex-row flex-wrap gap-2">
                                     {itemOpts.map((o) => {
                                       const active = selId === o.id;
                                       return (
@@ -590,9 +590,6 @@ function HomePage() {
                                           }`}
                                         >
                                           {o.name}
-                                          <span className="ms-1 opacity-70">
-                                            · {o.price.toLocaleString()}
-                                          </span>
                                         </button>
                                       );
                                     })}
