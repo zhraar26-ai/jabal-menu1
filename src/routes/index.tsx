@@ -612,6 +612,11 @@ function HomePage() {
                                     <Sparkles className="h-3 w-3" /> عرض
                                   </span>
                                 )}
+                                {(item as any).featured && (
+                                  <span className="absolute top-3 right-3 inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
+                                    🔥 الأكثر طلباً
+                                  </span>
+                                )}
                               </div>
 
                               <div className="flex flex-col gap-3 p-4 md:p-5">
