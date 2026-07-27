@@ -166,6 +166,11 @@ function HomePage() {
     return m;
   }, [categories, items]);
 
+  const featuredItems = useMemo(
+    () => items.filter((it) => it.available && (it as any).featured).slice(0, 4),
+    [items],
+  );
+
   const itemById = useMemo(() => {
     const m: Record<string, MenuItem> = {};
     for (const it of items) m[it.id] = it;
@@ -448,6 +453,70 @@ function HomePage() {
         </section>
       )}
 
+      {/* ============ MOST ORDERED ============ */}
+      {featuredItems.length > 0 && (
+        <section className="px-4 pt-14">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-center">
+              <h2 className="font-display text-2xl font-bold md:text-4xl">
+                <span className="gold-text">🔥 الأكثر طلباً</span>
+              </h2>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 md:gap-5">
+              {featuredItems.map((item) => {
+                const fOpts = optionsByItem[item.id] ?? [];
+                const fSel = selectedOption[item.id] ?? fOpts[0]?.id ?? "";
+                const fDiscount =
+                  item.discount_price != null && item.discount_price < item.price;
+                const fPrice =
+                  fOpts.length > 0
+                    ? (fOpts.find((o) => o.id === fSel) ?? fOpts[0]).price
+                    : fDiscount
+                      ? item.discount_price!
+                      : item.price;
+                return (
+                  <article
+                    key={`feat-${item.id}`}
+                    className="glass-card group flex flex-col overflow-hidden rounded-2xl md:rounded-3xl"
+                  >
+                    <div className="relative aspect-[4/3] w-full overflow-hidden">
+                      <img
+                        src={item.image_url || ITEM_PLACEHOLDER}
+                        alt={item.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <span className="absolute top-2 left-2 inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
+                        🔥 الأكثر طلباً
+                      </span>
+                    </div>
+                    <div className="flex flex-1 flex-col gap-2 p-3 md:p-4">
+                      <h3 className="font-display text-sm font-bold text-foreground md:text-lg">
+                        {item.name}
+                      </h3>
+                      <div className="gold-text font-display text-sm font-bold md:text-lg">
+                        {fPrice.toLocaleString()} <span className="text-[10px] md:text-xs">د.ع</span>
+                      </div>
+                      <button
+                        onClick={() => addToCart(item)}
+                        className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] md:text-sm ${
+                          justAdded === item.id
+                            ? "bg-[#25D366] text-white"
+                            : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                        }`}
+                      >
+                        <ShoppingBag className="h-3.5 w-3.5" />
+                        {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ============ MENU ============ */}
       <section id="menu" className="relative px-4 py-16 md:py-24">
         <div className="mx-auto max-w-7xl">
@@ -541,6 +610,11 @@ function HomePage() {
                                 {hasDiscount && itemOpts.length === 0 && (
                                   <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
                                     <Sparkles className="h-3 w-3" /> عرض
+                                  </span>
+                                )}
+                                {(item as any).featured && (
+                                  <span className="absolute top-3 right-3 inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
+                                    🔥 الأكثر طلباً
                                   </span>
                                 )}
                               </div>

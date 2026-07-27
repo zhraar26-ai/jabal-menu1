@@ -519,6 +519,7 @@ function ItemCard({
         image_url: m.image_url,
         sort_order: m.sort_order,
         available: m.available,
+        featured: m.featured ?? false,
       })
       .eq("id", m.id);
     if (error) return alert("فشل الحفظ: " + error.message);
@@ -622,6 +623,14 @@ function ItemCard({
           onChange={(e) => setM({ ...m, available: e.target.checked })}
         />
         متوفر
+      </label>
+      <label className="flex items-center gap-2 text-xs text-foreground/80">
+        <input
+          type="checkbox"
+          checked={m.featured ?? false}
+          onChange={(e) => setM({ ...m, featured: e.target.checked })}
+        />
+        🔥 الأكثر طلباً
       </label>
       <div className="flex items-center gap-2">
         <button
