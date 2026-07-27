@@ -166,6 +166,11 @@ function HomePage() {
     return m;
   }, [categories, items]);
 
+  const featuredItems = useMemo(
+    () => items.filter((it) => it.available && (it as any).featured).slice(0, 4),
+    [items],
+  );
+
   const itemById = useMemo(() => {
     const m: Record<string, MenuItem> = {};
     for (const it of items) m[it.id] = it;
