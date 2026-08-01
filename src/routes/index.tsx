@@ -166,10 +166,12 @@ function HomePage() {
     return m;
   }, [categories, items]);
 
-  const featuredItems = useMemo(
-    () => items.filter((it) => it.available && (it as any).featured).slice(0, 4),
-    [items],
-  );
+  const featuredItems = useMemo(() => {
+    const available = items.filter((it) => it.available);
+    const flagged = available.filter((it) => (it as any).featured);
+    return (flagged.length > 0 ? flagged : available).slice(0, 4);
+  }, [items]);
+
 
   const itemById = useMemo(() => {
     const m: Record<string, MenuItem> = {};
