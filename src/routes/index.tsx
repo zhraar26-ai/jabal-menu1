@@ -14,6 +14,7 @@ import {
   UtensilsCrossed,
   Trash2,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
