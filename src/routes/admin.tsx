@@ -209,6 +209,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
             [
               ["categories", "الأقسام"],
               ["items", "الأكلات"],
+              ["featured", "🔥 الأكثر طلباً"],
               ["offers", "العروض"],
               ["theme", "المظهر"],
             ] as const
@@ -229,6 +230,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
 
         {tab === "categories" && <CategoriesTab />}
         {tab === "items" && <ItemsTab />}
+        {tab === "featured" && <FeaturedTab />}
         {tab === "offers" && <OffersTab />}
         {tab === "theme" && <ThemeTab />}
       </div>
