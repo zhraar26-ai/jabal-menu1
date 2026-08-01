@@ -178,7 +178,7 @@ function LoginScreen() {
 
 /* ============ DASHBOARD ============ */
 
-type Tab = "categories" | "items" | "offers" | "theme";
+type Tab = "categories" | "items" | "featured" | "offers" | "theme";
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("categories");
@@ -209,6 +209,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
             [
               ["categories", "الأقسام"],
               ["items", "الأكلات"],
+              ["featured", "🔥 الأكثر طلباً"],
               ["offers", "العروض"],
               ["theme", "المظهر"],
             ] as const
@@ -229,6 +230,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
 
         {tab === "categories" && <CategoriesTab />}
         {tab === "items" && <ItemsTab />}
+        {tab === "featured" && <FeaturedTab />}
         {tab === "offers" && <OffersTab />}
         {tab === "theme" && <ThemeTab />}
       </div>
@@ -758,6 +760,154 @@ function OptionRow({
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
+    </div>
+  );
+}
+
+/* ============ FEATURED (الأكثر طلباً) ============ */
+
+function FeaturedTab() {
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
+  const [enabled, setEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [pick, setPick] = useState("");
+
+  const load = () => {
+    setLoading(true);
+    Promise.all([fetchMenuItems(), fetchCategories(), fetchTheme()])
+      .then(([its, cs, t]) => {
+        setItems(its);
+        setCats(cs);
+        setEnabled(((t as any)?.featured_enabled ?? true) as boolean);
+      })
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const catName = (id: string) => cats.find((c) => c.id === id)?.name ?? "";
+  const featured = items.filter((it) => (it as any).featured);
+  const rest = items.filter((it) => !(it as any).featured);
+
+  const setFeatured = async (id: string, value: boolean) => {
+    setSaving(true);
+    const { error } = await sb.from("menu_items").update({ featured: value }).eq("id", id);
+    setSaving(false);
+    if (error) return alert("خطأ: " + error.message);
+    setItems((cur) => cur.map((i) => (i.id === id ? ({ ...i, featured: value } as MenuItem) : i)));
+  };
+
+  const toggleSection = async (value: boolean) => {
+    setEnabled(value);
+    const { error } = await sb
+      .from("theme_settings")
+      .update({ featured_enabled: value })
+      .eq("id", 1);
+    if (error) alert("خطأ: " + error.message);
+  };
+
+  if (loading) return <div className="text-foreground/70">جاري التحميل…</div>;
+
+  return (
+    <div className="space-y-5">
+      <div className="glass-card flex items-center justify-between gap-3 rounded-2xl p-4">
+        <div>
+          <div className="font-display font-bold text-foreground">إظهار قسم "🔥 الأكثر طلباً"</div>
+          <div className="text-xs text-foreground/60">تحكم بإظهار أو إخفاء القسم من الصفحة الرئيسية</div>
+        </div>
+        <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-[var(--gold)]">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => toggleSection(e.target.checked)}
+            className="h-5 w-5 accent-[var(--gold)]"
+          />
+          {enabled ? "ظاهر" : "مخفي"}
+        </label>
+      </div>
+
+      <div className="glass-card rounded-2xl p-4">
+        <div className="mb-3 font-display font-bold text-foreground">إضافة طبق للقسم</div>
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={pick}
+            onChange={(e) => setPick(e.target.value)}
+            className="min-w-[220px] flex-1 rounded-xl bg-black/20 px-3 py-2 text-sm text-foreground gold-border"
+          >
+            <option value="">اختر طبقاً…</option>
+            {rest.map((it) => (
+              <option key={it.id} value={it.id}>
+                {it.name} — {catName(it.category_id)}
+              </option>
+            ))}
+          </select>
+          <button
+            disabled={!pick || saving}
+            onClick={async () => {
+              await setFeatured(pick, true);
+              setPick("");
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-4 py-2 text-sm font-bold text-[var(--forest-deep)] disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" /> إضافة
+          </button>
+        </div>
+      </div>
+
+      <div className="glass-card rounded-2xl p-4">
+        <div className="mb-3 font-display font-bold text-foreground">
+          الأطباق المختارة ({featured.length})
+        </div>
+        {featured.length === 0 ? (
+          <div className="text-sm text-foreground/60">لا توجد أطباق مختارة بعد.</div>
+        ) : (
+          <div className="space-y-2">
+            {featured.map((it) => (
+              <div
+                key={it.id}
+                className="flex items-center gap-3 rounded-xl bg-black/20 p-2"
+              >
+                {it.image_url && (
+                  <img
+                    src={it.image_url}
+                    alt={it.name}
+                    className="h-12 w-12 rounded-lg object-cover"
+                  />
+                )}
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-foreground">{it.name}</div>
+                  <div className="text-xs text-foreground/60">{catName(it.category_id)}</div>
+                </div>
+                <select
+                  value={it.id}
+                  onChange={async (e) => {
+                    const next = e.target.value;
+                    if (next === it.id) return;
+                    await setFeatured(it.id, false);
+                    await setFeatured(next, true);
+                  }}
+                  className="rounded-xl bg-black/30 px-2 py-1 text-xs text-foreground gold-border"
+                >
+                  <option value={it.id}>استبدال بـ…</option>
+                  {rest.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setFeatured(it.id, false)}
+                  className="rounded-full bg-red-500/80 p-2 text-white"
+                  title="إزالة"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

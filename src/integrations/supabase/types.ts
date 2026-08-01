@@ -162,6 +162,7 @@ export type Database = {
       theme_settings: {
         Row: {
           background_style: string
+          featured_enabled: boolean
           font_family: string
           footer_text: string
           forest_color: string
@@ -175,6 +176,7 @@ export type Database = {
         }
         Insert: {
           background_style?: string
+          featured_enabled?: boolean
           font_family?: string
           footer_text?: string
           forest_color?: string
@@ -188,6 +190,7 @@ export type Database = {
         }
         Update: {
           background_style?: string
+          featured_enabled?: boolean
           font_family?: string
           footer_text?: string
           forest_color?: string
