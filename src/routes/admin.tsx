@@ -178,7 +178,7 @@ function LoginScreen() {
 
 /* ============ DASHBOARD ============ */
 
-type Tab = "categories" | "items" | "offers" | "theme";
+type Tab = "categories" | "items" | "featured" | "offers" | "theme";
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("categories");
