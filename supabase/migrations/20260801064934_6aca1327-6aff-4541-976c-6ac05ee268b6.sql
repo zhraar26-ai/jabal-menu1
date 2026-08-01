@@ -1,0 +1,1 @@
+ALTER TABLE public.theme_settings ADD COLUMN IF NOT EXISTS featured_enabled boolean NOT NULL DEFAULT true;
