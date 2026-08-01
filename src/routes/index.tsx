@@ -101,6 +101,7 @@ function HomePage() {
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
+  const [featOpen, setFeatOpen] = useState(true);
   const toggleCat = (id: string) => setOpenCat((cur) => (cur === id ? null : id));
 
   const reloadAll = () => {
