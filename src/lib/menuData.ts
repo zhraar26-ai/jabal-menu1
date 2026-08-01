@@ -52,6 +52,7 @@ export type ThemeSettings = {
   font_family: string;
   footer_text: string;
   location_url: string;
+  featured_enabled?: boolean;
 };
 
 
