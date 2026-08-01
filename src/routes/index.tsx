@@ -455,15 +455,22 @@ function HomePage() {
       )}
 
       {/* ============ MOST ORDERED ============ */}
-      {featuredItems.length > 0 && (
+      {theme?.featured_enabled !== false && featuredItems.length > 0 && (
         <section className="px-4 pt-14">
           <div className="mx-auto max-w-5xl">
-            <div className="text-center">
-              <h2 className="font-display text-2xl font-bold md:text-4xl">
+            <button
+              onClick={() => setFeatOpen((v) => !v)}
+              className="glass-card flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-right md:px-6 md:py-4"
+            >
+              <span className="font-display text-lg font-bold md:text-2xl">
                 <span className="gold-text">🔥 الأكثر طلباً</span>
-              </h2>
-            </div>
-            <div className="mt-6 grid grid-cols-2 gap-3 md:gap-5">
+              </span>
+              <ChevronDown
+                className={`h-5 w-5 text-[var(--gold)] transition-transform ${featOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <div className={`${featOpen ? "mt-4 grid" : "hidden"} grid-cols-2 gap-3 md:gap-5`}>
+
               {featuredItems.map((item) => {
                 const fOpts = optionsByItem[item.id] ?? [];
                 const fSel = selectedOption[item.id] ?? fOpts[0]?.id ?? "";
