@@ -15,6 +15,7 @@ import {
   Trash2,
   Sparkles,
   ChevronDown,
+  Search,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -102,7 +103,19 @@ function HomePage() {
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [featOpen, setFeatOpen] = useState(true);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [query, setQuery] = useState("");
   const toggleCat = (id: string) => setOpenCat((cur) => (cur === id ? null : id));
+  const closeCat = (id: string) => {
+    setOpenCat(null);
+    requestAnimationFrame(() => {
+      document.getElementById(`cat-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+  const isNewItem = (it: MenuItem) => {
+    if (!it.created_at) return false;
+    return Date.now() - new Date(it.created_at).getTime() < 14 * 24 * 60 * 60 * 1000;
+  };
 
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
