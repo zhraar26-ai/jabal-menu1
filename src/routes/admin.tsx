@@ -483,7 +483,7 @@ function ItemCard({
   onSaved: () => void;
 }) {
   const [m, setM] = useState(item);
-  const [uploading, setUploading] = useState(false);
+  const [savedAt2, _unused] = useState(0);
   const [savedAt, setSavedAt] = useState(0);
 
   const save = async () => {
