@@ -1168,6 +1168,28 @@ function HomePage() {
           </aside>
         </div>
       )}
+
+      {/* ============ IMAGE LIGHTBOX ============ */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 animate-fade-in"
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            aria-label="إغلاق"
+            className="absolute top-4 right-4 grid h-11 w-11 place-items-center rounded-full gold-border bg-[var(--forest-deep)]/80 text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={lightbox.src}
+            alt={lightbox.alt}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-[var(--shadow-card)]"
+          />
+        </div>
+      )}
     </div>
   );
 }
