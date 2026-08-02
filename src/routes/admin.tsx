@@ -1123,30 +1123,18 @@ function ThemeTab() {
 
       <div>
         <label className="text-xs text-foreground/70">صورة الهيرو</label>
-        <div className="mt-1 flex items-center gap-3">
-          <label className="inline-flex cursor-pointer items-center gap-1 rounded-full gold-border px-3 py-2 text-xs text-[var(--gold)]">
-            <Upload className="h-3.5 w-3.5" />
-            {uploading ? "جاري الرفع..." : "رفع صورة"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && uploadHero(e.target.files[0])}
-            />
-          </label>
-          {t.hero_image_url && (
-            <>
-              <img src={t.hero_image_url} className="h-14 w-24 rounded object-cover" />
-              <button
-                onClick={() => setT({ ...t, hero_image_url: null })}
-                className="text-xs text-red-400 hover:underline"
-              >
-                إزالة
-              </button>
-            </>
-          )}
+        <div className="mt-1">
+          <ImageField
+            value={t.hero_image_url}
+            onChange={(url) => setT({ ...t, hero_image_url: url })}
+            folder="hero"
+            label="رفع صورة"
+            aspect={16 / 9}
+            previewClassName="h-14 w-24 rounded object-cover"
+          />
         </div>
       </div>
+
 
       <div className="flex items-center gap-3">
         <button
