@@ -16,7 +16,8 @@ import {
   fetchTheme,
   MenuItemOption,
 } from "@/lib/menuData";
-import { LogOut, Plus, Save, Trash2, Upload } from "lucide-react";
+import { LogOut, Plus, Save, Trash2 } from "lucide-react";
+import { ImageField } from "@/components/ImageCropper";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "لوحة التحكم | مطعم جبل" }] }),
@@ -333,44 +334,19 @@ function CategoryRow({
   const [sort, setSort] = useState(c.sort_order);
   const [visible, setVisible] = useState(c.visible !== false);
   const [imageUrl, setImageUrl] = useState<string | null>(c.image_url ?? null);
-  const [uploading, setUploading] = useState(false);
-
-  const uploadImg = async (file: File) => {
-    setUploading(true);
-    const path = `categories/${c.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const { error } = await sb.storage.from("menu-images").upload(path, file, { upsert: true });
-    if (error) {
-      alert("فشل الرفع: " + error.message);
-      setUploading(false);
-      return;
-    }
-    const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
-    setImageUrl(pub.publicUrl);
-    setUploading(false);
-  };
 
   return (
     <div className="glass-card flex flex-wrap items-end gap-3 rounded-2xl p-3">
-      {imageUrl ? (
-        <img src={imageUrl} alt={name} className="h-14 w-14 rounded-xl object-cover" />
-      ) : (
-        <div className="grid h-14 w-14 place-items-center rounded-xl gold-border text-[10px] text-foreground/50">بدون صورة</div>
-      )}
-      <label className="inline-flex cursor-pointer items-center gap-1 rounded-full gold-border px-3 py-1.5 text-xs text-[var(--gold)]">
-        <Upload className="h-3.5 w-3.5" />
-        {uploading ? "جاري الرفع..." : "صورة القسم"}
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => e.target.files?.[0] && uploadImg(e.target.files[0])}
-        />
-      </label>
-      {imageUrl && (
-        <button onClick={() => setImageUrl(null)} className="text-xs text-red-400 hover:underline">
-          إزالة الصورة
-        </button>
-      )}
+      <ImageField
+        value={imageUrl}
+        onChange={setImageUrl}
+        folder="categories"
+        label="صورة القسم"
+        aspect={1}
+        cropShape="round"
+        previewClassName="h-14 w-14 rounded-full object-cover ring-2 ring-[var(--gold)]/50"
+      />
+
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -507,7 +483,6 @@ function ItemCard({
   onSaved: () => void;
 }) {
   const [m, setM] = useState(item);
-  const [uploading, setUploading] = useState(false);
   const [savedAt, setSavedAt] = useState(0);
 
   const save = async () => {
@@ -529,20 +504,6 @@ function ItemCard({
     onSaved();
   };
 
-  const upload = async (file: File) => {
-    setUploading(true);
-    const path = `items/${m.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const { error } = await sb.storage.from("menu-images").upload(path, file, { upsert: true });
-    if (error) {
-      alert("فشل الرفع: " + error.message);
-      setUploading(false);
-      return;
-    }
-    const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
-    setM({ ...m, image_url: pub.publicUrl });
-    setUploading(false);
-  };
-
   return (
     <div className="glass-card space-y-3 rounded-2xl p-4">
       {m.image_url && (
@@ -552,26 +513,15 @@ function ItemCard({
           className="h-32 w-full rounded-xl object-cover"
         />
       )}
-      <div className="flex items-center gap-2">
-        <label className="inline-flex cursor-pointer items-center gap-1 rounded-full gold-border px-3 py-1.5 text-xs text-[var(--gold)]">
-          <Upload className="h-3.5 w-3.5" />
-          {uploading ? "جاري الرفع..." : "صورة"}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
-          />
-        </label>
-        {m.image_url && (
-          <button
-            onClick={() => setM({ ...m, image_url: null })}
-            className="text-xs text-red-400 hover:underline"
-          >
-            إزالة
-          </button>
-        )}
-      </div>
+      <ImageField
+        value={m.image_url}
+        onChange={(url) => setM({ ...m, image_url: url })}
+        folder="items"
+        label="صورة الطبق"
+        aspect={4 / 3}
+        previewClassName="h-14 w-20 rounded-lg object-cover"
+      />
+
       <input
         value={m.name}
         onChange={(e) => setM({ ...m, name: e.target.value })}
@@ -1037,7 +987,7 @@ function OfferCard({
 function ThemeTab() {
   const [t, setT] = useState<ThemeSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  
   const [savedAt, setSavedAt] = useState(0);
   const [saveErr, setSaveErr] = useState<string | null>(null);
 
@@ -1061,15 +1011,6 @@ function ThemeTab() {
   };
 
 
-  const uploadHero = async (file: File) => {
-    setUploading(true);
-    const path = `hero/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const { error } = await sb.storage.from("menu-images").upload(path, file, { upsert: true });
-    if (error) return alert("فشل الرفع: " + error.message);
-    const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
-    setT({ ...t, hero_image_url: pub.publicUrl });
-    setUploading(false);
-  };
 
   const colorField = (label: string, k: "forest_color" | "forest_deep_color" | "gold_color") => (
     <div key={k}>
@@ -1173,30 +1114,18 @@ function ThemeTab() {
 
       <div>
         <label className="text-xs text-foreground/70">صورة الهيرو</label>
-        <div className="mt-1 flex items-center gap-3">
-          <label className="inline-flex cursor-pointer items-center gap-1 rounded-full gold-border px-3 py-2 text-xs text-[var(--gold)]">
-            <Upload className="h-3.5 w-3.5" />
-            {uploading ? "جاري الرفع..." : "رفع صورة"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && uploadHero(e.target.files[0])}
-            />
-          </label>
-          {t.hero_image_url && (
-            <>
-              <img src={t.hero_image_url} className="h-14 w-24 rounded object-cover" />
-              <button
-                onClick={() => setT({ ...t, hero_image_url: null })}
-                className="text-xs text-red-400 hover:underline"
-              >
-                إزالة
-              </button>
-            </>
-          )}
+        <div className="mt-1">
+          <ImageField
+            value={t.hero_image_url}
+            onChange={(url) => setT({ ...t, hero_image_url: url })}
+            folder="hero"
+            label="رفع صورة"
+            aspect={16 / 9}
+            previewClassName="h-14 w-24 rounded object-cover"
+          />
         </div>
       </div>
+
 
       <div className="flex items-center gap-3">
         <button
