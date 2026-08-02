@@ -987,7 +987,7 @@ function OfferCard({
 function ThemeTab() {
   const [t, setT] = useState<ThemeSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  
   const [savedAt, setSavedAt] = useState(0);
   const [saveErr, setSaveErr] = useState<string | null>(null);
 
