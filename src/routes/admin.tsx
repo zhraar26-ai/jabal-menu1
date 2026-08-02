@@ -1011,15 +1011,6 @@ function ThemeTab() {
   };
 
 
-  const uploadHero = async (file: File) => {
-    setUploading(true);
-    const path = `hero/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const { error } = await sb.storage.from("menu-images").upload(path, file, { upsert: true });
-    if (error) return alert("فشل الرفع: " + error.message);
-    const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
-    setT({ ...t, hero_image_url: pub.publicUrl });
-    setUploading(false);
-  };
 
   const colorField = (label: string, k: "forest_color" | "forest_deep_color" | "gold_color") => (
     <div key={k}>
