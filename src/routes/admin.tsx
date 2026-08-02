@@ -483,7 +483,6 @@ function ItemCard({
   onSaved: () => void;
 }) {
   const [m, setM] = useState(item);
-  const [savedAt2, _unused] = useState(0);
   const [savedAt, setSavedAt] = useState(0);
 
   const save = async () => {
@@ -505,20 +504,6 @@ function ItemCard({
     onSaved();
   };
 
-  const upload = async (file: File) => {
-    setUploading(true);
-    const path = `items/${m.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const { error } = await sb.storage.from("menu-images").upload(path, file, { upsert: true });
-    if (error) {
-      alert("فشل الرفع: " + error.message);
-      setUploading(false);
-      return;
-    }
-    const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
-    setM({ ...m, image_url: pub.publicUrl });
-    setUploading(false);
-  };
-
   return (
     <div className="glass-card space-y-3 rounded-2xl p-4">
       {m.image_url && (
@@ -528,26 +513,15 @@ function ItemCard({
           className="h-32 w-full rounded-xl object-cover"
         />
       )}
-      <div className="flex items-center gap-2">
-        <label className="inline-flex cursor-pointer items-center gap-1 rounded-full gold-border px-3 py-1.5 text-xs text-[var(--gold)]">
-          <Upload className="h-3.5 w-3.5" />
-          {uploading ? "جاري الرفع..." : "صورة"}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
-          />
-        </label>
-        {m.image_url && (
-          <button
-            onClick={() => setM({ ...m, image_url: null })}
-            className="text-xs text-red-400 hover:underline"
-          >
-            إزالة
-          </button>
-        )}
-      </div>
+      <ImageField
+        value={m.image_url}
+        onChange={(url) => setM({ ...m, image_url: url })}
+        folder="items"
+        label="صورة الطبق"
+        aspect={4 / 3}
+        previewClassName="h-14 w-20 rounded-lg object-cover"
+      />
+
       <input
         value={m.name}
         onChange={(e) => setM({ ...m, name: e.target.value })}
