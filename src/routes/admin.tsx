@@ -16,7 +16,8 @@ import {
   fetchTheme,
   MenuItemOption,
 } from "@/lib/menuData";
-import { LogOut, Plus, Save, Trash2, Upload } from "lucide-react";
+import { LogOut, Plus, Save, Trash2 } from "lucide-react";
+import { ImageField } from "@/components/ImageCropper";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "لوحة التحكم | مطعم جبل" }] }),
