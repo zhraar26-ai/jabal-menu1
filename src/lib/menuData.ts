@@ -20,6 +20,7 @@ export type MenuItem = {
   image_url: string | null;
   sort_order: number;
   available: boolean;
+  created_at?: string | null;
   featured?: boolean;
 };
 

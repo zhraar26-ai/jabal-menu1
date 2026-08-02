@@ -15,6 +15,7 @@ import {
   Trash2,
   Sparkles,
   ChevronDown,
+  Search,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -102,7 +103,19 @@ function HomePage() {
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [featOpen, setFeatOpen] = useState(true);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [query, setQuery] = useState("");
   const toggleCat = (id: string) => setOpenCat((cur) => (cur === id ? null : id));
+  const closeCat = (id: string) => {
+    setOpenCat(null);
+    requestAnimationFrame(() => {
+      document.getElementById(`cat-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+  const isNewItem = (it: MenuItem) => {
+    if (!it.created_at) return false;
+    return Date.now() - new Date(it.created_at).getTime() < 14 * 24 * 60 * 60 * 1000;
+  };
 
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
@@ -172,6 +185,17 @@ function HomePage() {
     () => items.filter((it) => it.available && (it as any).featured),
     [items],
   );
+
+  const searchResults = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return items.filter(
+      (it) =>
+        it.available &&
+        (it.name.toLowerCase().includes(q) ||
+          (it.description ?? "").toLowerCase().includes(q)),
+    );
+  }, [items, query]);
 
 
   const itemById = useMemo(() => {
@@ -423,6 +447,102 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ============ SEARCH ============ */}
+      <section className="px-4 pt-8">
+        <div className="mx-auto max-w-3xl">
+          <div className="glass-card flex items-center gap-3 rounded-full px-4 py-2.5">
+            <Search className="h-5 w-5 shrink-0 text-[var(--gold)]" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ابحث عن طبقك المفضل..."
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground/45 focus:outline-none md:text-base"
+            />
+            {query && (
+              <button onClick={() => setQuery("")} aria-label="مسح" className="text-[var(--gold)]">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {query.trim() && (
+            <div className="mt-5">
+              {searchResults.length === 0 ? (
+                <p className="text-center text-sm text-foreground/60">لا توجد نتائج مطابقة</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+                  {searchResults.map((item) => {
+                    const sOpts = optionsByItem[item.id] ?? [];
+                    const sSel = selectedOption[item.id] ?? sOpts[0]?.id ?? "";
+                    const sDiscount =
+                      item.discount_price != null && item.discount_price < item.price;
+                    const sPrice =
+                      sOpts.length > 0
+                        ? (sOpts.find((o) => o.id === sSel) ?? sOpts[0]).price
+                        : sDiscount
+                          ? item.discount_price!
+                          : item.price;
+                    return (
+                      <article
+                        key={`search-${item.id}`}
+                        className="glass-card group flex flex-col overflow-hidden rounded-2xl"
+                      >
+                        <div className="relative aspect-[4/3] w-full overflow-hidden">
+                          <img
+                            src={item.image_url || ITEM_PLACEHOLDER}
+                            alt={item.name}
+                            loading="lazy"
+                            onClick={() =>
+                              setLightbox({
+                                src: item.image_url || ITEM_PLACEHOLDER,
+                                alt: item.name,
+                              })
+                            }
+                            className="h-full w-full cursor-zoom-in object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
+                            {(item as any).featured && (
+                              <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-[var(--forest-deep)]">
+                                🔥 الأكثر طلباً
+                              </span>
+                            )}
+                            {isNewItem(item) && (
+                              <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-[var(--forest-deep)]">
+                                🆕 جديد
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2 p-3">
+                          <h3 className="font-display text-sm font-bold text-foreground">
+                            {item.name}
+                          </h3>
+                          <div className="gold-text font-display text-sm font-bold">
+                            {sPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
+                          </div>
+                          <button
+                            onClick={() => addToCart(item)}
+                            className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
+                              justAdded === item.id
+                                ? "bg-[#25D366] text-white"
+                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                            }`}
+                          >
+                            <ShoppingBag className="h-3.5 w-3.5" />
+                            {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة"}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* ============ OFFERS BANNER ============ */}
       {offers.length > 0 && (
         <section className="px-4 pt-12">
@@ -494,11 +614,21 @@ function HomePage() {
                         src={item.image_url || ITEM_PLACEHOLDER}
                         alt={item.name}
                         loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        onClick={() =>
+                          setLightbox({ src: item.image_url || ITEM_PLACEHOLDER, alt: item.name })
+                        }
+                        className="h-full w-full cursor-zoom-in object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <span className="absolute top-2 left-2 inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
-                        🔥 الأكثر طلباً
-                      </span>
+                      <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
+                        <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
+                          🔥 الأكثر طلباً
+                        </span>
+                        {isNewItem(item) && (
+                          <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
+                            🆕 جديد
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-1 flex-col gap-2 p-3 md:p-4">
                       <h3 className="font-display text-sm font-bold text-foreground md:text-lg">
@@ -566,13 +696,15 @@ function HomePage() {
                     className="flex w-full flex-col items-center justify-center gap-3 px-4 py-5 text-center transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-6 md:py-7"
                   >
                     {c.image_url ? (
-                      <img
-                        src={c.image_url}
-                        alt={c.name}
-                        className="h-16 w-16 shrink-0 rounded-full object-cover gold-border md:h-20 md:w-20"
-                      />
+                      <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full p-[3px] ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] md:h-20 md:w-20">
+                        <img
+                          src={c.image_url}
+                          alt={c.name}
+                          className="h-full w-full rounded-full object-cover object-center"
+                        />
+                      </span>
                     ) : (
-                      <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] md:h-20 md:w-20">
+                      <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] text-[var(--gold)] md:h-20 md:w-20">
                         <UtensilsCrossed className="h-7 w-7 md:h-8 md:w-8" />
                       </span>
                     )}
@@ -622,18 +754,31 @@ function HomePage() {
                                   src={item.image_url || ITEM_PLACEHOLDER}
                                   alt={item.name}
                                   loading="lazy"
-                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                  onClick={() =>
+                                    setLightbox({
+                                      src: item.image_url || ITEM_PLACEHOLDER,
+                                      alt: item.name,
+                                    })
+                                  }
+                                  className="h-full w-full cursor-zoom-in object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
                                 {hasDiscount && itemOpts.length === 0 && (
                                   <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
                                     <Sparkles className="h-3 w-3" /> عرض
                                   </span>
                                 )}
-                                {(item as any).featured && (
-                                  <span className="absolute top-3 right-3 inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
-                                    🔥 الأكثر طلباً
-                                  </span>
-                                )}
+                                <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+                                  {(item as any).featured && (
+                                    <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
+                                      🔥 الأكثر طلباً
+                                    </span>
+                                  )}
+                                  {isNewItem(item) && (
+                                    <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2.5 py-1 text-[10px] font-bold text-[var(--forest-deep)] shadow-[var(--shadow-gold)] md:text-xs">
+                                      🆕 جديد
+                                    </span>
+                                  )}
+                                </div>
                               </div>
 
                               <div className="flex flex-col gap-3 p-4 md:p-5">
@@ -735,6 +880,16 @@ function HomePage() {
                             </article>
                           );
                         })}
+                      </div>
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => closeCat(c.id)}
+                          className="inline-flex items-center gap-2 rounded-full gold-border bg-[color-mix(in_oklab,var(--gold)_12%,transparent)] px-6 py-2.5 text-sm font-bold text-[var(--gold)] transition-all hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                        >
+                          <X className="h-4 w-4" />
+                          إغلاق القسم
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1011,6 +1166,28 @@ function HomePage() {
               </div>
             )}
           </aside>
+        </div>
+      )}
+
+      {/* ============ IMAGE LIGHTBOX ============ */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 animate-fade-in"
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            aria-label="إغلاق"
+            className="absolute top-4 right-4 grid h-11 w-11 place-items-center rounded-full gold-border bg-[var(--forest-deep)]/80 text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={lightbox.src}
+            alt={lightbox.alt}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-[var(--shadow-card)]"
+          />
         </div>
       )}
     </div>
