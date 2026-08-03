@@ -62,12 +62,14 @@ export function ImageCropperModal({
   src,
   aspect = 1,
   cropShape = "rect",
+  keepAlpha,
   onCancel,
   onCropped,
 }: {
   src: string;
   aspect?: number;
   cropShape?: "rect" | "round";
+  keepAlpha?: boolean;
   onCancel: () => void;
   onCropped: (blob: Blob) => void | Promise<void>;
 }) {
@@ -76,6 +78,7 @@ export function ImageCropperModal({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const areaRef = useRef<Area | null>(null);
+  const alpha = keepAlpha ?? isAlphaSource(src);
 
   const onComplete = useCallback((_: Area, px: Area) => {
     areaRef.current = px;
@@ -86,7 +89,7 @@ export function ImageCropperModal({
     setBusy(true);
     setErr(null);
     try {
-      const blob = await getCroppedBlob(src, areaRef.current);
+      const blob = await getCroppedBlob(src, areaRef.current, alpha);
       await onCropped(blob);
     } catch (e: any) {
       setErr(e?.message ?? "فشل قص الصورة");
@@ -94,6 +97,9 @@ export function ImageCropperModal({
       setBusy(false);
     }
   };
+
+  const nudge = (d: number) =>
+    setZoom((z) => Math.min(4, Math.max(0.5, Number((z + d).toFixed(2)))));
 
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4" dir="rtl">
@@ -105,11 +111,14 @@ export function ImageCropperModal({
           </button>
         </div>
 
-        <div className="relative h-[320px] w-full bg-black">
+        <div className="relative h-[320px] w-full bg-[var(--forest-deep)]">
           <Cropper
             image={src}
             crop={crop}
             zoom={zoom}
+            minZoom={0.5}
+            maxZoom={4}
+            restrictPosition={false}
             aspect={aspect}
             cropShape={cropShape}
             showGrid
@@ -121,17 +130,38 @@ export function ImageCropperModal({
 
         <div className="space-y-3 p-4">
           <div className="flex items-center gap-2">
-            <ZoomIn className="h-4 w-4 text-[var(--gold)]" />
+            <button
+              type="button"
+              onClick={() => nudge(-0.1)}
+              aria-label="تصغير"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
             <input
               type="range"
-              min={1}
+              min={0.5}
               max={4}
               step={0.01}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
               className="w-full accent-[var(--gold)]"
             />
+            <button
+              type="button"
+              onClick={() => nudge(0.1)}
+              aria-label="تكبير"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
           </div>
+          <div className="text-[10px] text-foreground/50">
+            {alpha
+              ? "سيتم الحفظ بصيغة PNG مع الحفاظ على الشفافية."
+              : "سيتم الحفظ بصيغة JPEG عالية الجودة."}
+          </div>
+
           {err && <div className="text-xs text-red-400">{err}</div>}
           <div className="flex items-center gap-2">
             <button
