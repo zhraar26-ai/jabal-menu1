@@ -1112,10 +1112,12 @@ function HomePage() {
                                       🆕 جديد
                                     </span>
                                   )}
-                                </div>
-                              </div>
+                                 </div>
+                                 {favButton(item)}
+                               </div>
 
-                              <div className="flex flex-col gap-3 p-4 md:p-5">
+                               <div className="flex flex-col gap-3 p-4 md:p-5">
+
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0 flex-1">
                                     <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
