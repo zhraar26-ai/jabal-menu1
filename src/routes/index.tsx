@@ -548,7 +548,17 @@ function HomePage() {
             <span className="gold-text font-display text-lg font-bold md:text-xl">مطعم جبل</span>
           </a>
 
-          <div className="hidden flex-1 items-center justify-end md:flex">
+          <div className="hidden flex-1 items-center justify-end gap-2 md:flex">
+            <button
+              onClick={() => {
+                setSearchOpen((v) => !v);
+                requestAnimationFrame(() => searchRef.current?.focus());
+              }}
+              aria-label="بحث"
+              className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            </button>
             <a
               href={`tel:${PHONE_PRIMARY}`}
               className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3.5 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
@@ -558,19 +568,57 @@ function HomePage() {
             </a>
           </div>
 
-          <button
-            onClick={() => setNavOpen((v) => !v)}
-            className="rounded-full gold-border p-2 text-[var(--gold)] md:hidden"
-            aria-label="القائمة"
-          >
-            {navOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={() => {
+                setSearchOpen((v) => !v);
+                requestAnimationFrame(() => searchRef.current?.focus());
+              }}
+              aria-label="بحث"
+              className="rounded-full gold-border p-2 text-[var(--gold)]"
+            >
+              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            </button>
+            <button
+              onClick={() => setNavOpen((v) => !v)}
+              className="rounded-full gold-border p-2 text-[var(--gold)]"
+              aria-label="القائمة"
+            >
+              {navOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* expanding search field */}
+        <div
+          className={`overflow-hidden border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] transition-all duration-300 ${
+            searchOpen ? "max-h-24 opacity-100" : "max-h-0 border-transparent opacity-0"
+          }`}
+        >
+          <div className="mx-auto max-w-3xl px-4 py-2.5">
+            <div className="glass-card flex items-center gap-3 rounded-full px-4 py-2">
+              <Search className="h-4 w-4 shrink-0 text-[var(--gold)]" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="ابحث عن طبقك المفضل..."
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground/45 focus:outline-none"
+              />
+              {query && (
+                <button onClick={() => setQuery("")} aria-label="مسح" className="text-[var(--gold)]">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {navOpen && (
           <nav className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)] px-4 py-4 md:hidden animate-fade-in">
             <div className="flex flex-col gap-3 text-base">
-              {NAV_LINKS.map((l) => (
+              {SIDE_LINKS.map((l) => (
                 <a
                   key={l.href}
                   href={l.href}
@@ -590,6 +638,7 @@ function HomePage() {
             </div>
           </nav>
         )}
+
       </header>
 
       {/* ============ HERO ============ */}
