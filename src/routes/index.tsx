@@ -822,7 +822,8 @@ function HomePage() {
 
       {/* ============ MOST ORDERED ============ */}
       {theme?.featured_enabled !== false && featuredItems.length > 0 && (
-        <section className="px-4 pt-14">
+        <section id="featured" className="scroll-mt-24 px-4 pt-14">
+
           <div className="mx-auto max-w-5xl">
             <button
               onClick={() => setFeatOpen((v) => !v)}
