@@ -205,9 +205,11 @@ export function ImageField({
   previewClassName?: string;
 }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [alpha, setAlpha] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const pickFile = (file: File) => {
+    setAlpha(file.type === "image/png" || file.type === "image/webp");
     const reader = new FileReader();
     reader.onload = () => setSrc(String(reader.result));
     reader.readAsDataURL(file);
@@ -216,10 +218,11 @@ export function ImageField({
   const uploadBlob = async (blob: Blob) => {
     setUploading(true);
     try {
-      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+      const isPng = blob.type === "image/png";
+      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${isPng ? "png" : "jpg"}`;
       const { error } = await sb.storage
         .from("menu-images")
-        .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+        .upload(path, blob, { upsert: true, contentType: blob.type || "image/jpeg" });
       if (error) throw error;
       const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
       onChange(pub.publicUrl);
@@ -230,6 +233,7 @@ export function ImageField({
       setUploading(false);
     }
   };
+
 
   return (
     <div className="flex flex-wrap items-center gap-2">
