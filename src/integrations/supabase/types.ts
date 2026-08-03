@@ -44,6 +44,65 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_areas: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      dish_ratings: {
+        Row: {
+          created_at: string
+          hidden: boolean
+          id: string
+          menu_item_id: string
+          stars: number
+        }
+        Insert: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          menu_item_id: string
+          stars: number
+        }
+        Update: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          menu_item_id?: string
+          stars?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_ratings_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_item_options: {
         Row: {
           created_at: string
@@ -156,6 +215,66 @@ export type Database = {
           id?: string
           sort_order?: number
           title?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          address: string | null
+          created_at: string
+          delivery_area: string | null
+          delivery_fee: number
+          id: string
+          items: Json
+          phone: string | null
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          delivery_area?: string | null
+          delivery_fee?: number
+          id?: string
+          items?: Json
+          phone?: string | null
+          subtotal?: number
+          total?: number
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          delivery_area?: string | null
+          delivery_fee?: number
+          id?: string
+          items?: Json
+          phone?: string | null
+          subtotal?: number
+          total?: number
+        }
+        Relationships: []
+      }
+      restaurant_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          hidden: boolean
+          id: string
+          stars: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          stars: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          stars?: number
         }
         Relationships: []
       }

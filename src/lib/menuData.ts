@@ -138,3 +138,179 @@ export function applyTheme(t: ThemeSettings) {
     document.body.style.fontFamily = stack;
   }
 }
+
+/* ============ DELIVERY / RATINGS / ORDERS ============ */
+
+export type DeliveryArea = {
+  id: string;
+  name: string;
+  price: number;
+  active: boolean;
+  sort_order: number;
+};
+
+export type DishRating = {
+  id: string;
+  menu_item_id: string;
+  stars: number;
+  hidden: boolean;
+  created_at: string;
+};
+
+export type RestaurantRating = {
+  id: string;
+  stars: number;
+  comment: string | null;
+  hidden: boolean;
+  created_at: string;
+};
+
+export type OrderRow = {
+  id: string;
+  items: any;
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  delivery_area: string | null;
+  phone: string | null;
+  address: string | null;
+  created_at: string;
+};
+
+export async function fetchDeliveryAreas(activeOnly = false): Promise<DeliveryArea[]> {
+  let q = sb.from("delivery_areas").select("*").order("sort_order", { ascending: true });
+  if (activeOnly) q = q.eq("active", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchDishRatings(): Promise<DishRating[]> {
+  const { data, error } = await sb
+    .from("dish_ratings")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchRestaurantRatings(): Promise<RestaurantRating[]> {
+  const { data, error } = await sb
+    .from("restaurant_ratings")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function submitDishRating(menuItemId: string, stars: number) {
+  const { error } = await sb
+    .from("dish_ratings")
+    .insert({ menu_item_id: menuItemId, stars: Math.min(5, Math.max(1, Math.round(stars))) });
+  if (error) throw error;
+}
+
+export async function submitRestaurantRating(stars: number, comment: string) {
+  const { error } = await sb.from("restaurant_ratings").insert({
+    stars: Math.min(5, Math.max(1, Math.round(stars))),
+    comment: comment ? comment.slice(0, 500) : null,
+  });
+  if (error) throw error;
+}
+
+export async function logOrder(payload: {
+  items: any;
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  delivery_area: string | null;
+  phone: string;
+  address: string;
+}) {
+  const { error } = await sb.from("orders").insert({
+    ...payload,
+    phone: payload.phone.slice(0, 40),
+    address: payload.address.slice(0, 500),
+  });
+  if (error) throw error;
+}
+
+/* ============ SECURITY HELPERS ============ */
+
+/** Strips HTML/script-ish characters from free-text customer input (XSS hardening). */
+export function sanitizeText(input: string, max = 200): string {
+  return input
+    .replace(/<[^>]*>/g, "")
+    .replace(/[<>]/g, "")
+    .replace(/javascript:/gi, "")
+    .replace(/on\w+\s*=/gi, "")
+    .replace(/\s{3,}/g, "  ")
+    .trim()
+    .slice(0, max);
+}
+
+/** Simple client-side throttle to stop spam submissions. */
+export function rateLimit(key: string, minIntervalMs: number, maxPerHour = 20): string | null {
+  if (typeof window === "undefined") return null;
+  const now = Date.now();
+  const storeKey = `rl:${key}`;
+  let hits: number[] = [];
+  try {
+    hits = JSON.parse(localStorage.getItem(storeKey) || "[]");
+  } catch {
+    hits = [];
+  }
+  hits = hits.filter((t) => now - t < 60 * 60 * 1000);
+  const last = hits[hits.length - 1];
+  if (last && now - last < minIntervalMs) {
+    return `يرجى الانتظار ${Math.ceil((minIntervalMs - (now - last)) / 1000)} ثانية قبل المحاولة مرة أخرى.`;
+  }
+  if (hits.length >= maxPerHour) {
+    return "تم تجاوز الحد المسموح من المحاولات، حاول لاحقاً.";
+  }
+  hits.push(now);
+  localStorage.setItem(storeKey, JSON.stringify(hits));
+  return null;
+}
+
+/* ============ LOCAL STORAGE (favorites / address) ============ */
+
+const FAV_KEY = "jabal:favorites";
+const ADDR_KEY = "jabal:address";
+
+export function loadFavorites(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const v = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveFavorites(ids: string[]) {
+  try {
+    localStorage.setItem(FAV_KEY, JSON.stringify(ids));
+  } catch {
+    /* ignore */
+  }
+}
+
+export type SavedAddress = { areaId: string; phone: string; address: string };
+
+export function loadSavedAddress(): SavedAddress | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(localStorage.getItem(ADDR_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+export function saveAddress(v: SavedAddress) {
+  try {
+    localStorage.setItem(ADDR_KEY, JSON.stringify(v));
+  } catch {
+    /* ignore */
+  }
+}

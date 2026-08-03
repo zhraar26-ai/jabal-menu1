@@ -1,10 +1,17 @@
 import { useCallback, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
-import { Crop, Upload, X, ZoomIn } from "lucide-react";
+import { Crop, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const sb = supabase as any;
+
+/** Formats that carry an alpha channel and must never be flattened to JPEG. */
+function isAlphaSource(src: string) {
+  const s = src.toLowerCase();
+  if (s.startsWith("data:")) return s.startsWith("data:image/png") || s.startsWith("data:image/webp");
+  return /\.(png|webp)(\?|#|$)/.test(s);
+}
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -16,13 +23,19 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-async function getCroppedBlob(src: string, area: Area): Promise<Blob> {
+async function getCroppedBlob(
+  src: string,
+  area: Area,
+  keepAlpha: boolean,
+): Promise<Blob> {
   const img = await loadImage(src);
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(area.width));
   canvas.height = Math.max(1, Math.round(area.height));
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: true });
   if (!ctx) throw new Error("Canvas غير مدعوم");
+  // no background fill -> transparency of the source is preserved
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(
     img,
     area.x,
@@ -34,25 +47,29 @@ async function getCroppedBlob(src: string, area: Area): Promise<Blob> {
     canvas.width,
     canvas.height,
   );
+  const type = keepAlpha ? "image/png" : "image/jpeg";
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("فشل إنشاء الصورة"))),
-      "image/jpeg",
+      type,
       0.92,
     ),
   );
 }
 
+
 export function ImageCropperModal({
   src,
   aspect = 1,
   cropShape = "rect",
+  keepAlpha,
   onCancel,
   onCropped,
 }: {
   src: string;
   aspect?: number;
   cropShape?: "rect" | "round";
+  keepAlpha?: boolean;
   onCancel: () => void;
   onCropped: (blob: Blob) => void | Promise<void>;
 }) {
@@ -61,6 +78,7 @@ export function ImageCropperModal({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const areaRef = useRef<Area | null>(null);
+  const alpha = keepAlpha ?? isAlphaSource(src);
 
   const onComplete = useCallback((_: Area, px: Area) => {
     areaRef.current = px;
@@ -71,7 +89,7 @@ export function ImageCropperModal({
     setBusy(true);
     setErr(null);
     try {
-      const blob = await getCroppedBlob(src, areaRef.current);
+      const blob = await getCroppedBlob(src, areaRef.current, alpha);
       await onCropped(blob);
     } catch (e: any) {
       setErr(e?.message ?? "فشل قص الصورة");
@@ -79,6 +97,9 @@ export function ImageCropperModal({
       setBusy(false);
     }
   };
+
+  const nudge = (d: number) =>
+    setZoom((z) => Math.min(4, Math.max(0.5, Number((z + d).toFixed(2)))));
 
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4" dir="rtl">
@@ -90,11 +111,14 @@ export function ImageCropperModal({
           </button>
         </div>
 
-        <div className="relative h-[320px] w-full bg-black">
+        <div className="relative h-[320px] w-full bg-[var(--forest-deep)]">
           <Cropper
             image={src}
             crop={crop}
             zoom={zoom}
+            minZoom={0.5}
+            maxZoom={4}
+            restrictPosition={false}
             aspect={aspect}
             cropShape={cropShape}
             showGrid
@@ -106,17 +130,38 @@ export function ImageCropperModal({
 
         <div className="space-y-3 p-4">
           <div className="flex items-center gap-2">
-            <ZoomIn className="h-4 w-4 text-[var(--gold)]" />
+            <button
+              type="button"
+              onClick={() => nudge(-0.1)}
+              aria-label="تصغير"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
             <input
               type="range"
-              min={1}
+              min={0.5}
               max={4}
               step={0.01}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
               className="w-full accent-[var(--gold)]"
             />
+            <button
+              type="button"
+              onClick={() => nudge(0.1)}
+              aria-label="تكبير"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
           </div>
+          <div className="text-[10px] text-foreground/50">
+            {alpha
+              ? "سيتم الحفظ بصيغة PNG مع الحفاظ على الشفافية."
+              : "سيتم الحفظ بصيغة JPEG عالية الجودة."}
+          </div>
+
           {err && <div className="text-xs text-red-400">{err}</div>}
           <div className="flex items-center gap-2">
             <button
@@ -160,9 +205,11 @@ export function ImageField({
   previewClassName?: string;
 }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [alpha, setAlpha] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const pickFile = (file: File) => {
+    setAlpha(file.type === "image/png" || file.type === "image/webp");
     const reader = new FileReader();
     reader.onload = () => setSrc(String(reader.result));
     reader.readAsDataURL(file);
@@ -171,10 +218,11 @@ export function ImageField({
   const uploadBlob = async (blob: Blob) => {
     setUploading(true);
     try {
-      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+      const isPng = blob.type === "image/png";
+      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${isPng ? "png" : "jpg"}`;
       const { error } = await sb.storage
         .from("menu-images")
-        .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+        .upload(path, blob, { upsert: true, contentType: blob.type || "image/jpeg" });
       if (error) throw error;
       const { data: pub } = sb.storage.from("menu-images").getPublicUrl(path);
       onChange(pub.publicUrl);
@@ -185,6 +233,7 @@ export function ImageField({
       setUploading(false);
     }
   };
+
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -212,7 +261,10 @@ export function ImageField({
       {value && (
         <button
           type="button"
-          onClick={() => setSrc(`${value}${value.includes("?") ? "&" : "?"}t=${Date.now()}`)}
+          onClick={() => {
+            setAlpha(/\.(png|webp)(\?|#|$)/i.test(value));
+            setSrc(`${value}${value.includes("?") ? "&" : "?"}t=${Date.now()}`);
+          }}
           className="inline-flex items-center gap-1 rounded-full gold-border px-3 py-1.5 text-xs text-[var(--gold)]"
         >
           <Crop className="h-3.5 w-3.5" /> تعديل الصورة
@@ -232,10 +284,12 @@ export function ImageField({
           src={src}
           aspect={aspect}
           cropShape={cropShape}
+          keepAlpha={alpha}
           onCancel={() => setSrc(null)}
           onCropped={uploadBlob}
         />
       )}
     </div>
   );
+
 }

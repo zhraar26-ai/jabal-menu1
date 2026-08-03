@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Phone,
   MapPin,
@@ -16,6 +16,8 @@ import {
   Sparkles,
   ChevronDown,
   Search,
+  Heart,
+  Star,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -23,17 +25,31 @@ import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Category,
+  DeliveryArea,
+  DishRating,
   MenuItem,
   MenuItemOption,
   Offer,
   ThemeSettings,
   applyTheme,
   fetchCategories,
+  fetchDeliveryAreas,
+  fetchDishRatings,
   fetchMenuItems,
   fetchMenuItemOptions,
   fetchOffers,
   fetchTheme,
+  loadFavorites,
+  loadSavedAddress,
+  logOrder,
+  rateLimit,
+  sanitizeText,
+  saveAddress,
+  saveFavorites,
+  submitDishRating,
+  submitRestaurantRating,
 } from "@/lib/menuData";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -72,6 +88,45 @@ const NAV_LINKS = [
   { href: "#contact", label: "تواصل" },
 ];
 
+const SIDE_LINKS = [
+  { href: "#home", label: "الرئيسية" },
+  { href: "#menu", label: "أقسام المنيو" },
+  { href: "#featured", label: "🔥 الأكثر طلباً" },
+  { href: "#favorites", label: "♡ المفضلة" },
+  { href: "#about", label: "عن المطعم" },
+  { href: "#contact", label: "تواصل" },
+];
+
+/** 5-star display / picker */
+function Stars({
+  value,
+  size = "sm",
+  onPick,
+}: {
+  value: number;
+  size?: "sm" | "lg";
+  onPick?: (n: number) => void;
+}) {
+  const cls = size === "lg" ? "h-9 w-9" : "h-3.5 w-3.5";
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          disabled={!onPick}
+          onClick={onPick ? () => onPick(n) : undefined}
+          aria-label={`${n} نجوم`}
+          className={onPick ? "transition-transform hover:scale-110" : "cursor-default"}
+        >
+          <Star
+            className={`${cls} ${n <= value ? "fill-[var(--gold)] text-[var(--gold)]" : "text-[var(--gold)]/40"}`}
+          />
+        </button>
+      ))}
+    </span>
+  );
+}
 
 type CartLine = {
   itemId: string;
@@ -81,6 +136,7 @@ type CartLine = {
   qty: number;
   note: string;
 };
+
 
 function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -103,8 +159,24 @@ function HomePage() {
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [featOpen, setFeatOpen] = useState(true);
+  const [favOpen, setFavOpen] = useState(true);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+
+  // favorites (localStorage, no auth)
+  const [favorites, setFavorites] = useState<string[]>([]);
+  // ratings
+  const [ratings, setRatings] = useState<DishRating[]>([]);
+  const [rateTarget, setRateTarget] = useState<{ type: "dish" | "restaurant"; id?: string; name: string } | null>(null);
+  const [rateStars, setRateStars] = useState(0);
+
+  // delivery
+  const [areas, setAreas] = useState<DeliveryArea[]>([]);
+  const [areaId, setAreaId] = useState("");
+  const [orderError, setOrderError] = useState<string | null>(null);
+
   const toggleCat = (id: string) => setOpenCat((cur) => (cur === id ? null : id));
   const closeCat = (id: string) => {
     setOpenCat(null);
@@ -117,11 +189,20 @@ function HomePage() {
     return Date.now() - new Date(it.created_at).getTime() < 14 * 24 * 60 * 60 * 1000;
   };
 
+  const toggleFav = (id: string) =>
+    setFavorites((cur) => {
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      saveFavorites(next);
+      return next;
+    });
+
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
     fetchMenuItems().then(setItems).catch(console.error);
     fetchMenuItemOptions().then(setOptions).catch(console.error);
     fetchOffers(true).then(setOffers).catch(console.error);
+    fetchDeliveryAreas(true).then(setAreas).catch(console.error);
+    fetchDishRatings().then(setRatings).catch(console.error);
     fetchTheme()
       .then((t) => {
         if (t) {
@@ -131,6 +212,19 @@ function HomePage() {
       })
       .catch(console.error);
   };
+
+  // restore local prefs
+  useEffect(() => {
+    setFavorites(loadFavorites());
+    const saved = loadSavedAddress();
+    if (saved) {
+      setAreaId(saved.areaId ?? "");
+      setCustomerPhone(saved.phone ?? "");
+      setCustomerAddress(saved.address ?? "");
+    }
+  }, []);
+
+
 
   useEffect(() => {
     reloadAll();
@@ -149,6 +243,12 @@ function HomePage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "offers" }, () =>
         fetchOffers(true).then(setOffers).catch(console.error),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "delivery_areas" }, () =>
+        fetchDeliveryAreas(true).then(setAreas).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "dish_ratings" }, () =>
+        fetchDishRatings().then(setRatings).catch(console.error),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "theme_settings" }, () =>
         fetchTheme()
           .then((t) => {
@@ -160,6 +260,7 @@ function HomePage() {
           .catch(console.error),
       )
       .subscribe();
+
     return () => {
       sb.removeChannel(channel);
     };
@@ -196,6 +297,71 @@ function HomePage() {
           (it.description ?? "").toLowerCase().includes(q)),
     );
   }, [items, query]);
+
+  const favoriteItems = useMemo(
+    () => items.filter((it) => it.available && favorites.includes(it.id)),
+    [items, favorites],
+  );
+
+  const ratingByItem = useMemo(() => {
+    const m: Record<string, { avg: number; count: number }> = {};
+    const acc: Record<string, number[]> = {};
+    for (const r of ratings) {
+      if (r.hidden) continue;
+      (acc[r.menu_item_id] ||= []).push(r.stars);
+    }
+    for (const [id, arr] of Object.entries(acc)) {
+      m[id] = { avg: arr.reduce((a, b) => a + b, 0) / arr.length, count: arr.length };
+    }
+    return m;
+  }, [ratings]);
+
+  /** avg rating + "rate dish" trigger, rendered under every dish card */
+  const ratingLine = (item: MenuItem) => {
+    const r = ratingByItem[item.id];
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 text-xs text-foreground/75">
+          <Star className="h-3.5 w-3.5 fill-[var(--gold)] text-[var(--gold)]" />
+          {r ? (
+            <>
+              <span className="font-bold text-[var(--gold)]">{r.avg.toFixed(1)}</span>
+              <span className="text-foreground/50">({r.count})</span>
+            </>
+          ) : (
+            <span className="text-foreground/50">لا يوجد تقييم</span>
+          )}
+        </span>
+        <button
+          type="button"
+          onClick={() => setRateTarget({ type: "dish", id: item.id, name: item.name })}
+          className="rounded-full gold-border px-2.5 py-1 text-[11px] font-bold text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+        >
+          ✍️ قَيّم الطبق
+        </button>
+      </div>
+    );
+  };
+
+  /** heart favorite toggle, positioned inside the image wrapper */
+  const favButton = (item: MenuItem) => {
+    const active = favorites.includes(item.id);
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFav(item.id);
+        }}
+        aria-label={active ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+        className="absolute bottom-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full bg-[var(--forest-deep)]/80 backdrop-blur transition-transform hover:scale-110"
+      >
+        <Heart
+          className={`h-4.5 w-4.5 ${active ? "fill-red-500 text-red-500" : "text-[var(--gold)]"}`}
+        />
+      </button>
+    );
+  };
 
 
   const itemById = useMemo(() => {
@@ -268,9 +434,16 @@ function HomePage() {
     [cartEntries],
   );
 
+  const selectedArea = useMemo(
+    () => areas.find((a) => a.id === areaId) ?? null,
+    [areas, areaId],
+  );
+  const deliveryFee = selectedArea?.price ?? 0;
+  const grandTotal = cartTotal + deliveryFee;
+
   const addToCart = (item: MenuItem) => {
     const qty = getPending(item.id);
-    const note = (notes[item.id] ?? "").trim();
+    const note = sanitizeText(notes[item.id] ?? "");
     const { price, option } = priceForSelection(item);
     const key = cartKey(item.id, option?.id ?? null);
     setCart((c) => {
@@ -292,22 +465,57 @@ function HomePage() {
     setTimeout(() => setJustAdded((j) => (j === item.id ? null : j)), 1200);
   };
 
-  const sendCartToWhatsapp = () => {
-    if (!customerPhone.trim() || !customerAddress.trim()) {
+  const sendCartToWhatsapp = async () => {
+    setOrderError(null);
+    const phone = sanitizeText(customerPhone, 40);
+    const address = sanitizeText(customerAddress, 500);
+    if (!phone || !address) {
       setShowCheckoutWarning(true);
       return;
     }
+    const limited = rateLimit("order", 20_000, 15);
+    if (limited) {
+      setOrderError(limited);
+      return;
+    }
+    saveAddress({ areaId, phone, address });
+
     const lines = cartEntries.map((e) => {
       const label = e.line.optionName ? `${e.item.name} (${e.line.optionName})` : e.item.name;
-      const noteLine = e.line.note ? `\n   ملاحظة: ${e.line.note}` : "";
+      const note = sanitizeText(e.line.note);
+      const noteLine = note ? `\n   ملاحظة: ${note}` : "";
       return `• ${label} × ${e.line.qty} = ${(e.line.unitPrice * e.line.qty).toLocaleString()} د.ع${noteLine}`;
     });
+    const areaLine = selectedArea
+      ? `منطقة التوصيل: ${selectedArea.name} (${selectedArea.price.toLocaleString()} د.ع)\n`
+      : "";
     const text =
       `مرحبا، طلب جديد من منيو جبل الإلكتروني:\n\n${lines.join("\n")}\n\n` +
-      `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
-      `رقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
+      `مجموع الأطباق: ${cartTotal.toLocaleString()} د.ع\n` +
+      (selectedArea ? `التوصيل: ${deliveryFee.toLocaleString()} د.ع\n` : "") +
+      `المجموع الكلي: ${grandTotal.toLocaleString()} د.ع\n\n` +
+      areaLine +
+      `رقم الهاتف: ${phone}\nالعنوان: ${address}`;
+
+    logOrder({
+      items: cartEntries.map((e) => ({
+        id: e.item.id,
+        name: e.item.name,
+        option: e.line.optionName,
+        qty: e.line.qty,
+        unit_price: e.line.unitPrice,
+      })),
+      subtotal: cartTotal,
+      delivery_fee: deliveryFee,
+      total: grandTotal,
+      delivery_area: selectedArea?.name ?? null,
+      phone,
+      address,
+    }).catch(console.error);
+
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
+
 
 
   const heroSrc = theme?.hero_image_url || heroImg;
@@ -342,7 +550,17 @@ function HomePage() {
             <span className="gold-text font-display text-lg font-bold md:text-xl">مطعم جبل</span>
           </a>
 
-          <div className="hidden flex-1 items-center justify-end md:flex">
+          <div className="hidden flex-1 items-center justify-end gap-2 md:flex">
+            <button
+              onClick={() => {
+                setSearchOpen((v) => !v);
+                requestAnimationFrame(() => searchRef.current?.focus());
+              }}
+              aria-label="بحث"
+              className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            </button>
             <a
               href={`tel:${PHONE_PRIMARY}`}
               className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3.5 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
@@ -352,19 +570,57 @@ function HomePage() {
             </a>
           </div>
 
-          <button
-            onClick={() => setNavOpen((v) => !v)}
-            className="rounded-full gold-border p-2 text-[var(--gold)] md:hidden"
-            aria-label="القائمة"
-          >
-            {navOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={() => {
+                setSearchOpen((v) => !v);
+                requestAnimationFrame(() => searchRef.current?.focus());
+              }}
+              aria-label="بحث"
+              className="rounded-full gold-border p-2 text-[var(--gold)]"
+            >
+              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            </button>
+            <button
+              onClick={() => setNavOpen((v) => !v)}
+              className="rounded-full gold-border p-2 text-[var(--gold)]"
+              aria-label="القائمة"
+            >
+              {navOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* expanding search field */}
+        <div
+          className={`overflow-hidden border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] transition-all duration-300 ${
+            searchOpen ? "max-h-24 opacity-100" : "max-h-0 border-transparent opacity-0"
+          }`}
+        >
+          <div className="mx-auto max-w-3xl px-4 py-2.5">
+            <div className="glass-card flex items-center gap-3 rounded-full px-4 py-2">
+              <Search className="h-4 w-4 shrink-0 text-[var(--gold)]" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="ابحث عن طبقك المفضل..."
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground/45 focus:outline-none"
+              />
+              {query && (
+                <button onClick={() => setQuery("")} aria-label="مسح" className="text-[var(--gold)]">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {navOpen && (
           <nav className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)] px-4 py-4 md:hidden animate-fade-in">
             <div className="flex flex-col gap-3 text-base">
-              {NAV_LINKS.map((l) => (
+              {SIDE_LINKS.map((l) => (
                 <a
                   key={l.href}
                   href={l.href}
@@ -384,6 +640,7 @@ function HomePage() {
             </div>
           </nav>
         )}
+
       </header>
 
       {/* ============ HERO ============ */}
@@ -447,24 +704,10 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ============ SEARCH ============ */}
+      {/* ============ SEARCH RESULTS ============ */}
       <section className="px-4 pt-8">
         <div className="mx-auto max-w-3xl">
-          <div className="glass-card flex items-center gap-3 rounded-full px-4 py-2.5">
-            <Search className="h-5 w-5 shrink-0 text-[var(--gold)]" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="ابحث عن طبقك المفضل..."
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground/45 focus:outline-none md:text-base"
-            />
-            {query && (
-              <button onClick={() => setQuery("")} aria-label="مسح" className="text-[var(--gold)]">
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+
 
           {query.trim() && (
             <div className="mt-5">
@@ -513,6 +756,7 @@ function HomePage() {
                               </span>
                             )}
                           </div>
+                          {favButton(item)}
                         </div>
                         <div className="flex flex-1 flex-col gap-2 p-3">
                           <h3 className="font-display text-sm font-bold text-foreground">
@@ -521,6 +765,8 @@ function HomePage() {
                           <div className="gold-text font-display text-sm font-bold">
                             {sPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
                           </div>
+                          {ratingLine(item)}
+
                           <button
                             onClick={() => addToCart(item)}
                             className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
@@ -578,7 +824,8 @@ function HomePage() {
 
       {/* ============ MOST ORDERED ============ */}
       {theme?.featured_enabled !== false && featuredItems.length > 0 && (
-        <section className="px-4 pt-14">
+        <section id="featured" className="scroll-mt-24 px-4 pt-14">
+
           <div className="mx-auto max-w-5xl">
             <button
               onClick={() => setFeatOpen((v) => !v)}
@@ -629,6 +876,7 @@ function HomePage() {
                           </span>
                         )}
                       </div>
+                      {favButton(item)}
                     </div>
                     <div className="flex flex-1 flex-col gap-2 p-3 md:p-4">
                       <h3 className="font-display text-sm font-bold text-foreground md:text-lg">
@@ -637,6 +885,7 @@ function HomePage() {
                       <div className="gold-text font-display text-sm font-bold md:text-lg">
                         {fPrice.toLocaleString()} <span className="text-[10px] md:text-xs">د.ع</span>
                       </div>
+                      {ratingLine(item)}
                       <input
                         type="text"
                         value={notes[item.id] ?? ""}
@@ -644,6 +893,7 @@ function HomePage() {
                         placeholder="ملاحظات (مثلاً: بدون مخلل)"
                         className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-2.5 py-1.5 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
                       />
+
                       <button
                         onClick={() => addToCart(item)}
                         className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] md:text-sm ${
@@ -663,6 +913,92 @@ function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ============ FAVORITES ============ */}
+      <section id="favorites" className="scroll-mt-24 px-4 pt-14">
+        <div className="mx-auto max-w-5xl">
+          <button
+            onClick={() => setFavOpen((v) => !v)}
+            className="glass-card flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-right md:px-6 md:py-4"
+          >
+            <span className="font-display text-lg font-bold md:text-2xl">
+              <span className="gold-text">♡ المفضلة</span>
+              <span className="mr-2 text-xs text-foreground/60">({favoriteItems.length})</span>
+            </span>
+            <ChevronDown
+              className={`h-5 w-5 text-[var(--gold)] transition-transform ${favOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {favOpen && (
+            <div className="mt-4">
+              {favoriteItems.length === 0 ? (
+                <p className="text-center text-sm text-foreground/60">
+                  لم تقم بإضافة أطباق إلى المفضلة بعد — اضغط ♡ على أي طبق.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+                  {favoriteItems.map((item) => {
+                    const vOpts = optionsByItem[item.id] ?? [];
+                    const vSel = selectedOption[item.id] ?? vOpts[0]?.id ?? "";
+                    const vDiscount =
+                      item.discount_price != null && item.discount_price < item.price;
+                    const vPrice =
+                      vOpts.length > 0
+                        ? (vOpts.find((o) => o.id === vSel) ?? vOpts[0]).price
+                        : vDiscount
+                          ? item.discount_price!
+                          : item.price;
+                    return (
+                      <article
+                        key={`fav-${item.id}`}
+                        className="glass-card group flex flex-col overflow-hidden rounded-2xl"
+                      >
+                        <div className="relative aspect-[4/3] w-full overflow-hidden">
+                          <img
+                            src={item.image_url || ITEM_PLACEHOLDER}
+                            alt={item.name}
+                            loading="lazy"
+                            onClick={() =>
+                              setLightbox({
+                                src: item.image_url || ITEM_PLACEHOLDER,
+                                alt: item.name,
+                              })
+                            }
+                            className="h-full w-full cursor-zoom-in object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          {favButton(item)}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2 p-3">
+                          <h3 className="font-display text-sm font-bold text-foreground">
+                            {item.name}
+                          </h3>
+                          <div className="gold-text font-display text-sm font-bold">
+                            {vPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
+                          </div>
+                          {ratingLine(item)}
+                          <button
+                            onClick={() => addToCart(item)}
+                            className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
+                              justAdded === item.id
+                                ? "bg-[#25D366] text-white"
+                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                            }`}
+                          >
+                            <ShoppingBag className="h-3.5 w-3.5" />
+                            {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة"}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+
 
       {/* ============ MENU ============ */}
       <section id="menu" className="relative px-4 py-16 md:py-24">
@@ -778,10 +1114,12 @@ function HomePage() {
                                       🆕 جديد
                                     </span>
                                   )}
-                                </div>
-                              </div>
+                                 </div>
+                                 {favButton(item)}
+                               </div>
 
-                              <div className="flex flex-col gap-3 p-4 md:p-5">
+                               <div className="flex flex-col gap-3 p-4 md:p-5">
+
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0 flex-1">
                                     <h4 className="font-display text-lg font-bold text-foreground md:text-xl">
@@ -832,8 +1170,11 @@ function HomePage() {
                                   </div>
                                 )}
 
+                                {ratingLine(item)}
+
                                 <input
                                   type="text"
+
                                   value={notes[key] ?? ""}
                                   onChange={(e) =>
                                     setNotes((n) => ({ ...n, [key]: e.target.value }))
@@ -1128,6 +1469,20 @@ function HomePage() {
             {cartEntries.length > 0 && (
               <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest)] px-5 py-4">
                 <div className="mb-3 space-y-2">
+                  {areas.length > 0 && (
+                    <select
+                      value={areaId}
+                      onChange={(e) => setAreaId(e.target.value)}
+                      className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
+                    >
+                      <option value="">اختر منطقة التوصيل ▾</option>
+                      {areas.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} — {a.price.toLocaleString()} د.ع
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <input
                     type="tel"
                     placeholder="رقم الهاتف *"
@@ -1142,6 +1497,13 @@ function HomePage() {
                     onChange={(e) => setCustomerAddress(e.target.value)}
                     className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setRateTarget({ type: "restaurant", name: "مطعم جبل" })}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full gold-border px-4 py-2 text-xs font-bold text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                  >
+                    ⭐️ تقييم المطعم
+                  </button>
                 </div>
 
                 {showCheckoutWarning && (!customerPhone.trim() || !customerAddress.trim()) && (
@@ -1149,13 +1511,31 @@ function HomePage() {
                     ⚠️ يرجى إضافة رقم الهاتف والعنوان قبل إرسال الطلب.
                   </div>
                 )}
+                {orderError && (
+                  <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    {orderError}
+                  </div>
+                )}
 
-                <div className="mb-3 flex items-center justify-between text-sm">
-                  <span className="text-foreground/70">المجموع</span>
-                  <span className="gold-text font-display text-xl font-bold">
-                    {cartTotal.toLocaleString()} د.ع
-                  </span>
+                <div className="mb-3 space-y-1 text-sm">
+                  <div className="flex items-center justify-between text-xs text-foreground/70">
+                    <span>مجموع الأطباق</span>
+                    <span>{cartTotal.toLocaleString()} د.ع</span>
+                  </div>
+                  {selectedArea && (
+                    <div className="flex items-center justify-between text-xs text-foreground/70">
+                      <span>التوصيل ({selectedArea.name})</span>
+                      <span>{deliveryFee.toLocaleString()} د.ع</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-foreground/80">المجموع الكلي</span>
+                    <span className="gold-text font-display text-xl font-bold">
+                      {grandTotal.toLocaleString()} د.ع
+                    </span>
+                  </div>
                 </div>
+
                 <button
                   onClick={sendCartToWhatsapp}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
@@ -1190,6 +1570,56 @@ function HomePage() {
           />
         </div>
       )}
+
+      {/* ============ RATING MODAL ============ */}
+      {rateTarget && (
+        <div
+          onClick={() => setRateTarget(null)}
+          className="fixed inset-0 z-[110] grid place-items-center bg-black/80 p-4 animate-fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-card w-full max-w-sm rounded-2xl p-5 text-center"
+          >
+            <div className="mb-1 font-display text-lg font-bold gold-text">
+              {rateTarget.type === "dish" ? "✍️ قَيّم الطبق" : "⭐️ تقييم المطعم"}
+            </div>
+            <div className="mb-4 text-sm text-foreground/70">{rateTarget.name}</div>
+            <div className="mb-5 flex justify-center">
+              <Stars value={rateStars} size="lg" onPick={setRateStars} />
+            </div>
+            <div className="flex gap-2">
+              <button
+                disabled={rateStars < 1}
+                onClick={async () => {
+                  try {
+                    if (rateTarget.type === "dish" && rateTarget.id) {
+                      await submitDishRating(rateTarget.id, rateStars);
+                      fetchDishRatings().then(setRatings).catch(console.error);
+                    } else {
+                      await submitRestaurantRating(rateStars, "");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  }
+                  setRateTarget(null);
+                  setRateStars(0);
+                }}
+                className="flex-1 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] disabled:opacity-50"
+              >
+                إرسال التقييم
+              </button>
+              <button
+                onClick={() => setRateTarget(null)}
+                className="rounded-full gold-border px-4 py-2.5 text-sm text-foreground/80"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
