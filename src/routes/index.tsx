@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Phone,
   MapPin,
@@ -16,6 +16,8 @@ import {
   Sparkles,
   ChevronDown,
   Search,
+  Heart,
+  Star,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
@@ -23,17 +25,31 @@ import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Category,
+  DeliveryArea,
+  DishRating,
   MenuItem,
   MenuItemOption,
   Offer,
   ThemeSettings,
   applyTheme,
   fetchCategories,
+  fetchDeliveryAreas,
+  fetchDishRatings,
   fetchMenuItems,
   fetchMenuItemOptions,
   fetchOffers,
   fetchTheme,
+  loadFavorites,
+  loadSavedAddress,
+  logOrder,
+  rateLimit,
+  sanitizeText,
+  saveAddress,
+  saveFavorites,
+  submitDishRating,
+  submitRestaurantRating,
 } from "@/lib/menuData";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
