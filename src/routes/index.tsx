@@ -754,6 +754,7 @@ function HomePage() {
                               </span>
                             )}
                           </div>
+                          {favButton(item)}
                         </div>
                         <div className="flex flex-1 flex-col gap-2 p-3">
                           <h3 className="font-display text-sm font-bold text-foreground">
@@ -762,6 +763,8 @@ function HomePage() {
                           <div className="gold-text font-display text-sm font-bold">
                             {sPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
                           </div>
+                          {ratingLine(item)}
+
                           <button
                             onClick={() => addToCart(item)}
                             className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
