@@ -432,9 +432,16 @@ function HomePage() {
     [cartEntries],
   );
 
+  const selectedArea = useMemo(
+    () => areas.find((a) => a.id === areaId) ?? null,
+    [areas, areaId],
+  );
+  const deliveryFee = selectedArea?.price ?? 0;
+  const grandTotal = cartTotal + deliveryFee;
+
   const addToCart = (item: MenuItem) => {
     const qty = getPending(item.id);
-    const note = (notes[item.id] ?? "").trim();
+    const note = sanitizeText(notes[item.id] ?? "");
     const { price, option } = priceForSelection(item);
     const key = cartKey(item.id, option?.id ?? null);
     setCart((c) => {
@@ -456,22 +463,57 @@ function HomePage() {
     setTimeout(() => setJustAdded((j) => (j === item.id ? null : j)), 1200);
   };
 
-  const sendCartToWhatsapp = () => {
-    if (!customerPhone.trim() || !customerAddress.trim()) {
+  const sendCartToWhatsapp = async () => {
+    setOrderError(null);
+    const phone = sanitizeText(customerPhone, 40);
+    const address = sanitizeText(customerAddress, 500);
+    if (!phone || !address) {
       setShowCheckoutWarning(true);
       return;
     }
+    const limited = rateLimit("order", 20_000, 15);
+    if (limited) {
+      setOrderError(limited);
+      return;
+    }
+    saveAddress({ areaId, phone, address });
+
     const lines = cartEntries.map((e) => {
       const label = e.line.optionName ? `${e.item.name} (${e.line.optionName})` : e.item.name;
-      const noteLine = e.line.note ? `\n   ملاحظة: ${e.line.note}` : "";
+      const note = sanitizeText(e.line.note);
+      const noteLine = note ? `\n   ملاحظة: ${note}` : "";
       return `• ${label} × ${e.line.qty} = ${(e.line.unitPrice * e.line.qty).toLocaleString()} د.ع${noteLine}`;
     });
+    const areaLine = selectedArea
+      ? `منطقة التوصيل: ${selectedArea.name} (${selectedArea.price.toLocaleString()} د.ع)\n`
+      : "";
     const text =
       `مرحبا، طلب جديد من منيو جبل الإلكتروني:\n\n${lines.join("\n")}\n\n` +
-      `المجموع: ${cartTotal.toLocaleString()} د.ع\n\n` +
-      `رقم الهاتف: ${customerPhone}\nالعنوان: ${customerAddress}`;
+      `مجموع الأطباق: ${cartTotal.toLocaleString()} د.ع\n` +
+      (selectedArea ? `التوصيل: ${deliveryFee.toLocaleString()} د.ع\n` : "") +
+      `المجموع الكلي: ${grandTotal.toLocaleString()} د.ع\n\n` +
+      areaLine +
+      `رقم الهاتف: ${phone}\nالعنوان: ${address}`;
+
+    logOrder({
+      items: cartEntries.map((e) => ({
+        id: e.item.id,
+        name: e.item.name,
+        option: e.line.optionName,
+        qty: e.line.qty,
+        unit_price: e.line.unitPrice,
+      })),
+      subtotal: cartTotal,
+      delivery_fee: deliveryFee,
+      total: grandTotal,
+      delivery_area: selectedArea?.name ?? null,
+      phone,
+      address,
+    }).catch(console.error);
+
     window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
   };
+
 
 
   const heroSrc = theme?.hero_image_url || heroImg;
