@@ -1168,8 +1168,11 @@ function HomePage() {
                                   </div>
                                 )}
 
+                                {ratingLine(item)}
+
                                 <input
                                   type="text"
+
                                   value={notes[key] ?? ""}
                                   onChange={(e) =>
                                     setNotes((n) => ({ ...n, [key]: e.target.value }))
