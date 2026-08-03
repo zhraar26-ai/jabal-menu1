@@ -88,6 +88,45 @@ const NAV_LINKS = [
   { href: "#contact", label: "تواصل" },
 ];
 
+const SIDE_LINKS = [
+  { href: "#home", label: "الرئيسية" },
+  { href: "#menu", label: "أقسام المنيو" },
+  { href: "#featured", label: "🔥 الأكثر طلباً" },
+  { href: "#favorites", label: "♡ المفضلة" },
+  { href: "#about", label: "عن المطعم" },
+  { href: "#contact", label: "تواصل" },
+];
+
+/** 5-star display / picker */
+function Stars({
+  value,
+  size = "sm",
+  onPick,
+}: {
+  value: number;
+  size?: "sm" | "lg";
+  onPick?: (n: number) => void;
+}) {
+  const cls = size === "lg" ? "h-9 w-9" : "h-3.5 w-3.5";
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          disabled={!onPick}
+          onClick={onPick ? () => onPick(n) : undefined}
+          aria-label={`${n} نجوم`}
+          className={onPick ? "transition-transform hover:scale-110" : "cursor-default"}
+        >
+          <Star
+            className={`${cls} ${n <= value ? "fill-[var(--gold)] text-[var(--gold)]" : "text-[var(--gold)]/40"}`}
+          />
+        </button>
+      ))}
+    </span>
+  );
+}
 
 type CartLine = {
   itemId: string;
@@ -97,6 +136,7 @@ type CartLine = {
   qty: number;
   note: string;
 };
+
 
 function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
