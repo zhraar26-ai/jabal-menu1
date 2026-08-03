@@ -1,10 +1,17 @@
 import { useCallback, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
-import { Crop, Upload, X, ZoomIn } from "lucide-react";
+import { Crop, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const sb = supabase as any;
+
+/** Formats that carry an alpha channel and must never be flattened to JPEG. */
+function isAlphaSource(src: string) {
+  const s = src.toLowerCase();
+  if (s.startsWith("data:")) return s.startsWith("data:image/png") || s.startsWith("data:image/webp");
+  return /\.(png|webp)(\?|#|$)/.test(s);
+}
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -16,13 +23,19 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-async function getCroppedBlob(src: string, area: Area): Promise<Blob> {
+async function getCroppedBlob(
+  src: string,
+  area: Area,
+  keepAlpha: boolean,
+): Promise<Blob> {
   const img = await loadImage(src);
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(area.width));
   canvas.height = Math.max(1, Math.round(area.height));
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: true });
   if (!ctx) throw new Error("Canvas غير مدعوم");
+  // no background fill -> transparency of the source is preserved
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(
     img,
     area.x,
@@ -34,14 +47,16 @@ async function getCroppedBlob(src: string, area: Area): Promise<Blob> {
     canvas.width,
     canvas.height,
   );
+  const type = keepAlpha ? "image/png" : "image/jpeg";
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("فشل إنشاء الصورة"))),
-      "image/jpeg",
+      type,
       0.92,
     ),
   );
 }
+
 
 export function ImageCropperModal({
   src,
