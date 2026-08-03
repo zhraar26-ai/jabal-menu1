@@ -296,6 +296,71 @@ function HomePage() {
     );
   }, [items, query]);
 
+  const favoriteItems = useMemo(
+    () => items.filter((it) => it.available && favorites.includes(it.id)),
+    [items, favorites],
+  );
+
+  const ratingByItem = useMemo(() => {
+    const m: Record<string, { avg: number; count: number }> = {};
+    const acc: Record<string, number[]> = {};
+    for (const r of ratings) {
+      if (r.hidden) continue;
+      (acc[r.menu_item_id] ||= []).push(r.stars);
+    }
+    for (const [id, arr] of Object.entries(acc)) {
+      m[id] = { avg: arr.reduce((a, b) => a + b, 0) / arr.length, count: arr.length };
+    }
+    return m;
+  }, [ratings]);
+
+  /** avg rating + "rate dish" trigger, rendered under every dish card */
+  const ratingLine = (item: MenuItem) => {
+    const r = ratingByItem[item.id];
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 text-xs text-foreground/75">
+          <Star className="h-3.5 w-3.5 fill-[var(--gold)] text-[var(--gold)]" />
+          {r ? (
+            <>
+              <span className="font-bold text-[var(--gold)]">{r.avg.toFixed(1)}</span>
+              <span className="text-foreground/50">({r.count})</span>
+            </>
+          ) : (
+            <span className="text-foreground/50">لا يوجد تقييم</span>
+          )}
+        </span>
+        <button
+          type="button"
+          onClick={() => setRateTarget({ type: "dish", id: item.id, name: item.name })}
+          className="rounded-full gold-border px-2.5 py-1 text-[11px] font-bold text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+        >
+          ✍️ قَيّم الطبق
+        </button>
+      </div>
+    );
+  };
+
+  /** heart favorite toggle, positioned inside the image wrapper */
+  const favButton = (item: MenuItem) => {
+    const active = favorites.includes(item.id);
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFav(item.id);
+        }}
+        aria-label={active ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+        className="absolute bottom-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full bg-[var(--forest-deep)]/80 backdrop-blur transition-transform hover:scale-110"
+      >
+        <Heart
+          className={`h-4.5 w-4.5 ${active ? "fill-red-500 text-red-500" : "text-[var(--gold)]"}`}
+        />
+      </button>
+    );
+  };
+
 
   const itemById = useMemo(() => {
     const m: Record<string, MenuItem> = {};
