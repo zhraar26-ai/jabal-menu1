@@ -1467,6 +1467,20 @@ function HomePage() {
             {cartEntries.length > 0 && (
               <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest)] px-5 py-4">
                 <div className="mb-3 space-y-2">
+                  {areas.length > 0 && (
+                    <select
+                      value={areaId}
+                      onChange={(e) => setAreaId(e.target.value)}
+                      className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
+                    >
+                      <option value="">اختر منطقة التوصيل ▾</option>
+                      {areas.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} — {a.price.toLocaleString()} د.ع
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <input
                     type="tel"
                     placeholder="رقم الهاتف *"
@@ -1481,6 +1495,13 @@ function HomePage() {
                     onChange={(e) => setCustomerAddress(e.target.value)}
                     className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setRateTarget({ type: "restaurant", name: "مطعم جبل" })}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full gold-border px-4 py-2 text-xs font-bold text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                  >
+                    ⭐️ تقييم المطعم
+                  </button>
                 </div>
 
                 {showCheckoutWarning && (!customerPhone.trim() || !customerAddress.trim()) && (
@@ -1488,13 +1509,31 @@ function HomePage() {
                     ⚠️ يرجى إضافة رقم الهاتف والعنوان قبل إرسال الطلب.
                   </div>
                 )}
+                {orderError && (
+                  <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    {orderError}
+                  </div>
+                )}
 
-                <div className="mb-3 flex items-center justify-between text-sm">
-                  <span className="text-foreground/70">المجموع</span>
-                  <span className="gold-text font-display text-xl font-bold">
-                    {cartTotal.toLocaleString()} د.ع
-                  </span>
+                <div className="mb-3 space-y-1 text-sm">
+                  <div className="flex items-center justify-between text-xs text-foreground/70">
+                    <span>مجموع الأطباق</span>
+                    <span>{cartTotal.toLocaleString()} د.ع</span>
+                  </div>
+                  {selectedArea && (
+                    <div className="flex items-center justify-between text-xs text-foreground/70">
+                      <span>التوصيل ({selectedArea.name})</span>
+                      <span>{deliveryFee.toLocaleString()} د.ع</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-foreground/80">المجموع الكلي</span>
+                    <span className="gold-text font-display text-xl font-bold">
+                      {grandTotal.toLocaleString()} د.ع
+                    </span>
+                  </div>
                 </div>
+
                 <button
                   onClick={sendCartToWhatsapp}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
