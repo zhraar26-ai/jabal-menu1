@@ -170,6 +170,8 @@ function HomePage() {
   // ratings
   const [ratings, setRatings] = useState<DishRating[]>([]);
   const [rateTarget, setRateTarget] = useState<{ type: "dish" | "restaurant"; id?: string; name: string } | null>(null);
+  const [rateStars, setRateStars] = useState(0);
+
   // delivery
   const [areas, setAreas] = useState<DeliveryArea[]>([]);
   const [areaId, setAreaId] = useState("");
