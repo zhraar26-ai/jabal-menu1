@@ -159,8 +159,22 @@ function HomePage() {
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [featOpen, setFeatOpen] = useState(true);
+  const [favOpen, setFavOpen] = useState(true);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+
+  // favorites (localStorage, no auth)
+  const [favorites, setFavorites] = useState<string[]>([]);
+  // ratings
+  const [ratings, setRatings] = useState<DishRating[]>([]);
+  const [rateTarget, setRateTarget] = useState<{ type: "dish" | "restaurant"; id?: string; name: string } | null>(null);
+  // delivery
+  const [areas, setAreas] = useState<DeliveryArea[]>([]);
+  const [areaId, setAreaId] = useState("");
+  const [orderError, setOrderError] = useState<string | null>(null);
+
   const toggleCat = (id: string) => setOpenCat((cur) => (cur === id ? null : id));
   const closeCat = (id: string) => {
     setOpenCat(null);
@@ -173,11 +187,20 @@ function HomePage() {
     return Date.now() - new Date(it.created_at).getTime() < 14 * 24 * 60 * 60 * 1000;
   };
 
+  const toggleFav = (id: string) =>
+    setFavorites((cur) => {
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      saveFavorites(next);
+      return next;
+    });
+
   const reloadAll = () => {
     fetchCategories().then(setCategories).catch(console.error);
     fetchMenuItems().then(setItems).catch(console.error);
     fetchMenuItemOptions().then(setOptions).catch(console.error);
     fetchOffers(true).then(setOffers).catch(console.error);
+    fetchDeliveryAreas(true).then(setAreas).catch(console.error);
+    fetchDishRatings().then(setRatings).catch(console.error);
     fetchTheme()
       .then((t) => {
         if (t) {
@@ -187,6 +210,19 @@ function HomePage() {
       })
       .catch(console.error);
   };
+
+  // restore local prefs
+  useEffect(() => {
+    setFavorites(loadFavorites());
+    const saved = loadSavedAddress();
+    if (saved) {
+      setAreaId(saved.areaId ?? "");
+      setCustomerPhone(saved.phone ?? "");
+      setCustomerAddress(saved.address ?? "");
+    }
+  }, []);
+
+
 
   useEffect(() => {
     reloadAll();
