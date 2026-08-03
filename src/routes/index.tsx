@@ -912,6 +912,92 @@ function HomePage() {
         </section>
       )}
 
+      {/* ============ FAVORITES ============ */}
+      <section id="favorites" className="scroll-mt-24 px-4 pt-14">
+        <div className="mx-auto max-w-5xl">
+          <button
+            onClick={() => setFavOpen((v) => !v)}
+            className="glass-card flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-right md:px-6 md:py-4"
+          >
+            <span className="font-display text-lg font-bold md:text-2xl">
+              <span className="gold-text">♡ المفضلة</span>
+              <span className="mr-2 text-xs text-foreground/60">({favoriteItems.length})</span>
+            </span>
+            <ChevronDown
+              className={`h-5 w-5 text-[var(--gold)] transition-transform ${favOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {favOpen && (
+            <div className="mt-4">
+              {favoriteItems.length === 0 ? (
+                <p className="text-center text-sm text-foreground/60">
+                  لم تقم بإضافة أطباق إلى المفضلة بعد — اضغط ♡ على أي طبق.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+                  {favoriteItems.map((item) => {
+                    const vOpts = optionsByItem[item.id] ?? [];
+                    const vSel = selectedOption[item.id] ?? vOpts[0]?.id ?? "";
+                    const vDiscount =
+                      item.discount_price != null && item.discount_price < item.price;
+                    const vPrice =
+                      vOpts.length > 0
+                        ? (vOpts.find((o) => o.id === vSel) ?? vOpts[0]).price
+                        : vDiscount
+                          ? item.discount_price!
+                          : item.price;
+                    return (
+                      <article
+                        key={`fav-${item.id}`}
+                        className="glass-card group flex flex-col overflow-hidden rounded-2xl"
+                      >
+                        <div className="relative aspect-[4/3] w-full overflow-hidden">
+                          <img
+                            src={item.image_url || ITEM_PLACEHOLDER}
+                            alt={item.name}
+                            loading="lazy"
+                            onClick={() =>
+                              setLightbox({
+                                src: item.image_url || ITEM_PLACEHOLDER,
+                                alt: item.name,
+                              })
+                            }
+                            className="h-full w-full cursor-zoom-in object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          {favButton(item)}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2 p-3">
+                          <h3 className="font-display text-sm font-bold text-foreground">
+                            {item.name}
+                          </h3>
+                          <div className="gold-text font-display text-sm font-bold">
+                            {vPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
+                          </div>
+                          {ratingLine(item)}
+                          <button
+                            onClick={() => addToCart(item)}
+                            className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
+                              justAdded === item.id
+                                ? "bg-[#25D366] text-white"
+                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                            }`}
+                          >
+                            <ShoppingBag className="h-3.5 w-3.5" />
+                            {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة"}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+
+
       {/* ============ MENU ============ */}
       <section id="menu" className="relative px-4 py-16 md:py-24">
         <div className="mx-auto max-w-7xl">
