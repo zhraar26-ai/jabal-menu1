@@ -1568,6 +1568,56 @@ function HomePage() {
           />
         </div>
       )}
+
+      {/* ============ RATING MODAL ============ */}
+      {rateTarget && (
+        <div
+          onClick={() => setRateTarget(null)}
+          className="fixed inset-0 z-[110] grid place-items-center bg-black/80 p-4 animate-fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-card w-full max-w-sm rounded-2xl p-5 text-center"
+          >
+            <div className="mb-1 font-display text-lg font-bold gold-text">
+              {rateTarget.type === "dish" ? "✍️ قَيّم الطبق" : "⭐️ تقييم المطعم"}
+            </div>
+            <div className="mb-4 text-sm text-foreground/70">{rateTarget.name}</div>
+            <div className="mb-5 flex justify-center">
+              <Stars value={rateStars} size="lg" onPick={setRateStars} />
+            </div>
+            <div className="flex gap-2">
+              <button
+                disabled={rateStars < 1}
+                onClick={async () => {
+                  try {
+                    if (rateTarget.type === "dish" && rateTarget.id) {
+                      await submitDishRating(rateTarget.id, rateStars);
+                      fetchDishRatings().then(setRatings).catch(console.error);
+                    } else {
+                      await submitRestaurantRating(rateStars, "");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  }
+                  setRateTarget(null);
+                  setRateStars(0);
+                }}
+                className="flex-1 rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] disabled:opacity-50"
+              >
+                إرسال التقييم
+              </button>
+              <button
+                onClick={() => setRateTarget(null)}
+                className="rounded-full gold-border px-4 py-2.5 text-sm text-foreground/80"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
