@@ -702,24 +702,10 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ============ SEARCH ============ */}
+      {/* ============ SEARCH RESULTS ============ */}
       <section className="px-4 pt-8">
         <div className="mx-auto max-w-3xl">
-          <div className="glass-card flex items-center gap-3 rounded-full px-4 py-2.5">
-            <Search className="h-5 w-5 shrink-0 text-[var(--gold)]" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="ابحث عن طبقك المفضل..."
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground/45 focus:outline-none md:text-base"
-            />
-            {query && (
-              <button onClick={() => setQuery("")} aria-label="مسح" className="text-[var(--gold)]">
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+
 
           {query.trim() && (
             <div className="mt-5">
