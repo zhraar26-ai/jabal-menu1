@@ -874,6 +874,7 @@ function HomePage() {
                           </span>
                         )}
                       </div>
+                      {favButton(item)}
                     </div>
                     <div className="flex flex-1 flex-col gap-2 p-3 md:p-4">
                       <h3 className="font-display text-sm font-bold text-foreground md:text-lg">
@@ -882,6 +883,7 @@ function HomePage() {
                       <div className="gold-text font-display text-sm font-bold md:text-lg">
                         {fPrice.toLocaleString()} <span className="text-[10px] md:text-xs">د.ع</span>
                       </div>
+                      {ratingLine(item)}
                       <input
                         type="text"
                         value={notes[item.id] ?? ""}
@@ -889,6 +891,7 @@ function HomePage() {
                         placeholder="ملاحظات (مثلاً: بدون مخلل)"
                         className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/50 px-2.5 py-1.5 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
                       />
+
                       <button
                         onClick={() => addToCart(item)}
                         className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] md:text-sm ${
