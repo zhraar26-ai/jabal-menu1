@@ -241,6 +241,12 @@ function HomePage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "offers" }, () =>
         fetchOffers(true).then(setOffers).catch(console.error),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "delivery_areas" }, () =>
+        fetchDeliveryAreas(true).then(setAreas).catch(console.error),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "dish_ratings" }, () =>
+        fetchDishRatings().then(setRatings).catch(console.error),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "theme_settings" }, () =>
         fetchTheme()
           .then((t) => {
@@ -252,6 +258,7 @@ function HomePage() {
           .catch(console.error),
       )
       .subscribe();
+
     return () => {
       sb.removeChannel(channel);
     };
