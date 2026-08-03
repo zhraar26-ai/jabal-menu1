@@ -261,7 +261,10 @@ export function ImageField({
       {value && (
         <button
           type="button"
-          onClick={() => setSrc(`${value}${value.includes("?") ? "&" : "?"}t=${Date.now()}`)}
+          onClick={() => {
+            setAlpha(/\.(png|webp)(\?|#|$)/i.test(value));
+            setSrc(`${value}${value.includes("?") ? "&" : "?"}t=${Date.now()}`);
+          }}
           className="inline-flex items-center gap-1 rounded-full gold-border px-3 py-1.5 text-xs text-[var(--gold)]"
         >
           <Crop className="h-3.5 w-3.5" /> تعديل الصورة
@@ -281,10 +284,12 @@ export function ImageField({
           src={src}
           aspect={aspect}
           cropShape={cropShape}
+          keepAlpha={alpha}
           onCancel={() => setSrc(null)}
           onCropped={uploadBlob}
         />
       )}
     </div>
   );
+
 }
