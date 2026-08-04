@@ -30,6 +30,7 @@ import {
   MenuItem,
   MenuItemOption,
   Offer,
+  RestaurantRating,
   ThemeSettings,
   applyTheme,
   fetchCategories,
@@ -38,6 +39,7 @@ import {
   fetchMenuItems,
   fetchMenuItemOptions,
   fetchOffers,
+  fetchRestaurantRatings,
   fetchTheme,
   loadFavorites,
   loadSavedAddress,
@@ -92,10 +94,10 @@ const SIDE_LINKS = [
   { href: "#home", label: "الرئيسية" },
   { href: "#menu", label: "أقسام المنيو" },
   { href: "#featured", label: "🔥 الأكثر طلباً" },
-  { href: "#favorites", label: "♡ المفضلة" },
   { href: "#about", label: "عن المطعم" },
   { href: "#contact", label: "تواصل" },
 ];
+
 
 /** 5-star display / picker */
 function Stars({
@@ -159,7 +161,14 @@ function HomePage() {
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [featOpen, setFeatOpen] = useState(true);
-  const [favOpen, setFavOpen] = useState(true);
+  const [favDrawerOpen, setFavDrawerOpen] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviewStars, setReviewStars] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewMsg, setReviewMsg] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<RestaurantRating[]>([]);
+
+
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -203,6 +212,8 @@ function HomePage() {
     fetchOffers(true).then(setOffers).catch(console.error);
     fetchDeliveryAreas(true).then(setAreas).catch(console.error);
     fetchDishRatings().then(setRatings).catch(console.error);
+    fetchRestaurantRatings().then(setReviews).catch(console.error);
+
     fetchTheme()
       .then((t) => {
         if (t) {
@@ -440,6 +451,9 @@ function HomePage() {
   );
   const deliveryFee = selectedArea?.price ?? 0;
   const grandTotal = cartTotal + deliveryFee;
+  const canCheckout =
+    (areas.length === 0 || !!areaId) && customerPhone.trim().length >= 8;
+
 
   const addToCart = (item: MenuItem) => {
     const qty = getPending(item.id);
@@ -469,10 +483,11 @@ function HomePage() {
     setOrderError(null);
     const phone = sanitizeText(customerPhone, 40);
     const address = sanitizeText(customerAddress, 500);
-    if (!phone || !address) {
+    if (!canCheckout) {
       setShowCheckoutWarning(true);
       return;
     }
+
     const limited = rateLimit("order", 20_000, 15);
     if (limited) {
       setOrderError(limited);
@@ -568,7 +583,15 @@ function HomePage() {
               <Phone className="h-3.5 w-3.5" />
               اتصل للطلب
             </a>
+            <button
+              onClick={() => setNavOpen((v) => !v)}
+              aria-label="القائمة"
+              className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              {navOpen ? <X className="h-4 w-4" /> : <MenuIcon className="h-4 w-4" />}
+            </button>
           </div>
+
 
           <div className="flex items-center gap-2 md:hidden">
             <button
@@ -618,7 +641,7 @@ function HomePage() {
         </div>
 
         {navOpen && (
-          <nav className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)] px-4 py-4 md:hidden animate-fade-in">
+          <nav className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)] px-4 py-4 animate-fade-in">
             <div className="flex flex-col gap-3 text-base">
               {SIDE_LINKS.map((l) => (
                 <a
@@ -630,6 +653,27 @@ function HomePage() {
                   {l.label}
                 </a>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setNavOpen(false);
+                  setFavDrawerOpen(true);
+                }}
+                className="rounded-lg px-3 py-2 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_12%,transparent)] hover:text-[var(--gold)]"
+              >
+                ♡ المفضلة ({favoriteItems.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNavOpen(false);
+                  setReviewsOpen(true);
+                }}
+                className="rounded-lg px-3 py-2 text-right transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_12%,transparent)] hover:text-[var(--gold)]"
+              >
+                💬 آراء الزبائن
+              </button>
+
               <a
                 href={`tel:${PHONE_PRIMARY}`}
                 className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 font-bold text-[var(--forest-deep)]"
@@ -775,8 +819,8 @@ function HomePage() {
                                 : "bg-[var(--gold)] text-[var(--forest-deep)]"
                             }`}
                           >
-                            <ShoppingBag className="h-3.5 w-3.5" />
-                            {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة"}
+                            {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة للطلب"}
+
                           </button>
                         </div>
                       </article>
@@ -902,8 +946,8 @@ function HomePage() {
                             : "bg-[var(--gold)] text-[var(--forest-deep)]"
                         }`}
                       >
-                        <ShoppingBag className="h-3.5 w-3.5" />
-                        {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة"}
+                        {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة للطلب"}
+
                       </button>
                     </div>
                   </article>
@@ -914,89 +958,8 @@ function HomePage() {
         </section>
       )}
 
-      {/* ============ FAVORITES ============ */}
-      <section id="favorites" className="scroll-mt-24 px-4 pt-14">
-        <div className="mx-auto max-w-5xl">
-          <button
-            onClick={() => setFavOpen((v) => !v)}
-            className="glass-card flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-right md:px-6 md:py-4"
-          >
-            <span className="font-display text-lg font-bold md:text-2xl">
-              <span className="gold-text">♡ المفضلة</span>
-              <span className="mr-2 text-xs text-foreground/60">({favoriteItems.length})</span>
-            </span>
-            <ChevronDown
-              className={`h-5 w-5 text-[var(--gold)] transition-transform ${favOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-          {favOpen && (
-            <div className="mt-4">
-              {favoriteItems.length === 0 ? (
-                <p className="text-center text-sm text-foreground/60">
-                  لم تقم بإضافة أطباق إلى المفضلة بعد — اضغط ♡ على أي طبق.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
-                  {favoriteItems.map((item) => {
-                    const vOpts = optionsByItem[item.id] ?? [];
-                    const vSel = selectedOption[item.id] ?? vOpts[0]?.id ?? "";
-                    const vDiscount =
-                      item.discount_price != null && item.discount_price < item.price;
-                    const vPrice =
-                      vOpts.length > 0
-                        ? (vOpts.find((o) => o.id === vSel) ?? vOpts[0]).price
-                        : vDiscount
-                          ? item.discount_price!
-                          : item.price;
-                    return (
-                      <article
-                        key={`fav-${item.id}`}
-                        className="glass-card group flex flex-col overflow-hidden rounded-2xl"
-                      >
-                        <div className="relative aspect-[4/3] w-full overflow-hidden">
-                          <img
-                            src={item.image_url || ITEM_PLACEHOLDER}
-                            alt={item.name}
-                            loading="lazy"
-                            onClick={() =>
-                              setLightbox({
-                                src: item.image_url || ITEM_PLACEHOLDER,
-                                alt: item.name,
-                              })
-                            }
-                            className="h-full w-full cursor-zoom-in object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                          {favButton(item)}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-2 p-3">
-                          <h3 className="font-display text-sm font-bold text-foreground">
-                            {item.name}
-                          </h3>
-                          <div className="gold-text font-display text-sm font-bold">
-                            {vPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
-                          </div>
-                          {ratingLine(item)}
-                          <button
-                            onClick={() => addToCart(item)}
-                            className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
-                              justAdded === item.id
-                                ? "bg-[#25D366] text-white"
-                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
-                            }`}
-                          >
-                            <ShoppingBag className="h-3.5 w-3.5" />
-                            {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة"}
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
+
+
 
 
 
@@ -1130,21 +1093,23 @@ function HomePage() {
                                         {item.description}
                                       </p>
                                     )}
-                                  </div>
-                                  <div className="shrink-0 text-end">
-                                    <div className="gold-text font-display text-lg font-bold md:text-xl">
-                                      {displayPrice.toLocaleString()}
+                                    <div className="mt-1 flex items-baseline gap-2">
+                                      <span className="gold-text font-display text-lg font-bold md:text-xl">
+                                        {displayPrice.toLocaleString()}
+                                      </span>
+                                      <span className="text-xs uppercase tracking-widest text-[var(--gold)]/70">
+                                        د.ع
+                                      </span>
+                                      {hasDiscount && itemOpts.length === 0 && (
+                                        <span className="text-xs text-foreground/50 line-through">
+                                          {item.price.toLocaleString()}
+                                        </span>
+                                      )}
                                     </div>
-                                    {hasDiscount && itemOpts.length === 0 && (
-                                      <div className="text-xs text-foreground/50 line-through">
-                                        {item.price.toLocaleString()}
-                                      </div>
-                                    )}
-                                    <div className="text-xs uppercase tracking-widest text-[var(--gold)]/70">
-                                      د.ع
-                                    </div>
                                   </div>
+                                  <div className="shrink-0">{ratingLine(item)}</div>
                                 </div>
+
 
                                 {itemOpts.length > 0 && (
                                   <div className="flex flex-row flex-wrap gap-2">
@@ -1170,7 +1135,7 @@ function HomePage() {
                                   </div>
                                 )}
 
-                                {ratingLine(item)}
+
 
                                 <input
                                   type="text"
@@ -1209,12 +1174,12 @@ function HomePage() {
                                         : "bg-[var(--gold)] text-[var(--forest-deep)]"
                                     }`}
                                   >
-                                    <ShoppingBag className="h-4 w-4" />
                                     {justAdded === key
                                       ? "تمت الإضافة ✓"
                                       : inCartCount > 0
-                                        ? `إضافة إلى السلة (${inCartCount})`
-                                        : "إضافة إلى السلة"}
+                                        ? `إضافة للطلب (${inCartCount})`
+                                        : "إضافة للطلب"}
+
                                   </button>
                                 </div>
                               </div>
@@ -1408,58 +1373,60 @@ function HomePage() {
                   <p>السلة فارغة. أضف أطباقك المفضلة!</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {cartEntries.map((e) => (
                     <div
                       key={e.key}
-                      className="glass-card flex flex-col gap-2 rounded-2xl p-3"
+                      className="glass-card flex flex-col gap-1.5 rounded-xl p-2"
                     >
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold">
+                          <div className="text-xs font-bold leading-snug">
                             {e.item.name}
+
                             {e.line.optionName && (
-                              <span className="ms-2 text-xs text-[var(--gold)]">
+                              <span className="ms-1.5 text-[10px] text-[var(--gold)]">
                                 ({e.line.optionName})
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-foreground/60">
+                          <div className="text-[10px] text-foreground/60">
                             {e.line.unitPrice.toLocaleString()} د.ع × {e.line.qty}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 rounded-full gold-border p-1">
+                        <div className="flex items-center gap-0.5 rounded-full gold-border p-0.5">
                           <button
                             onClick={() => setCartQty(e.key, -1)}
-                            className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                            className="grid h-6 w-6 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                             aria-label="إنقاص"
                           >
-                            <Minus className="h-3.5 w-3.5" />
+                            <Minus className="h-3 w-3" />
                           </button>
-                          <span className="w-6 text-center text-sm font-bold tabular-nums">{e.line.qty}</span>
+                          <span className="w-5 text-center text-xs font-bold tabular-nums">{e.line.qty}</span>
                           <button
                             onClick={() => setCartQty(e.key, +1)}
-                            className="grid h-7 w-7 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+                            className="grid h-6 w-6 place-items-center rounded-full text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
                             aria-label="زيادة"
                           >
-                            <Plus className="h-3.5 w-3.5" />
+                            <Plus className="h-3 w-3" />
                           </button>
                         </div>
                         <button
                           onClick={() => removeFromCart(e.key)}
-                          className="grid h-8 w-8 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
+                          className="grid h-7 w-7 place-items-center rounded-full text-red-400 hover:bg-red-500/10"
                           aria-label="حذف"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                       <input
                         type="text"
                         value={e.line.note}
                         onChange={(ev) => setCartNote(e.key, ev.target.value)}
-                        placeholder="✏️ أضف أو عدّل ملاحظة (مثلاً: بدون مخلل)"
-                        className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/60 px-3 py-2 text-xs text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+                        placeholder="✏️ ملاحظة (مثلاً: بدون مخلل)"
+                        className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/60 px-2 py-1.5 text-[11px] text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
                       />
+
                     </div>
                   ))}
                 </div>
@@ -1468,14 +1435,14 @@ function HomePage() {
 
             {cartEntries.length > 0 && (
               <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest)] px-5 py-4">
-                <div className="mb-3 space-y-2">
+                <div className="mb-2.5 space-y-1.5">
                   {areas.length > 0 && (
                     <select
                       value={areaId}
                       onChange={(e) => setAreaId(e.target.value)}
-                      className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
+                      className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
                     >
-                      <option value="">اختر منطقة التوصيل ▾</option>
+                      <option value="">اختر منطقة التوصيل * ▾</option>
                       {areas.map((a) => (
                         <option key={a.id} value={a.id}>
                           {a.name} — {a.price.toLocaleString()} د.ع
@@ -1484,53 +1451,46 @@ function HomePage() {
                     </select>
                   )}
                   <input
+                    type="text"
+                    placeholder="العنوان الكامل للتوصيل"
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
+                  />
+                  <input
                     type="tel"
                     placeholder="رقم الهاتف *"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
+                    className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
                   />
-                  <input
-                    type="text"
-                    placeholder="العنوان الكامل للتوصيل *"
-                    value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
-                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-4 py-2.5 text-sm focus:border-[var(--gold)] focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setRateTarget({ type: "restaurant", name: "مطعم جبل" })}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full gold-border px-4 py-2 text-xs font-bold text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-                  >
-                    ⭐️ تقييم المطعم
-                  </button>
                 </div>
 
-                {showCheckoutWarning && (!customerPhone.trim() || !customerAddress.trim()) && (
-                  <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-                    ⚠️ يرجى إضافة رقم الهاتف والعنوان قبل إرسال الطلب.
+                {!canCheckout && (
+                  <div className="mb-2.5 rounded-lg border border-[color-mix(in_oklab,var(--gold)_35%,transparent)] bg-[var(--gold)]/10 px-3 py-2 text-[11px] text-[var(--gold)]">
+                    ⚠️ يرجى اختيار منطقة التوصيل وإدخال رقم الهاتف لتفعيل الإرسال.
                   </div>
                 )}
                 {orderError && (
-                  <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                  <div className="mb-2.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-[11px] text-red-300">
                     {orderError}
                   </div>
                 )}
 
-                <div className="mb-3 space-y-1 text-sm">
-                  <div className="flex items-center justify-between text-xs text-foreground/70">
+                <div className="mb-2.5 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] text-foreground/70">
                     <span>مجموع الأطباق</span>
                     <span>{cartTotal.toLocaleString()} د.ع</span>
                   </div>
                   {selectedArea && (
-                    <div className="flex items-center justify-between text-xs text-foreground/70">
+                    <div className="flex items-center justify-between text-[11px] text-foreground/70">
                       <span>التوصيل ({selectedArea.name})</span>
                       <span>{deliveryFee.toLocaleString()} د.ع</span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-foreground/80">المجموع الكلي</span>
-                    <span className="gold-text font-display text-xl font-bold">
+                  <div className="flex items-center justify-between pt-0.5">
+                    <span className="text-xs text-foreground/80">المجموع الكلي</span>
+                    <span className="gold-text font-display text-lg font-bold">
                       {grandTotal.toLocaleString()} د.ع
                     </span>
                   </div>
@@ -1538,11 +1498,13 @@ function HomePage() {
 
                 <button
                   onClick={sendCartToWhatsapp}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                  disabled={!canCheckout}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                   <MessageCircle className="h-4 w-4" />
                   إرسال الطلب عبر واتساب
                 </button>
+
               </div>
             )}
           </aside>
@@ -1553,12 +1515,13 @@ function HomePage() {
       {lightbox && (
         <div
           onClick={() => setLightbox(null)}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 animate-fade-in"
+          style={{ touchAction: "pinch-zoom" }}
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-auto overscroll-contain bg-black/90 p-4 animate-fade-in"
         >
           <button
             onClick={() => setLightbox(null)}
             aria-label="إغلاق"
-            className="absolute top-4 right-4 grid h-11 w-11 place-items-center rounded-full gold-border bg-[var(--forest-deep)]/80 text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            className="fixed top-4 right-4 z-10 grid h-11 w-11 place-items-center rounded-full gold-border bg-[var(--forest-deep)]/80 text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
           >
             <X className="h-6 w-6" />
           </button>
@@ -1566,9 +1529,11 @@ function HomePage() {
             src={lightbox.src}
             alt={lightbox.alt}
             onClick={(e) => e.stopPropagation()}
+            style={{ touchAction: "pinch-zoom" }}
             className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-[var(--shadow-card)]"
           />
         </div>
+
       )}
 
       {/* ============ RATING MODAL ============ */}

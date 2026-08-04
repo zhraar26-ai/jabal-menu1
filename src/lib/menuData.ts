@@ -162,8 +162,10 @@ export type RestaurantRating = {
   stars: number;
   comment: string | null;
   hidden: boolean;
+  pinned?: boolean;
   created_at: string;
 };
+
 
 export type OrderRow = {
   id: string;
@@ -198,10 +200,12 @@ export async function fetchRestaurantRatings(): Promise<RestaurantRating[]> {
   const { data, error } = await sb
     .from("restaurant_ratings")
     .select("*")
+    .order("pinned", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
+
 
 export async function submitDishRating(menuItemId: string, stars: number) {
   const { error } = await sb
