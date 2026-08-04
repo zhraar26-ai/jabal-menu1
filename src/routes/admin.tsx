@@ -1143,3 +1143,240 @@ function ThemeTab() {
   );
 }
 
+
+/* ============ DELIVERY AREAS ============ */
+
+function DeliveryTab() {
+  const [areas, setAreas] = useState<DeliveryArea[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState("");
+  const [newPrice, setNewPrice] = useState<number>(0);
+
+  const load = () => {
+    setLoading(true);
+    fetchDeliveryAreas()
+      .then(setAreas)
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const add = async () => {
+    if (!newName.trim()) return;
+    const { error } = await sb.from("delivery_areas").insert({
+      name: newName.trim(),
+      price: Number(newPrice) || 0,
+      sort_order: areas.length + 1,
+    });
+    if (error) return alert("فشل الإضافة: " + error.message);
+    setNewName("");
+    setNewPrice(0);
+    load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("حذف منطقة التوصيل؟")) return;
+    const { error } = await sb.from("delivery_areas").delete().eq("id", id);
+    if (error) return alert("فشل الحذف: " + error.message);
+    load();
+  };
+
+  if (loading) return <div className="text-foreground/70">جاري التحميل…</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card flex flex-wrap items-end gap-3 rounded-2xl p-4">
+        <div className="min-w-[180px] flex-1">
+          <label className="text-xs text-foreground/70">اسم المنطقة</label>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="w-36">
+          <label className="text-xs text-foreground/70">سعر التوصيل (د.ع)</label>
+          <input
+            type="number"
+            value={newPrice}
+            onChange={(e) => setNewPrice(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-sm"
+          />
+        </div>
+        <button
+          onClick={add}
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-4 py-2 text-sm font-bold text-[var(--forest-deep)]"
+        >
+          <Plus className="h-4 w-4" /> إضافة منطقة
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {areas.map((a) => (
+          <AreaRow key={a.id} a={a} onDelete={remove} />
+        ))}
+        {areas.length === 0 && (
+          <div className="text-sm text-foreground/60">لا توجد مناطق توصيل بعد.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AreaRow({ a, onDelete }: { a: DeliveryArea; onDelete: (id: string) => void }) {
+  const [name, setName] = useState(a.name);
+  const [price, setPrice] = useState(a.price);
+  const [sort, setSort] = useState(a.sort_order);
+  const [active, setActive] = useState(a.active);
+
+  const save = async () => {
+    const { error } = await sb
+      .from("delivery_areas")
+      .update({ name, price: Number(price) || 0, sort_order: Number(sort) || 0, active })
+      .eq("id", a.id);
+    if (error) alert("فشل الحفظ: " + error.message);
+  };
+
+  return (
+    <div className="glass-card flex flex-wrap items-end gap-3 rounded-2xl p-3">
+      <div className="min-w-[160px] flex-1">
+        <label className="text-[10px] text-foreground/60">المنطقة</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-sm"
+        />
+      </div>
+      <div className="w-28">
+        <label className="text-[10px] text-foreground/60">السعر</label>
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(Number(e.target.value))}
+          className="mt-1 w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-sm"
+        />
+      </div>
+      <div className="w-20">
+        <label className="text-[10px] text-foreground/60">الترتيب</label>
+        <input
+          type="number"
+          value={sort}
+          onChange={(e) => setSort(Number(e.target.value))}
+          className="mt-1 w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-sm"
+        />
+      </div>
+      <label className="flex items-center gap-1.5 text-xs text-foreground/80">
+        <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+        مفعّلة
+      </label>
+      <button
+        onClick={save}
+        className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3 py-2 text-xs font-bold text-[var(--forest-deep)]"
+      >
+        <Save className="h-3.5 w-3.5" /> حفظ
+      </button>
+      <button
+        onClick={() => onDelete(a.id)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-red-500/50 px-3 py-2 text-xs font-bold text-red-400"
+      >
+        <Trash2 className="h-3.5 w-3.5" /> حذف
+      </button>
+    </div>
+  );
+}
+
+/* ============ CUSTOMER REVIEWS ============ */
+
+function ReviewsTab() {
+  const [rows, setRows] = useState<RestaurantRating[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    fetchRestaurantRatings()
+      .then(setRows)
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const patch = async (id: string, p: Record<string, unknown>) => {
+    const { error } = await sb.from("restaurant_ratings").update(p).eq("id", id);
+    if (error) return alert("فشل الحفظ: " + error.message);
+    load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("حذف هذا الرأي نهائياً؟")) return;
+    const { error } = await sb.from("restaurant_ratings").delete().eq("id", id);
+    if (error) return alert("فشل الحذف: " + error.message);
+    load();
+  };
+
+  if (loading) return <div className="text-foreground/70">جاري التحميل…</div>;
+  if (rows.length === 0)
+    return <div className="text-sm text-foreground/60">لا توجد آراء بعد.</div>;
+
+  return (
+    <div className="space-y-2">
+      {rows.map((r) => (
+        <ReviewRow key={r.id} r={r} onPatch={patch} onDelete={remove} />
+      ))}
+    </div>
+  );
+}
+
+function ReviewRow({
+  r,
+  onPatch,
+  onDelete,
+}: {
+  r: RestaurantRating;
+  onPatch: (id: string, p: Record<string, unknown>) => Promise<void>;
+  onDelete: (id: string) => void;
+}) {
+  const [comment, setComment] = useState(r.comment ?? "");
+
+  return (
+    <div className="glass-card space-y-2 rounded-2xl p-3">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-[var(--gold)]">{"★".repeat(r.stars)}</span>
+        <span className="text-foreground/50">
+          {new Date(r.created_at).toLocaleDateString("ar-IQ")}
+        </span>
+        {r.hidden && <span className="text-red-400">مخفي</span>}
+        {r.pinned && <span className="text-[var(--gold)]">مثبّت</span>}
+      </div>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        rows={2}
+        className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-sm"
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => onPatch(r.id, { comment: comment.trim() || null })}
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3 py-1.5 text-xs font-bold text-[var(--forest-deep)]"
+        >
+          <Save className="h-3.5 w-3.5" /> حفظ النص
+        </button>
+        <button
+          onClick={() => onPatch(r.id, { hidden: !r.hidden })}
+          className="rounded-full gold-border px-3 py-1.5 text-xs font-bold text-[var(--gold)]"
+        >
+          {r.hidden ? "إظهار" : "إخفاء"}
+        </button>
+        <button
+          onClick={() => onPatch(r.id, { pinned: !r.pinned })}
+          className="rounded-full gold-border px-3 py-1.5 text-xs font-bold text-[var(--gold)]"
+        >
+          {r.pinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
+        </button>
+        <button
+          onClick={() => onDelete(r.id)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-red-500/50 px-3 py-1.5 text-xs font-bold text-red-400"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> حذف
+        </button>
+      </div>
+    </div>
+  );
+}
