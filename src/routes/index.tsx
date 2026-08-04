@@ -1588,7 +1588,168 @@ function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ============ FAVORITES DRAWER (side menu) ============ */}
+      {favDrawerOpen && (
+        <div className="fixed inset-0 z-[95] flex">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setFavDrawerOpen(false)}
+          />
+          <aside className="relative ms-auto flex h-full w-full max-w-md flex-col bg-[var(--forest-deep)] shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between border-b border-[color-mix(in_oklab,var(--gold)_18%,transparent)] px-5 py-4">
+              <h3 className="font-display text-lg font-bold">
+                <span className="gold-text">♡ المفضلة</span>
+                <span className="ms-2 text-sm text-foreground/60">({favoriteItems.length})</span>
+              </h3>
+              <button
+                onClick={() => setFavDrawerOpen(false)}
+                className="rounded-full gold-border p-2 text-[var(--gold)]"
+                aria-label="إغلاق"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {favoriteItems.length === 0 ? (
+                <p className="mt-10 text-center text-sm text-foreground/60">
+                  لم تقم بإضافة أطباق إلى المفضلة بعد — اضغط ♡ على أي طبق.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {favoriteItems.map((item) => {
+                    const { price } = priceForSelection(item);
+                    return (
+                      <div key={`favd-${item.id}`} className="glass-card flex items-center gap-3 rounded-xl p-2">
+                        <img
+                          src={item.image_url || ITEM_PLACEHOLDER}
+                          alt={item.name}
+                          className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-bold">{item.name}</div>
+                          <div className="gold-text text-xs font-bold">
+                            {price.toLocaleString()} د.ع
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => addToCart(item)}
+                          className="shrink-0 rounded-full bg-[var(--gold)] px-3 py-1.5 text-[11px] font-bold text-[var(--forest-deep)]"
+                        >
+                          {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة للطلب"}
+                        </button>
+                        <button
+                          onClick={() => toggleFav(item.id)}
+                          aria-label="إزالة"
+                          className="shrink-0 text-red-400"
+                        >
+                          <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ============ CUSTOMER REVIEWS ============ */}
+      {reviewsOpen && (
+        <div
+          onClick={() => setReviewsOpen(false)}
+          className="fixed inset-0 z-[105] grid place-items-center overflow-y-auto bg-black/80 p-4 animate-fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-card my-8 w-full max-w-lg rounded-2xl p-5"
+          >
+            <div className="mb-1 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="gold-text font-display text-xl font-bold">رأيك يهمنا</h3>
+                <p className="mt-1 text-xs text-foreground/70">
+                  اكتب رأيك أو تجربتك مع المطعم وأي ملاحظة
+                </p>
+              </div>
+              <button
+                onClick={() => setReviewsOpen(false)}
+                aria-label="إغلاق"
+                className="rounded-full gold-border p-2 text-[var(--gold)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 flex justify-center">
+              <Stars value={reviewStars} size="lg" onPick={setReviewStars} />
+            </div>
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="اكتب رأيك هنا..."
+              className="mt-3 w-full rounded-xl border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)]/60 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:border-[var(--gold)] focus:outline-none"
+            />
+            {reviewMsg && (
+              <div className="mt-2 text-center text-xs text-[var(--gold)]">{reviewMsg}</div>
+            )}
+            <button
+              disabled={reviewStars < 1}
+              onClick={async () => {
+                setReviewMsg(null);
+                const limited = rateLimit("review", 30_000, 5);
+                if (limited) return setReviewMsg(limited);
+                try {
+                  await submitRestaurantRating(reviewStars, sanitizeText(reviewText, 500));
+                  setReviewStars(0);
+                  setReviewText("");
+                  setReviewMsg("شكراً لك! تم إرسال رأيك ❤️");
+                  fetchRestaurantRatings().then(setReviews).catch(console.error);
+                } catch (err: any) {
+                  setReviewMsg("تعذر الإرسال، حاول لاحقاً.");
+                  console.error(err);
+                }
+              }}
+              className="mt-3 w-full rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] disabled:opacity-50"
+            >
+              إرسال رأيي
+            </button>
+
+            <div className="mt-5 border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] pt-4">
+              <div className="mb-3 font-display text-sm font-bold text-[var(--gold)]">
+                آراء الزبائن ({reviews.length})
+              </div>
+              {reviews.length === 0 ? (
+                <p className="text-center text-xs text-foreground/60">لا توجد آراء بعد.</p>
+              ) : (
+                <div className="max-h-64 space-y-2 overflow-y-auto pe-1">
+                  {reviews.map((r) => (
+                    <div key={r.id} className="rounded-xl bg-black/20 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <Stars value={r.stars} />
+                        {r.pinned && (
+                          <span className="rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-[var(--forest-deep)]">
+                            ★ مميّز
+                          </span>
+                        )}
+                      </div>
+                      {r.comment && (
+                        <p className="mt-1.5 text-xs leading-relaxed text-foreground/80">
+                          {r.comment}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
 
   );
 }
