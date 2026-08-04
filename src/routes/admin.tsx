@@ -184,7 +184,7 @@ function LoginScreen() {
 
 /* ============ DASHBOARD ============ */
 
-type Tab = "categories" | "items" | "featured" | "offers" | "theme";
+type Tab = "categories" | "items" | "featured" | "offers" | "delivery" | "reviews" | "theme";
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("categories");
@@ -217,6 +217,8 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
               ["items", "الأكلات"],
               ["featured", "🔥 الأكثر طلباً"],
               ["offers", "العروض"],
+              ["delivery", "مناطق التوصيل"],
+              ["reviews", "آراء الزبائن"],
               ["theme", "المظهر"],
             ] as const
           ).map(([id, label]) => (
@@ -238,6 +240,8 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         {tab === "items" && <ItemsTab />}
         {tab === "featured" && <FeaturedTab />}
         {tab === "offers" && <OffersTab />}
+        {tab === "delivery" && <DeliveryTab />}
+        {tab === "reviews" && <ReviewsTab />}
         {tab === "theme" && <ThemeTab />}
       </div>
     </div>
