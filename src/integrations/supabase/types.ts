@@ -260,6 +260,7 @@ export type Database = {
           created_at: string
           hidden: boolean
           id: string
+          pinned: boolean
           stars: number
         }
         Insert: {
@@ -267,6 +268,7 @@ export type Database = {
           created_at?: string
           hidden?: boolean
           id?: string
+          pinned?: boolean
           stars: number
         }
         Update: {
@@ -274,6 +276,7 @@ export type Database = {
           created_at?: string
           hidden?: boolean
           id?: string
+          pinned?: boolean
           stars?: number
         }
         Relationships: []
