@@ -4,18 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   BACKGROUND_STYLES,
   Category,
+  DeliveryArea,
   FONT_OPTIONS,
   MenuItem,
   Offer,
+  RestaurantRating,
   ThemeSettings,
   applyTheme,
   fetchCategories,
+  fetchDeliveryAreas,
   fetchMenuItems,
   fetchMenuItemOptions,
   fetchOffers,
+  fetchRestaurantRatings,
   fetchTheme,
   MenuItemOption,
 } from "@/lib/menuData";
+
 import { LogOut, Plus, Save, Trash2 } from "lucide-react";
 import { ImageField } from "@/components/ImageCropper";
 
