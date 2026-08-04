@@ -260,6 +260,10 @@ function HomePage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "dish_ratings" }, () =>
         fetchDishRatings().then(setRatings).catch(console.error),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_ratings" }, () =>
+        fetchRestaurantRatings().then(setReviews).catch(console.error),
+      )
+
       .on("postgres_changes", { event: "*", schema: "public", table: "theme_settings" }, () =>
         fetchTheme()
           .then((t) => {
