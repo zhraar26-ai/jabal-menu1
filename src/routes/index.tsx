@@ -334,7 +334,7 @@ function HomePage() {
   const ratingLine = (item: MenuItem) => {
     const r = ratingByItem[item.id];
     return (
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col items-start gap-1.5">
         <span className="inline-flex items-center gap-1 text-xs text-foreground/75">
           <Star className="h-3.5 w-3.5 fill-[var(--gold)] text-[var(--gold)]" />
           {r ? (
