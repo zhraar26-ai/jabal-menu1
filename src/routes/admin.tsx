@@ -352,7 +352,7 @@ function CategoryRow({
         folder="categories"
         label="صورة القسم"
         aspect={1}
-        cropShape="round"
+        cropShape="rect"
         previewClassName="h-14 w-14 rounded-full object-cover ring-2 ring-[var(--gold)]/50"
       />
 
