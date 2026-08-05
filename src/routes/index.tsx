@@ -1458,7 +1458,7 @@ function HomePage() {
                       <option value="">اختر منطقة التوصيل * ▾</option>
                       {areas.map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.name} — {a.price.toLocaleString()} د.ع
+                          {a.name}
                         </option>
                       ))}
                     </select>
