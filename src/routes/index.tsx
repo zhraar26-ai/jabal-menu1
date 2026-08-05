@@ -1007,11 +1007,12 @@ function HomePage() {
                     className="flex w-full flex-col items-center justify-center gap-3 px-4 py-5 text-center transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-6 md:py-7"
                   >
                     {c.image_url ? (
-                      <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full p-[3px] ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] md:h-20 md:w-20">
+                      <span className="block h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] md:h-20 md:w-20">
                         <img
                           src={c.image_url}
                           alt={c.name}
-                          className="h-full w-full rounded-full object-cover object-center"
+                          loading="lazy"
+                          className="block h-full w-full object-cover object-center"
                         />
                       </span>
                     ) : (
