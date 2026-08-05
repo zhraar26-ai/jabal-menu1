@@ -722,7 +722,7 @@ function HomePage() {
             className="mx-auto h-40 w-auto object-contain drop-shadow-[0_8px_30px_rgba(255,189,89,0.35)] md:h-56"
           />
 
-          <h1 className="mt-4 font-display text-3xl font-bold leading-tight text-foreground md:text-5xl lg:text-6xl animate-fade-in">
+          <h1 className="mt-4 font-display text-[1.35rem] font-bold leading-tight text-foreground sm:text-2xl md:text-4xl lg:text-5xl animate-fade-in">
             {heroTitle.split(" ").length > 1 ? (
               <>
                 {heroTitle.split(" ").slice(0, -1).join(" ")}{" "}
