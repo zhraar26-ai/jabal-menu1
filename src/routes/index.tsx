@@ -676,6 +676,15 @@ function HomePage() {
               >
                 💬 آراء الزبائن
               </button>
+              <a
+                href="#contact"
+                onClick={() => setNavOpen(false)}
+                className="rounded-lg px-3 py-2 transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_12%,transparent)] hover:text-[var(--gold)]"
+              >
+                📞 تواصل
+              </a>
+
+
 
               <a
                 href={`tel:${PHONE_PRIMARY}`}
