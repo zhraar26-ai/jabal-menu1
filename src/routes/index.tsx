@@ -92,10 +92,9 @@ const NAV_LINKS = [
 
 const SIDE_LINKS = [
   { href: "#home", label: "الرئيسية" },
+  { href: "#about", label: "عن المطعم" },
   { href: "#menu", label: "أقسام المنيو" },
   { href: "#featured", label: "🔥 الأكثر طلباً" },
-  { href: "#about", label: "عن المطعم" },
-  { href: "#contact", label: "تواصل" },
 ];
 
 
@@ -335,7 +334,7 @@ function HomePage() {
   const ratingLine = (item: MenuItem) => {
     const r = ratingByItem[item.id];
     return (
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col items-start gap-1.5">
         <span className="inline-flex items-center gap-1 text-xs text-foreground/75">
           <Star className="h-3.5 w-3.5 fill-[var(--gold)] text-[var(--gold)]" />
           {r ? (
@@ -677,6 +676,15 @@ function HomePage() {
               >
                 💬 آراء الزبائن
               </button>
+              <a
+                href="#contact"
+                onClick={() => setNavOpen(false)}
+                className="rounded-lg px-3 py-2 transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_12%,transparent)] hover:text-[var(--gold)]"
+              >
+                📞 تواصل
+              </a>
+
+
 
               <a
                 href={`tel:${PHONE_PRIMARY}`}
@@ -999,11 +1007,12 @@ function HomePage() {
                     className="flex w-full flex-col items-center justify-center gap-3 px-4 py-5 text-center transition-colors hover:bg-[color-mix(in_oklab,var(--gold)_8%,transparent)] md:px-6 md:py-7"
                   >
                     {c.image_url ? (
-                      <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full p-[3px] ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] md:h-20 md:w-20">
+                      <span className="block h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] md:h-20 md:w-20">
                         <img
                           src={c.image_url}
                           alt={c.name}
-                          className="h-full w-full rounded-full object-cover object-center"
+                          loading="lazy"
+                          className="block h-full w-full object-cover object-center"
                         />
                       </span>
                     ) : (
@@ -1449,7 +1458,7 @@ function HomePage() {
                       <option value="">اختر منطقة التوصيل * ▾</option>
                       {areas.map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.name} — {a.price.toLocaleString()} د.ع
+                          {a.name}
                         </option>
                       ))}
                     </select>
@@ -1482,10 +1491,7 @@ function HomePage() {
                 )}
 
                 <div className="mb-2.5 space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-foreground/70">
-                    <span>مجموع الأطباق</span>
-                    <span>{cartTotal.toLocaleString()} د.ع</span>
-                  </div>
+
                   {selectedArea && (
                     <div className="flex items-center justify-between text-[11px] text-foreground/70">
                       <span>التوصيل ({selectedArea.name})</span>
