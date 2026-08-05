@@ -92,10 +92,9 @@ const NAV_LINKS = [
 
 const SIDE_LINKS = [
   { href: "#home", label: "الرئيسية" },
+  { href: "#about", label: "عن المطعم" },
   { href: "#menu", label: "أقسام المنيو" },
   { href: "#featured", label: "🔥 الأكثر طلباً" },
-  { href: "#about", label: "عن المطعم" },
-  { href: "#contact", label: "تواصل" },
 ];
 
 
