@@ -1491,10 +1491,7 @@ function HomePage() {
                 )}
 
                 <div className="mb-2.5 space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-foreground/70">
-                    <span>مجموع الأطباق</span>
-                    <span>{cartTotal.toLocaleString()} د.ع</span>
-                  </div>
+
                   {selectedArea && (
                     <div className="flex items-center justify-between text-[11px] text-foreground/70">
                       <span>التوصيل ({selectedArea.name})</span>
