@@ -19,6 +19,11 @@ import {
   fetchRestaurantRatings,
   fetchTheme,
   MenuItemOption,
+  DAY_NAMES,
+  DEFAULT_HOURS,
+  DEFAULT_CLOSED_MESSAGE,
+  DayHours,
+  OrderRow,
 } from "@/lib/menuData";
 
 import { LogOut, Plus, Save, Trash2 } from "lucide-react";
@@ -184,10 +189,10 @@ function LoginScreen() {
 
 /* ============ DASHBOARD ============ */
 
-type Tab = "categories" | "items" | "featured" | "offers" | "delivery" | "reviews" | "theme";
+type Tab = "analytics" | "hours" | "categories" | "items" | "featured" | "offers" | "delivery" | "reviews" | "theme";
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<Tab>("categories");
+  const [tab, setTab] = useState<Tab>("analytics");
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -213,6 +218,8 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         <nav className="mb-6 flex flex-wrap gap-2">
           {(
             [
+              ["analytics", "📊 الإحصائيات"],
+              ["hours", "أوقات العمل"],
               ["categories", "الأقسام"],
               ["items", "الأكلات"],
               ["featured", "🔥 الأكثر طلباً"],
@@ -236,6 +243,8 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
           ))}
         </nav>
 
+        {tab === "analytics" && <AnalyticsTab />}
+        {tab === "hours" && <HoursTab />}
         {tab === "categories" && <CategoriesTab />}
         {tab === "items" && <ItemsTab />}
         {tab === "featured" && <FeaturedTab />}
