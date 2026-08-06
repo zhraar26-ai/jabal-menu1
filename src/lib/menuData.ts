@@ -54,7 +54,66 @@ export type ThemeSettings = {
   footer_text: string;
   location_url: string;
   featured_enabled?: boolean;
+  opening_hours?: DayHours[] | null;
+  manual_closed?: boolean;
+  closed_message?: string | null;
 };
+
+/* ============ OPENING HOURS ============ */
+
+export type DayHours = { open: string; close: string; closed: boolean };
+
+export const DAY_NAMES = [
+  "الأحد",
+  "الإثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+  "السبت",
+];
+
+export const DEFAULT_HOURS: DayHours[] = Array.from({ length: 7 }, () => ({
+  open: "12:00",
+  close: "02:00",
+  closed: false,
+}));
+
+export const DEFAULT_CLOSED_MESSAGE =
+  "المطعم مغلق حالياً، نستقبل طلباتكم خلال أوقات العمل";
+
+function toMinutes(hhmm: string): number {
+  const [h, m] = (hhmm || "00:00").split(":").map((n) => parseInt(n, 10) || 0);
+  return h * 60 + m;
+}
+
+/** Returns true when the schedule says the store is open at `now` (handles past-midnight closing). */
+export function isWithinHours(hours: DayHours[] | null | undefined, now = new Date()): boolean {
+  const list = hours && hours.length === 7 ? hours : DEFAULT_HOURS;
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const day = now.getDay();
+  const today = list[day];
+  if (today && !today.closed) {
+    const o = toMinutes(today.open);
+    const c = toMinutes(today.close);
+    if (c > o ? mins >= o && mins < c : mins >= o) return true;
+  }
+  // yesterday's session spilling past midnight
+  const prev = list[(day + 6) % 7];
+  if (prev && !prev.closed) {
+    const o = toMinutes(prev.open);
+    const c = toMinutes(prev.close);
+    if (c <= o && mins < c) return true;
+  }
+  return false;
+}
+
+/** Store open state, factoring in the manual override switch. */
+export function isStoreOpen(theme: ThemeSettings | null, now = new Date()): boolean {
+  if (!theme) return true;
+  if (theme.manual_closed) return false;
+  return isWithinHours(theme.opening_hours ?? DEFAULT_HOURS, now);
+}
 
 
 const sb = supabase as any;
