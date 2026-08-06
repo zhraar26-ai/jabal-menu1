@@ -27,6 +27,17 @@ import {
 } from "@/lib/menuData";
 
 import { LogOut, Plus, Save, Trash2 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { ImageField } from "@/components/ImageCropper";
 
 export const Route = createFileRoute("/admin")({
@@ -1394,6 +1405,392 @@ function ReviewRow({
         >
           <Trash2 className="h-3.5 w-3.5" /> حذف
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============ OPERATING HOURS ============ */
+
+function HoursTab() {
+  const [t, setT] = useState<ThemeSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [savedAt, setSavedAt] = useState(0);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTheme()
+      .then(setT)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading || !t) return <div className="text-foreground/70">جاري التحميل…</div>;
+
+  const hours: DayHours[] =
+    Array.isArray(t.opening_hours) && t.opening_hours.length === 7
+      ? (t.opening_hours as DayHours[])
+      : DEFAULT_HOURS;
+
+  const setDay = (i: number, patch: Partial<DayHours>) => {
+    const next = hours.map((d, idx) => (idx === i ? { ...d, ...patch } : d));
+    setT({ ...t, opening_hours: next });
+  };
+
+  const save = async () => {
+    setErr(null);
+    const { error } = await sb
+      .from("theme_settings")
+      .update({
+        opening_hours: hours,
+        manual_closed: !!t.manual_closed,
+        closed_message: t.closed_message || DEFAULT_CLOSED_MESSAGE,
+      })
+      .eq("id", 1);
+    if (error) return setErr(error.message);
+    setSavedAt(Date.now());
+  };
+
+  const applyToAll = () => {
+    const first = hours[0];
+    setT({ ...t, opening_hours: hours.map(() => ({ ...first })) });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div
+        className={`glass-card flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${
+          t.manual_closed ? "border border-red-500/50" : ""
+        }`}
+      >
+        <div>
+          <div className="text-sm font-bold text-foreground">إغلاق يدوي — المطعم مغلق حالياً</div>
+          <p className="mt-1 text-xs text-foreground/60">
+            عند التفعيل يتم إغلاق استقبال الطلبات فوراً بغض النظر عن أوقات العمل.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setT({ ...t, manual_closed: !t.manual_closed })}
+          className={`relative h-8 w-16 shrink-0 rounded-full transition-colors ${
+            t.manual_closed ? "bg-red-500" : "bg-[var(--forest-deep)] gold-border"
+          }`}
+          aria-pressed={!!t.manual_closed}
+          aria-label="إغلاق يدوي"
+        >
+          <span
+            className={`absolute top-1 h-6 w-6 rounded-full bg-[var(--gold)] transition-all ${
+              t.manual_closed ? "start-1" : "end-1"
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="glass-card space-y-2 rounded-2xl p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-bold text-[var(--gold)]">أوقات العمل الأسبوعية</span>
+          <button
+            onClick={applyToAll}
+            className="rounded-full gold-border px-3 py-1.5 text-[11px] text-[var(--gold)]"
+          >
+            تطبيق توقيت الأحد على كل الأيام
+          </button>
+        </div>
+        {hours.map((d, i) => (
+          <div key={i} className="flex flex-wrap items-center gap-2 rounded-xl gold-border p-2">
+            <span className="w-20 text-xs font-bold">{DAY_NAMES[i]}</span>
+            <label className="flex items-center gap-1 text-[11px] text-foreground/70">
+              <input
+                type="checkbox"
+                checked={!d.closed}
+                onChange={(e) => setDay(i, { closed: !e.target.checked })}
+              />
+              مفتوح
+            </label>
+            <input
+              type="time"
+              value={d.open}
+              disabled={d.closed}
+              onChange={(e) => setDay(i, { open: e.target.value })}
+              className="rounded-lg bg-[var(--forest-deep)] px-2 py-1.5 text-xs gold-border disabled:opacity-40"
+            />
+            <span className="text-xs text-foreground/50">إلى</span>
+            <input
+              type="time"
+              value={d.close}
+              disabled={d.closed}
+              onChange={(e) => setDay(i, { close: e.target.value })}
+              className="rounded-lg bg-[var(--forest-deep)] px-2 py-1.5 text-xs gold-border disabled:opacity-40"
+            />
+          </div>
+        ))}
+        <div className="pt-2">
+          <label className="text-xs text-foreground/70">رسالة الإغلاق</label>
+          <input
+            value={t.closed_message ?? DEFAULT_CLOSED_MESSAGE}
+            onChange={(e) => setT({ ...t, closed_message: e.target.value })}
+            className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-5 py-2 text-sm font-bold text-[var(--forest-deep)]"
+        >
+          <Save className="h-4 w-4" /> حفظ أوقات العمل
+        </button>
+        {savedAt > 0 && Date.now() - savedAt < 2500 && (
+          <span className="text-xs text-green-400">تم الحفظ ✓</span>
+        )}
+        {err && <span className="text-xs text-red-400">خطأ: {err}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ============ ANALYTICS ============ */
+
+const iqd = (n: number) => `${Math.round(n).toLocaleString()} د.ع`;
+
+function AnalyticsTab() {
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [scope, setScope] = useState<"today" | "month">("today");
+
+  useEffect(() => {
+    sb.from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(3000)
+      .then(({ data }: any) => {
+        setOrders(data ?? []);
+        setLoading(false);
+      });
+  }, []);
+
+  const stats = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+
+    let todayCount = 0,
+      todayRevenue = 0,
+      monthCount = 0,
+      monthRevenue = 0,
+      prevCount = 0,
+      prevRevenue = 0;
+
+    const daily: { day: string; ts: number; orders: number; revenue: number }[] = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(startOfToday - i * 86_400_000);
+      daily.push({
+        day: `${d.getDate()}/${d.getMonth() + 1}`,
+        ts: d.getTime(),
+        orders: 0,
+        revenue: 0,
+      });
+    }
+    const monthly: { label: string; ts: number; orders: number; revenue: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthly.push({
+        label: `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`,
+        ts: d.getTime(),
+        orders: 0,
+        revenue: 0,
+      });
+    }
+
+    const topToday = new Map<string, { name: string; qty: number; revenue: number }>();
+    const topMonth = new Map<string, { name: string; qty: number; revenue: number }>();
+
+    for (const o of orders) {
+      const ts = new Date(o.created_at).getTime();
+      const total = Number(o.total) || 0;
+      if (ts >= startOfToday) {
+        todayCount++;
+        todayRevenue += total;
+      }
+      if (ts >= startOfMonth) {
+        monthCount++;
+        monthRevenue += total;
+      } else if (ts >= startOfPrevMonth) {
+        prevCount++;
+        prevRevenue += total;
+      }
+      for (let i = daily.length - 1; i >= 0; i--) {
+        if (ts >= daily[i].ts) {
+          if (ts < daily[i].ts + 86_400_000) {
+            daily[i].orders++;
+            daily[i].revenue += total;
+          }
+          break;
+        }
+      }
+      for (let i = monthly.length - 1; i >= 0; i--) {
+        if (ts >= monthly[i].ts) {
+          monthly[i].orders++;
+          monthly[i].revenue += total;
+          break;
+        }
+      }
+      const lines = Array.isArray(o.items) ? o.items : [];
+      for (const l of lines as any[]) {
+        const key = String(l?.name ?? l?.id ?? "");
+        if (!key) continue;
+        const qty = Number(l?.qty) || 0;
+        const rev = qty * (Number(l?.unit_price) || 0);
+        const bump = (m: Map<string, { name: string; qty: number; revenue: number }>) => {
+          const cur = m.get(key) ?? { name: key, qty: 0, revenue: 0 };
+          cur.qty += qty;
+          cur.revenue += rev;
+          m.set(key, cur);
+        };
+        if (ts >= startOfToday) bump(topToday);
+        if (ts >= startOfMonth) bump(topMonth);
+      }
+    }
+
+    const sortTop = (m: Map<string, { name: string; qty: number; revenue: number }>) =>
+      [...m.values()].sort((a, b) => b.qty - a.qty).slice(0, 8);
+
+    return {
+      todayCount,
+      todayRevenue,
+      monthCount,
+      monthRevenue,
+      prevCount,
+      prevRevenue,
+      daily,
+      monthly,
+      topToday: sortTop(topToday),
+      topMonth: sortTop(topMonth),
+    };
+  }, [orders]);
+
+  if (loading) return <div className="text-foreground/70">جاري التحميل…</div>;
+
+  const delta =
+    stats.prevRevenue > 0
+      ? ((stats.monthRevenue - stats.prevRevenue) / stats.prevRevenue) * 100
+      : null;
+
+  const card = (label: string, value: string, hint?: string) => (
+    <div className="glass-card rounded-2xl p-4">
+      <div className="text-[11px] text-foreground/60">{label}</div>
+      <div className="gold-text mt-1 font-display text-xl font-bold">{value}</div>
+      {hint && <div className="mt-0.5 text-[10px] text-foreground/50">{hint}</div>}
+    </div>
+  );
+
+  const top = scope === "today" ? stats.topToday : stats.topMonth;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {card("طلبات اليوم", String(stats.todayCount))}
+        {card("مبيعات اليوم", iqd(stats.todayRevenue))}
+        {card("طلبات هذا الشهر", String(stats.monthCount), `الشهر الماضي: ${stats.prevCount}`)}
+        {card(
+          "مبيعات هذا الشهر",
+          iqd(stats.monthRevenue),
+          delta === null
+            ? `الشهر الماضي: ${iqd(stats.prevRevenue)}`
+            : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta).toFixed(1)}% مقارنة بالشهر الماضي`,
+        )}
+      </div>
+
+      <div className="glass-card rounded-2xl p-4">
+        <div className="mb-3 text-sm font-bold text-[var(--gold)]">مبيعات آخر 14 يوم</div>
+        <div className="h-56 w-full" dir="ltr">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stats.daily}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,189,89,0.12)" />
+              <XAxis dataKey="day" tick={{ fill: "#cbd5c0", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#cbd5c0", fontSize: 10 }} width={60} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--forest-deep)",
+                  border: "1px solid rgba(255,189,89,0.35)",
+                  borderRadius: 12,
+                  fontSize: 12,
+                }}
+                formatter={(v: any, k: any) => [k === "revenue" ? iqd(Number(v)) : v, k === "revenue" ? "المبيعات" : "الطلبات"]}
+              />
+              <Bar dataKey="revenue" fill="#ffbd59" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="glass-card rounded-2xl p-4">
+        <div className="mb-3 text-sm font-bold text-[var(--gold)]">اتجاه المبيعات الشهري</div>
+        <div className="h-56 w-full" dir="ltr">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={stats.monthly}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,189,89,0.12)" />
+              <XAxis dataKey="label" tick={{ fill: "#cbd5c0", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#cbd5c0", fontSize: 10 }} width={60} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--forest-deep)",
+                  border: "1px solid rgba(255,189,89,0.35)",
+                  borderRadius: 12,
+                  fontSize: 12,
+                }}
+                formatter={(v: any) => iqd(Number(v))}
+              />
+              <Line type="monotone" dataKey="revenue" stroke="#ffbd59" strokeWidth={2} dot />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="glass-card rounded-2xl p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <span className="text-sm font-bold text-[var(--gold)]">الأطباق الأكثر مبيعاً</span>
+          <div className="flex gap-2">
+            {(
+              [
+                ["today", "اليوم"],
+                ["month", "هذا الشهر"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setScope(id)}
+                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
+                  scope === id
+                    ? "bg-[var(--gold)] text-[var(--forest-deep)]"
+                    : "gold-border text-foreground/70"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {top.length === 0 ? (
+          <div className="text-sm text-foreground/60">لا توجد مبيعات في هذه الفترة.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {top.map((d, i) => (
+              <div
+                key={d.name}
+                className="flex items-center justify-between rounded-xl gold-border px-3 py-2 text-xs"
+              >
+                <span className="font-bold">
+                  {i + 1}. {d.name}
+                </span>
+                <span className="text-foreground/70">
+                  {d.qty} طلب · {iqd(d.revenue)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
