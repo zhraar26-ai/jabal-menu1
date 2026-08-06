@@ -377,3 +377,42 @@ export function saveAddress(v: SavedAddress) {
     /* ignore */
   }
 }
+
+/* ============ ORDER ANTI-SPAM ============ */
+
+const ORDER_COOLDOWN_MS = 45_000;
+const DUP_WINDOW_MS = 5 * 60_000;
+const LAST_ORDER_KEY = "jabal:lastOrder";
+
+/**
+ * Guards order submissions: enforces a cooldown between orders and blocks an
+ * identical order re-submitted within a short window (unless the user confirms).
+ * Returns an error message, or null when the order may proceed.
+ */
+export function checkOrderGuard(signature: string): string | null {
+  if (typeof window === "undefined") return null;
+  const now = Date.now();
+  let last: { at: number; sig: string } | null = null;
+  try {
+    last = JSON.parse(localStorage.getItem(LAST_ORDER_KEY) || "null");
+  } catch {
+    last = null;
+  }
+  if (last) {
+    const elapsed = now - last.at;
+    if (elapsed < ORDER_COOLDOWN_MS) {
+      return `يرجى الانتظار ${Math.ceil((ORDER_COOLDOWN_MS - elapsed) / 1000)} ثانية قبل إرسال طلب جديد.`;
+    }
+    if (last.sig === signature && elapsed < DUP_WINDOW_MS) {
+      const ok =
+        typeof confirm === "function"
+          ? confirm("لقد أرسلت هذا الطلب للتو. هل تريد إرساله مرة أخرى؟")
+          : false;
+      if (!ok) return "تم إلغاء الإرسال لتفادي تكرار الطلب.";
+    }
+  }
+  const err = rateLimit("order", ORDER_COOLDOWN_MS, 10);
+  if (err) return err;
+  localStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ at: now, sig: signature }));
+  return null;
+}
