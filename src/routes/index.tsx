@@ -147,6 +147,12 @@ function HomePage() {
   const [options, setOptions] = useState<MenuItemOption[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [theme, setTheme] = useState<ThemeSettings | null>(null);
+  const [nowTick, setNowTick] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const [pendingQty, setPendingQty] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
