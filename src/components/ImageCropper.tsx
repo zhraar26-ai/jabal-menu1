@@ -102,8 +102,13 @@ export function ImageCropperModal({
     setZoom((z) => Math.min(4, Math.max(0.5, Number((z + d).toFixed(2)))));
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4" dir="rtl">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--forest-deep)] gold-border">
+    <div
+      className="fixed inset-0 z-[9999] grid place-items-center bg-black/90 p-4 backdrop-blur-md"
+      dir="rtl"
+    >
+      <div className="relative z-[10000] w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--forest-deep)] shadow-2xl gold-border">
+        <div className="absolute inset-0 -z-10 bg-[var(--forest-deep)]" />
+
         <div className="flex items-center justify-between border-b border-[color-mix(in_oklab,var(--gold)_20%,transparent)] px-4 py-3">
           <span className="text-sm font-bold text-[var(--gold)]">تعديل وقص الصورة</span>
           <button onClick={onCancel} className="rounded-full p-1 text-foreground/70 hover:text-foreground">
