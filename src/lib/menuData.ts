@@ -54,7 +54,66 @@ export type ThemeSettings = {
   footer_text: string;
   location_url: string;
   featured_enabled?: boolean;
+  opening_hours?: DayHours[] | null;
+  manual_closed?: boolean;
+  closed_message?: string | null;
 };
+
+/* ============ OPENING HOURS ============ */
+
+export type DayHours = { open: string; close: string; closed: boolean };
+
+export const DAY_NAMES = [
+  "الأحد",
+  "الإثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+  "السبت",
+];
+
+export const DEFAULT_HOURS: DayHours[] = Array.from({ length: 7 }, () => ({
+  open: "12:00",
+  close: "02:00",
+  closed: false,
+}));
+
+export const DEFAULT_CLOSED_MESSAGE =
+  "المطعم مغلق حالياً، نستقبل طلباتكم خلال أوقات العمل";
+
+function toMinutes(hhmm: string): number {
+  const [h, m] = (hhmm || "00:00").split(":").map((n) => parseInt(n, 10) || 0);
+  return h * 60 + m;
+}
+
+/** Returns true when the schedule says the store is open at `now` (handles past-midnight closing). */
+export function isWithinHours(hours: DayHours[] | null | undefined, now = new Date()): boolean {
+  const list = hours && hours.length === 7 ? hours : DEFAULT_HOURS;
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const day = now.getDay();
+  const today = list[day];
+  if (today && !today.closed) {
+    const o = toMinutes(today.open);
+    const c = toMinutes(today.close);
+    if (c > o ? mins >= o && mins < c : mins >= o) return true;
+  }
+  // yesterday's session spilling past midnight
+  const prev = list[(day + 6) % 7];
+  if (prev && !prev.closed) {
+    const o = toMinutes(prev.open);
+    const c = toMinutes(prev.close);
+    if (c <= o && mins < c) return true;
+  }
+  return false;
+}
+
+/** Store open state, factoring in the manual override switch. */
+export function isStoreOpen(theme: ThemeSettings | null, now = new Date()): boolean {
+  if (!theme) return true;
+  if (theme.manual_closed) return false;
+  return isWithinHours(theme.opening_hours ?? DEFAULT_HOURS, now);
+}
 
 
 const sb = supabase as any;
@@ -317,4 +376,43 @@ export function saveAddress(v: SavedAddress) {
   } catch {
     /* ignore */
   }
+}
+
+/* ============ ORDER ANTI-SPAM ============ */
+
+const ORDER_COOLDOWN_MS = 45_000;
+const DUP_WINDOW_MS = 5 * 60_000;
+const LAST_ORDER_KEY = "jabal:lastOrder";
+
+/**
+ * Guards order submissions: enforces a cooldown between orders and blocks an
+ * identical order re-submitted within a short window (unless the user confirms).
+ * Returns an error message, or null when the order may proceed.
+ */
+export function checkOrderGuard(signature: string): string | null {
+  if (typeof window === "undefined") return null;
+  const now = Date.now();
+  let last: { at: number; sig: string } | null = null;
+  try {
+    last = JSON.parse(localStorage.getItem(LAST_ORDER_KEY) || "null");
+  } catch {
+    last = null;
+  }
+  if (last) {
+    const elapsed = now - last.at;
+    if (elapsed < ORDER_COOLDOWN_MS) {
+      return `يرجى الانتظار ${Math.ceil((ORDER_COOLDOWN_MS - elapsed) / 1000)} ثانية قبل إرسال طلب جديد.`;
+    }
+    if (last.sig === signature && elapsed < DUP_WINDOW_MS) {
+      const ok =
+        typeof confirm === "function"
+          ? confirm("لقد أرسلت هذا الطلب للتو. هل تريد إرساله مرة أخرى؟")
+          : false;
+      if (!ok) return "تم إلغاء الإرسال لتفادي تكرار الطلب.";
+    }
+  }
+  const err = rateLimit("order", ORDER_COOLDOWN_MS, 10);
+  if (err) return err;
+  localStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ at: now, sig: signature }));
+  return null;
 }

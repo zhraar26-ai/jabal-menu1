@@ -43,6 +43,8 @@ import {
   fetchTheme,
   loadFavorites,
   loadSavedAddress,
+  isStoreOpen,
+  checkOrderGuard,
   logOrder,
   rateLimit,
   sanitizeText,
@@ -145,6 +147,12 @@ function HomePage() {
   const [options, setOptions] = useState<MenuItemOption[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [theme, setTheme] = useState<ThemeSettings | null>(null);
+  const [nowTick, setNowTick] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const [pendingQty, setPendingQty] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -454,8 +462,11 @@ function HomePage() {
   );
   const deliveryFee = selectedArea?.price ?? 0;
   const grandTotal = cartTotal + deliveryFee;
+  const storeOpen = isStoreOpen(theme, nowTick);
+  const closedMessage =
+    theme?.closed_message || "المطعم مغلق حالياً، نستقبل طلباتكم خلال أوقات العمل";
   const canCheckout =
-    (areas.length === 0 || !!areaId) && customerPhone.trim().length >= 8;
+    storeOpen && (areas.length === 0 || !!areaId) && customerPhone.trim().length >= 8;
 
 
   const addToCart = (item: MenuItem) => {
@@ -486,12 +497,22 @@ function HomePage() {
     setOrderError(null);
     const phone = sanitizeText(customerPhone, 40);
     const address = sanitizeText(customerAddress, 500);
+    if (!storeOpen) {
+      setOrderError(closedMessage);
+      return;
+    }
     if (!canCheckout) {
       setShowCheckoutWarning(true);
       return;
     }
 
-    const limited = rateLimit("order", 20_000, 15);
+    const signature = JSON.stringify({
+      lines: cartEntries.map((e) => [e.key, e.line.qty, e.line.unitPrice, e.line.note]),
+      areaId,
+      phone,
+      address,
+    });
+    const limited = checkOrderGuard(signature);
     if (limited) {
       setOrderError(limited);
       return;
@@ -700,7 +721,14 @@ function HomePage() {
       </header>
 
       {/* ============ HERO ============ */}
+      {!storeOpen && (
+        <div className="border-b border-red-500/40 bg-red-500/15 px-4 py-2.5 text-center text-xs font-bold text-red-200 md:text-sm">
+          🚫 {closedMessage}
+        </div>
+      )}
+
       <section id="home" className="relative overflow-hidden">
+
         <div className="absolute inset-0">
           <img
             src={heroSrc}
@@ -1479,7 +1507,12 @@ function HomePage() {
                   />
                 </div>
 
-                {!canCheckout && (
+                {!storeOpen && (
+                  <div className="mb-2.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-[11px] font-bold text-red-300">
+                    🚫 {closedMessage}
+                  </div>
+                )}
+                {storeOpen && !canCheckout && (
                   <div className="mb-2.5 rounded-lg border border-[color-mix(in_oklab,var(--gold)_35%,transparent)] bg-[var(--gold)]/10 px-3 py-2 text-[11px] text-[var(--gold)]">
                     ⚠️ يرجى اختيار منطقة التوصيل وإدخال رقم الهاتف لتفعيل الإرسال.
                   </div>
@@ -1512,7 +1545,7 @@ function HomePage() {
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  إرسال الطلب عبر واتساب
+                  إرسال الطلب
                 </button>
 
               </div>

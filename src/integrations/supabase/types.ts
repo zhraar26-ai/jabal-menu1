@@ -284,6 +284,7 @@ export type Database = {
       theme_settings: {
         Row: {
           background_style: string
+          closed_message: string
           featured_enabled: boolean
           font_family: string
           footer_text: string
@@ -295,9 +296,12 @@ export type Database = {
           hero_title: string | null
           id: number
           location_url: string
+          manual_closed: boolean
+          opening_hours: Json
         }
         Insert: {
           background_style?: string
+          closed_message?: string
           featured_enabled?: boolean
           font_family?: string
           footer_text?: string
@@ -309,9 +313,12 @@ export type Database = {
           hero_title?: string | null
           id?: number
           location_url?: string
+          manual_closed?: boolean
+          opening_hours?: Json
         }
         Update: {
           background_style?: string
+          closed_message?: string
           featured_enabled?: boolean
           font_family?: string
           footer_text?: string
@@ -323,6 +330,8 @@ export type Database = {
           hero_title?: string | null
           id?: number
           location_url?: string
+          manual_closed?: boolean
+          opening_hours?: Json
         }
         Relationships: []
       }
