@@ -721,7 +721,14 @@ function HomePage() {
       </header>
 
       {/* ============ HERO ============ */}
+      {!storeOpen && (
+        <div className="border-b border-red-500/40 bg-red-500/15 px-4 py-2.5 text-center text-xs font-bold text-red-200 md:text-sm">
+          🚫 {closedMessage}
+        </div>
+      )}
+
       <section id="home" className="relative overflow-hidden">
+
         <div className="absolute inset-0">
           <img
             src={heroSrc}
