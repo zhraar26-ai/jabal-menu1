@@ -226,32 +226,34 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
           </div>
         </header>
 
-        <nav className="mb-6 flex flex-wrap gap-2">
-          {(
-            [
-              ["analytics", "📊 الإحصائيات"],
-              ["hours", "أوقات العمل"],
-              ["categories", "الأقسام"],
-              ["items", "الأكلات"],
-              ["featured", "🔥 الأكثر طلباً"],
-              ["offers", "العروض"],
-              ["delivery", "مناطق التوصيل"],
-              ["reviews", "آراء الزبائن"],
-              ["theme", "المظهر"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`rounded-full px-4 py-2 text-sm font-bold transition-colors ${
-                tab === id
-                  ? "bg-[var(--gold)] text-[var(--forest-deep)]"
-                  : "gold-border text-foreground/80 hover:text-[var(--gold)]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <nav className="mb-6 rounded-full gold-border bg-[color-mix(in_oklab,var(--forest-deep)_85%,transparent)] p-1.5">
+          <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {(
+              [
+                ["categories", "الأقسام"],
+                ["items", "الأطباق"],
+                ["featured", "الأكثر طلباً"],
+                ["offers", "العروض"],
+                ["delivery", "أماكن التوصيل"],
+                ["reviews", "آراء الزبائن"],
+                ["hours", "أوقات العمل"],
+                ["analytics", "الإحصائيات"],
+                ["theme", "المظهر"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
+                  tab === id
+                    ? "bg-[var(--gold)] text-[var(--forest-deep)]"
+                    : "text-foreground/75 hover:text-[var(--gold)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </nav>
 
         {tab === "analytics" && <AnalyticsTab />}
