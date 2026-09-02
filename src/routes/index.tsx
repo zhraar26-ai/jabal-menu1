@@ -242,6 +242,19 @@ function HomePage() {
     }
   }, []);
 
+  /* warm the browser cache so images render instantly when a category opens */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const urls = [
+      ...items.map((it) => it.image_url),
+      ...categories.map((c) => c.image_url),
+    ].filter(Boolean) as string[];
+    urls.forEach((u) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = u;
+    });
+  }, [items, categories]);
 
 
   useEffect(() => {
@@ -640,8 +653,8 @@ function HomePage() {
 
         {/* expanding search field */}
         <div
-          className={`overflow-hidden border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] transition-all duration-300 ${
-            searchOpen ? "max-h-24 opacity-100" : "max-h-0 border-transparent opacity-0"
+          className={`overflow-y-auto overscroll-contain border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] bg-[var(--forest-deep)] transition-all duration-300 ${
+            searchOpen ? "max-h-[75vh] opacity-100" : "max-h-0 overflow-hidden border-transparent opacity-0"
           }`}
         >
           <div className="mx-auto max-w-3xl px-4 py-2.5">
@@ -661,6 +674,83 @@ function HomePage() {
                 </button>
               )}
             </div>
+
+            {query.trim() && (
+              <div className="mt-3 pb-3">
+                {searchResults.length === 0 ? (
+                  <p className="text-center text-sm text-foreground/60">لا توجد نتائج مطابقة</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+                    {searchResults.map((item) => {
+                      const sOpts = optionsByItem[item.id] ?? [];
+                      const sSel = selectedOption[item.id] ?? sOpts[0]?.id ?? "";
+                      const sDiscount =
+                        item.discount_price != null && item.discount_price < item.price;
+                      const sPrice =
+                        sOpts.length > 0
+                          ? (sOpts.find((o) => o.id === sSel) ?? sOpts[0]).price
+                          : sDiscount
+                            ? item.discount_price!
+                            : item.price;
+                      return (
+                        <article
+                          key={`search-${item.id}`}
+                          className="glass-card group flex flex-col overflow-hidden rounded-2xl"
+                        >
+                          <div className="relative aspect-[4/3] w-full overflow-hidden">
+                            <img
+                              src={item.image_url || ITEM_PLACEHOLDER}
+                              alt={item.name}
+                              loading="eager"
+                              decoding="async"
+                              onClick={() =>
+                                setLightbox({
+                                  src: item.image_url || ITEM_PLACEHOLDER,
+                                  alt: item.name,
+                                })
+                              }
+                              className="h-full w-full cursor-zoom-in object-cover"
+                            />
+                            <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
+                              {(item as any).featured && (
+                                <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-[var(--forest-deep)]">
+                                  🔥 الأكثر طلباً
+                                </span>
+                              )}
+                              {isNewItem(item) && (
+                                <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-[var(--forest-deep)]">
+                                  🆕 جديد
+                                </span>
+                              )}
+                            </div>
+                            {favButton(item)}
+                          </div>
+                          <div className="flex flex-1 flex-col gap-2 p-3">
+                            <h3 className="font-display text-sm font-bold text-foreground">
+                              {item.name}
+                            </h3>
+                            <div className="gold-text font-display text-sm font-bold">
+                              {sPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
+                            </div>
+                            {ratingLine(item)}
+                            <button
+                              onClick={() => addToCart(item)}
+                              className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all ${
+                                justAdded === item.id
+                                  ? "bg-[#25D366] text-white"
+                                  : "bg-[var(--gold)] text-[var(--forest-deep)]"
+                              }`}
+                            >
+                              {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة للطلب"}
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -788,90 +878,6 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ============ SEARCH RESULTS ============ */}
-      <section className="px-4 pt-8">
-        <div className="mx-auto max-w-3xl">
-
-
-          {query.trim() && (
-            <div className="mt-5">
-              {searchResults.length === 0 ? (
-                <p className="text-center text-sm text-foreground/60">لا توجد نتائج مطابقة</p>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-                  {searchResults.map((item) => {
-                    const sOpts = optionsByItem[item.id] ?? [];
-                    const sSel = selectedOption[item.id] ?? sOpts[0]?.id ?? "";
-                    const sDiscount =
-                      item.discount_price != null && item.discount_price < item.price;
-                    const sPrice =
-                      sOpts.length > 0
-                        ? (sOpts.find((o) => o.id === sSel) ?? sOpts[0]).price
-                        : sDiscount
-                          ? item.discount_price!
-                          : item.price;
-                    return (
-                      <article
-                        key={`search-${item.id}`}
-                        className="glass-card group flex flex-col overflow-hidden rounded-2xl"
-                      >
-                        <div className="relative aspect-[4/3] w-full overflow-hidden">
-                          <img
-                            src={item.image_url || ITEM_PLACEHOLDER}
-                            alt={item.name}
-                            loading="lazy"
-                            onClick={() =>
-                              setLightbox({
-                                src: item.image_url || ITEM_PLACEHOLDER,
-                                alt: item.name,
-                              })
-                            }
-                            className="h-full w-full cursor-zoom-in object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                          <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
-                            {(item as any).featured && (
-                              <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-[var(--forest-deep)]">
-                                🔥 الأكثر طلباً
-                              </span>
-                            )}
-                            {isNewItem(item) && (
-                              <span className="inline-flex items-center rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-[var(--forest-deep)]">
-                                🆕 جديد
-                              </span>
-                            )}
-                          </div>
-                          {favButton(item)}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-2 p-3">
-                          <h3 className="font-display text-sm font-bold text-foreground">
-                            {item.name}
-                          </h3>
-                          <div className="gold-text font-display text-sm font-bold">
-                            {sPrice.toLocaleString()} <span className="text-[10px]">د.ع</span>
-                          </div>
-                          {ratingLine(item)}
-
-                          <button
-                            onClick={() => addToCart(item)}
-                            className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all hover:scale-[1.02] ${
-                              justAdded === item.id
-                                ? "bg-[#25D366] text-white"
-                                : "bg-[var(--gold)] text-[var(--forest-deep)]"
-                            }`}
-                          >
-                            {justAdded === item.id ? "تمت الإضافة ✓" : "إضافة للطلب"}
-
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* ============ OFFERS BANNER ============ */}
       {offers.length > 0 && (
@@ -944,7 +950,8 @@ function HomePage() {
                       <img
                         src={item.image_url || ITEM_PLACEHOLDER}
                         alt={item.name}
-                        loading="lazy"
+                        loading="eager"
+                            decoding="async"
                         onClick={() =>
                           setLightbox({ src: item.image_url || ITEM_PLACEHOLDER, alt: item.name })
                         }
@@ -1039,7 +1046,8 @@ function HomePage() {
                         <img
                           src={c.image_url}
                           alt={c.name}
-                          loading="lazy"
+                          loading="eager"
+                            decoding="async"
                           className="block h-full w-full object-cover object-center"
                         />
                       </span>
@@ -1093,7 +1101,8 @@ function HomePage() {
                                 <img
                                   src={item.image_url || ITEM_PLACEHOLDER}
                                   alt={item.name}
-                                  loading="lazy"
+                                  loading="eager"
+                            decoding="async"
                                   onClick={() =>
                                     setLightbox({
                                       src: item.image_url || ITEM_PLACEHOLDER,
