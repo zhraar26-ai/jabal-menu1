@@ -242,6 +242,19 @@ function HomePage() {
     }
   }, []);
 
+  /* warm the browser cache so images render instantly when a category opens */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const urls = [
+      ...items.map((it) => it.image_url),
+      ...categories.map((c) => c.image_url),
+    ].filter(Boolean) as string[];
+    urls.forEach((u) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = u;
+    });
+  }, [items, categories]);
 
 
   useEffect(() => {
