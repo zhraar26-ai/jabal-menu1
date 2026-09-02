@@ -203,7 +203,7 @@ function LoginScreen() {
 type Tab = "analytics" | "hours" | "categories" | "items" | "featured" | "offers" | "delivery" | "reviews" | "theme";
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<Tab>("analytics");
+  const [tab, setTab] = useState<Tab>("categories");
 
   return (
     <div className="min-h-screen px-4 py-6">
