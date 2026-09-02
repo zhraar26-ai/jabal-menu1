@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { Crop, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
@@ -77,8 +78,13 @@ export function ImageCropperModal({
   const [zoom, setZoom] = useState(1);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const areaRef = useRef<Area | null>(null);
   const alpha = keepAlpha ?? isAlphaSource(src);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const onComplete = useCallback((_: Area, px: Area) => {
     areaRef.current = px;
@@ -101,12 +107,18 @@ export function ImageCropperModal({
   const nudge = (d: number) =>
     setZoom((z) => Math.min(4, Math.max(0.5, Number((z + d).toFixed(2)))));
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] grid place-items-center bg-black/90 p-4 backdrop-blur-md"
       dir="rtl"
+      onClick={onCancel}
     >
-      <div className="relative z-[10000] w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--forest-deep)] shadow-2xl gold-border">
+      <div
+        className="relative z-[10000] w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--forest-deep)] shadow-2xl gold-border"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="absolute inset-0 -z-10 bg-[var(--forest-deep)]" />
 
         <div className="flex items-center justify-between border-b border-[color-mix(in_oklab,var(--gold)_20%,transparent)] px-4 py-3">
@@ -185,7 +197,8 @@ export function ImageCropperModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
