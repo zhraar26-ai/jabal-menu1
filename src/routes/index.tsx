@@ -937,7 +937,8 @@ function HomePage() {
                       <img
                         src={item.image_url || ITEM_PLACEHOLDER}
                         alt={item.name}
-                        loading="lazy"
+                        loading="eager"
+                            decoding="async"
                         onClick={() =>
                           setLightbox({ src: item.image_url || ITEM_PLACEHOLDER, alt: item.name })
                         }
@@ -1032,7 +1033,8 @@ function HomePage() {
                         <img
                           src={c.image_url}
                           alt={c.name}
-                          loading="lazy"
+                          loading="eager"
+                            decoding="async"
                           className="block h-full w-full object-cover object-center"
                         />
                       </span>
@@ -1086,7 +1088,8 @@ function HomePage() {
                                 <img
                                   src={item.image_url || ITEM_PLACEHOLDER}
                                   alt={item.name}
-                                  loading="lazy"
+                                  loading="eager"
+                            decoding="async"
                                   onClick={() =>
                                     setLightbox({
                                       src: item.image_url || ITEM_PLACEHOLDER,
