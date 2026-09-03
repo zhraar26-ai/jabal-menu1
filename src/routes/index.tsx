@@ -99,6 +99,110 @@ const SIDE_LINKS = [
   { href: "#featured", label: "🔥 الأكثر طلباً" },
 ];
 
+function SkeletonBar({ className = "" }: { className?: string }) {
+  return <span aria-hidden="true" className={`menu-skeleton block rounded-full ${className}`} />;
+}
+
+function CategorySkeleton() {
+  return (
+    <div className="glass-card flex min-h-[154px] flex-col items-center justify-center gap-3 rounded-2xl px-4 py-5 md:min-h-[190px] md:rounded-3xl md:py-7">
+      <span className="menu-skeleton block h-16 w-16 rounded-full md:h-20 md:w-20" />
+      <SkeletonBar className="h-4 w-24 md:h-5 md:w-32" />
+      <SkeletonBar className="h-2.5 w-12" />
+    </div>
+  );
+}
+
+function OfferSkeleton() {
+  return (
+    <div className="glass-card min-h-[132px] rounded-3xl p-5">
+      <SkeletonBar className="h-5 w-20" />
+      <SkeletonBar className="mt-5 h-5 w-2/3" />
+      <SkeletonBar className="mt-3 h-3 w-full" />
+      <SkeletonBar className="mt-2 h-3 w-4/5" />
+    </div>
+  );
+}
+
+function FeaturedCardSkeleton() {
+  return (
+    <div className="glass-card overflow-hidden rounded-2xl md:rounded-3xl">
+      <div className="menu-skeleton aspect-[4/3] w-full" />
+      <div className="space-y-3 p-3 md:p-4">
+        <SkeletonBar className="h-4 w-2/3 md:h-5" />
+        <SkeletonBar className="h-4 w-24" />
+        <SkeletonBar className="h-3 w-28" />
+        <SkeletonBar className="h-8 w-full rounded-xl" />
+        <SkeletonBar className="h-9 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function DishCardSkeleton() {
+  return (
+    <div className="glass-card overflow-hidden rounded-2xl">
+      <div className="menu-skeleton aspect-[16/10] w-full" />
+      <div className="space-y-4 p-4 md:p-5">
+        <div className="flex items-start justify-between gap-5">
+          <div className="flex-1 space-y-2.5">
+            <SkeletonBar className="h-5 w-2/3" />
+            <SkeletonBar className="h-3 w-full" />
+            <SkeletonBar className="h-5 w-28" />
+          </div>
+          <div className="w-24 space-y-2">
+            <SkeletonBar className="h-3 w-full" />
+            <SkeletonBar className="h-7 w-20" />
+          </div>
+        </div>
+        <SkeletonBar className="h-10 w-full rounded-xl" />
+        <SkeletonBar className="h-11 w-full" />
+        <SkeletonBar className="h-11 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function MenuImage({
+  src,
+  alt,
+  className,
+  onClick,
+}: {
+  src: string | null;
+  alt: string;
+  className: string;
+  onClick?: () => void;
+}) {
+  const resolvedSrc = src || ITEM_PLACEHOLDER;
+  const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setCurrentSrc(resolvedSrc);
+    setReady(false);
+  }, [resolvedSrc]);
+
+  return (
+    <>
+      {!ready && <span aria-hidden="true" className="menu-skeleton absolute inset-0 block" />}
+      <img
+        src={currentSrc}
+        alt={alt}
+        loading="eager"
+        decoding="async"
+        onLoad={() => setReady(true)}
+        onError={() => {
+          if (currentSrc !== ITEM_PLACEHOLDER) setCurrentSrc(ITEM_PLACEHOLDER);
+          else setReady(true);
+        }}
+        onClick={onClick}
+        className={`${className} transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}
+      />
+    </>
+  );
+}
+
 
 /** 5-star display / picker */
 function Stars({
@@ -147,6 +251,8 @@ function HomePage() {
   const [options, setOptions] = useState<MenuItemOption[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [theme, setTheme] = useState<ThemeSettings | null>(null);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [openingCategory, setOpeningCategory] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState<Date>(() => new Date());
 
   useEffect(() => {
@@ -194,6 +300,15 @@ function HomePage() {
   const [orderError, setOrderError] = useState<string | null>(null);
 
   const toggleCat = (id: string) => setOpenCat((cur) => (cur === id ? null : id));
+  useEffect(() => {
+    if (!openCat) {
+      setOpeningCategory(null);
+      return;
+    }
+    setOpeningCategory(openCat);
+    const timer = window.setTimeout(() => setOpeningCategory(null), 320);
+    return () => window.clearTimeout(timer);
+  }, [openCat]);
   const closeCat = (id: string) => {
     setOpenCat(null);
     requestAnimationFrame(() => {
@@ -212,23 +327,27 @@ function HomePage() {
       return next;
     });
 
-  const reloadAll = () => {
-    fetchCategories().then(setCategories).catch(console.error);
-    fetchMenuItems().then(setItems).catch(console.error);
-    fetchMenuItemOptions().then(setOptions).catch(console.error);
-    fetchOffers(true).then(setOffers).catch(console.error);
-    fetchDeliveryAreas(true).then(setAreas).catch(console.error);
-    fetchDishRatings().then(setRatings).catch(console.error);
-    fetchRestaurantRatings().then(setReviews).catch(console.error);
-
-    fetchTheme()
-      .then((t) => {
+  const reloadAll = async () => {
+    const requests = [
+      fetchCategories().then(setCategories),
+      fetchMenuItems().then(setItems),
+      fetchMenuItemOptions().then(setOptions),
+      fetchOffers(true).then(setOffers),
+      fetchDeliveryAreas(true).then(setAreas),
+      fetchDishRatings().then(setRatings),
+      fetchRestaurantRatings().then(setReviews),
+      fetchTheme().then((t) => {
         if (t) {
           setTheme(t);
           applyTheme(t);
         }
-      })
-      .catch(console.error);
+      }),
+    ];
+    const results = await Promise.allSettled(requests);
+    results.forEach((result) => {
+      if (result.status === "rejected") console.error(result.reason);
+    });
+    setMenuLoading(false);
   };
 
   // restore local prefs
@@ -880,7 +999,7 @@ function HomePage() {
 
 
       {/* ============ OFFERS BANNER ============ */}
-      {offers.length > 0 && (
+      {(menuLoading || offers.length > 0) && (
         <section className="px-4 pt-12">
           <div className="mx-auto max-w-6xl">
             <div className="text-center">
@@ -890,7 +1009,9 @@ function HomePage() {
               </h2>
             </div>
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {offers.map((o) => (
+              {menuLoading
+                ? Array.from({ length: 3 }, (_, index) => <OfferSkeleton key={index} />)
+                : offers.map((o) => (
                 <div
                   key={o.id}
                   className="glass-card relative overflow-hidden rounded-3xl p-5 transition-transform hover:-translate-y-1"
@@ -906,14 +1027,14 @@ function HomePage() {
                     <p className="mt-2 text-sm leading-relaxed text-foreground/75">{o.description}</p>
                   )}
                 </div>
-              ))}
+                  ))}
             </div>
           </div>
         </section>
       )}
 
       {/* ============ MOST ORDERED ============ */}
-      {theme?.featured_enabled !== false && featuredItems.length > 0 && (
+      {(menuLoading || (theme?.featured_enabled !== false && featuredItems.length > 0)) && (
         <section id="featured" className="scroll-mt-24 px-4 pt-14">
 
           <div className="mx-auto max-w-5xl">
@@ -930,7 +1051,9 @@ function HomePage() {
             </button>
             <div className={`${featOpen ? "mt-4 grid" : "hidden"} grid-cols-2 gap-3 md:gap-5`}>
 
-              {featuredItems.map((item) => {
+              {menuLoading
+                ? Array.from({ length: 4 }, (_, index) => <FeaturedCardSkeleton key={index} />)
+                : featuredItems.map((item) => {
                 const fOpts = optionsByItem[item.id] ?? [];
                 const fSel = selectedOption[item.id] ?? fOpts[0]?.id ?? "";
                 const fDiscount =
@@ -947,11 +1070,9 @@ function HomePage() {
                     className="glass-card group flex flex-col overflow-hidden rounded-2xl md:rounded-3xl"
                   >
                     <div className="relative aspect-[4/3] w-full overflow-hidden">
-                      <img
-                        src={item.image_url || ITEM_PLACEHOLDER}
+                      <MenuImage
+                        src={item.image_url}
                         alt={item.name}
-                        loading="eager"
-                            decoding="async"
                         onClick={() =>
                           setLightbox({ src: item.image_url || ITEM_PLACEHOLDER, alt: item.name })
                         }
@@ -998,8 +1119,8 @@ function HomePage() {
                       </button>
                     </div>
                   </article>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         </section>
@@ -1025,7 +1146,9 @@ function HomePage() {
 
           {/* Collapsible categories */}
           <div className="mx-auto mt-10 grid max-w-5xl grid-cols-2 gap-3 md:gap-4">
-            {categories.filter((c) => c.visible !== false).map((c) => {
+            {menuLoading
+              ? Array.from({ length: 6 }, (_, index) => <CategorySkeleton key={index} />)
+              : categories.filter((c) => c.visible !== false).map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
               if (catItems.length === 0) return null;
               const isOpen = openCat === c.id;
@@ -1043,11 +1166,9 @@ function HomePage() {
                   >
                     {c.image_url ? (
                       <span className="block h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] md:h-20 md:w-20">
-                        <img
+                        <MenuImage
                           src={c.image_url}
                           alt={c.name}
-                          loading="eager"
-                            decoding="async"
                           className="block h-full w-full object-cover object-center"
                         />
                       </span>
@@ -1074,7 +1195,11 @@ function HomePage() {
                   {isOpen && (
                     <div className="border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-4 py-5 md:px-6 md:py-7">
                       <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4">
-                        {catItems.map((item) => {
+                        {openingCategory === c.id
+                          ? Array.from({ length: Math.min(3, Math.max(1, catItems.length)) }, (_, index) => (
+                              <DishCardSkeleton key={index} />
+                            ))
+                          : catItems.map((item) => {
                           const key = item.id;
                           const qty = getPending(key);
                           const itemOpts = optionsByItem[item.id] ?? [];
@@ -1098,11 +1223,9 @@ function HomePage() {
                               className="glass-card group flex flex-col gap-3 overflow-hidden rounded-2xl transition-all hover:border-[color-mix(in_oklab,var(--gold)_50%,transparent)]"
                             >
                               <div className="relative aspect-[16/10] w-full overflow-hidden">
-                                <img
-                                  src={item.image_url || ITEM_PLACEHOLDER}
+                                <MenuImage
+                                  src={item.image_url}
                                   alt={item.name}
-                                  loading="eager"
-                            decoding="async"
                                   onClick={() =>
                                     setLightbox({
                                       src: item.image_url || ITEM_PLACEHOLDER,
@@ -1234,8 +1357,8 @@ function HomePage() {
                                 </div>
                               </div>
                             </article>
-                          );
-                        })}
+                            );
+                          })}
                       </div>
                       <div className="mt-6 flex justify-center">
                         <button
@@ -1251,7 +1374,7 @@ function HomePage() {
                   )}
                 </div>
               );
-            })}
+                })}
 
           </div>
         </div>
