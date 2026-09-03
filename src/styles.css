@@ -147,3 +147,39 @@
     );
   }
 }
+
+@keyframes menu-skeleton-shimmer {
+  0% {
+    transform: translateX(110%);
+  }
+  100% {
+    transform: translateX(-110%);
+  }
+}
+
+@utility menu-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--gold) 9%, var(--forest-deep));
+  border: 1px solid color-mix(in oklab, var(--gold) 10%, transparent);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(110%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--gold) 18%, transparent),
+      transparent
+    );
+    animation: menu-skeleton-shimmer 1.35s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-skeleton::after {
+    animation: none;
+  }
+}
