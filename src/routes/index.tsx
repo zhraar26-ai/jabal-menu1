@@ -173,20 +173,23 @@ function MenuImage({
   alt,
   className,
   onClick,
+  width = 520,
 }: {
   src: string | null;
   alt: string;
   className: string;
   onClick?: () => void;
+  width?: number;
 }) {
-  const resolvedSrc = src || ITEM_PLACEHOLDER;
-  const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
+  const original = src || ITEM_PLACEHOLDER;
+  const optimized = optimizedImage(original, width) || original;
+  const [currentSrc, setCurrentSrc] = useState(optimized);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setCurrentSrc(resolvedSrc);
+    setCurrentSrc(optimized);
     setReady(false);
-  }, [resolvedSrc]);
+  }, [optimized]);
 
   return (
     <>
@@ -194,11 +197,14 @@ function MenuImage({
       <img
         src={currentSrc}
         alt={alt}
-        loading="eager"
+        loading="lazy"
         decoding="async"
+        fetchPriority="low"
         onLoad={() => setReady(true)}
         onError={() => {
-          if (currentSrc !== ITEM_PLACEHOLDER) setCurrentSrc(ITEM_PLACEHOLDER);
+          // transformer can refuse very large sources → fall back to the original file
+          if (currentSrc !== original) setCurrentSrc(original);
+          else if (currentSrc !== ITEM_PLACEHOLDER) setCurrentSrc(ITEM_PLACEHOLDER);
           else setReady(true);
         }}
         onClick={onClick}
@@ -207,6 +213,7 @@ function MenuImage({
     </>
   );
 }
+
 
 
 /** 5-star display / picker */
