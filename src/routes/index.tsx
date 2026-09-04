@@ -38,6 +38,11 @@ import {
   fetchDishRatings,
   fetchMenuItems,
   fetchMenuItemOptions,
+  fetchFeaturedItems,
+  fetchItemsByCategory,
+  fetchCategoryCounts,
+  fetchOptionsForItems,
+
   fetchOffers,
   fetchRestaurantRatings,
   fetchTheme,
@@ -327,28 +332,84 @@ function HomePage() {
       return next;
     });
 
-  const reloadAll = async () => {
-    const requests = [
+  /* ---------- staged, on-demand data loading ---------- */
+  const loadedCatsRef = useRef<Set<string>>(new Set());
+  const allItemsRef = useRef(false);
+  const [catCounts, setCatCounts] = useState<Record<string, number>>({});
+  const [loadingCat, setLoadingCat] = useState<string | null>(null);
+
+  const mergeItems = (incoming: MenuItem[]) =>
+    setItems((cur) => {
+      const map = new Map(cur.map((i) => [i.id, i] as const));
+      for (const it of incoming) map.set(it.id, it);
+      return Array.from(map.values()).sort((a, b) => a.sort_order - b.sort_order);
+    });
+
+  const mergeOptions = (incoming: MenuItemOption[]) =>
+    setOptions((cur) => {
+      const map = new Map(cur.map((o) => [o.id, o] as const));
+      for (const o of incoming) map.set(o.id, o);
+      return Array.from(map.values());
+    });
+
+  const loadCategoryItems = async (catId: string) => {
+    if (allItemsRef.current || loadedCatsRef.current.has(catId)) return;
+    loadedCatsRef.current.add(catId);
+    setLoadingCat(catId);
+    try {
+      const rows = await fetchItemsByCategory(catId);
+      mergeItems(rows);
+      mergeOptions(await fetchOptionsForItems(rows.map((r) => r.id)));
+    } catch (e) {
+      loadedCatsRef.current.delete(catId);
+      console.error(e);
+    } finally {
+      setLoadingCat((c) => (c === catId ? null : c));
+    }
+  };
+
+  /** Full menu — only needed for search / favorites; loaded when the browser is idle. */
+  const ensureAllItems = async () => {
+    if (allItemsRef.current) return;
+    allItemsRef.current = true;
+    try {
+      const [all, opts] = await Promise.all([fetchMenuItems(), fetchMenuItemOptions()]);
+      mergeItems(all);
+      mergeOptions(opts);
+    } catch (e) {
+      allItemsRef.current = false;
+      console.error(e);
+    }
+  };
+
+  /** First paint: categories + theme + offers + featured only (tiny payload). */
+  const loadCritical = async () => {
+    const results = await Promise.allSettled([
       fetchCategories().then(setCategories),
-      fetchMenuItems().then(setItems),
-      fetchMenuItemOptions().then(setOptions),
+      fetchFeaturedItems().then(mergeItems),
+      fetchCategoryCounts().then(setCatCounts),
       fetchOffers(true).then(setOffers),
-      fetchDeliveryAreas(true).then(setAreas),
-      fetchDishRatings().then(setRatings),
-      fetchRestaurantRatings().then(setReviews),
       fetchTheme().then((t) => {
         if (t) {
           setTheme(t);
           applyTheme(t);
         }
       }),
-    ];
-    const results = await Promise.allSettled(requests);
-    results.forEach((result) => {
-      if (result.status === "rejected") console.error(result.reason);
-    });
+    ]);
+    results.forEach((r) => r.status === "rejected" && console.error(r.reason));
     setMenuLoading(false);
   };
+
+  /** Everything else, after the menu is interactive. */
+  const loadSecondary = async () => {
+    const results = await Promise.allSettled([
+      fetchDeliveryAreas(true).then(setAreas),
+      fetchDishRatings().then(setRatings),
+      fetchRestaurantRatings().then(setReviews),
+    ]);
+    results.forEach((r) => r.status === "rejected" && console.error(r.reason));
+  };
+
 
   // restore local prefs
   useEffect(() => {
@@ -361,32 +422,52 @@ function HomePage() {
     }
   }, []);
 
-  /* warm the browser cache so images render instantly when a category opens */
+  /* warm the browser cache only for what is already on screen */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const urls = [
-      ...items.map((it) => it.image_url),
-      ...categories.map((c) => c.image_url),
-    ].filter(Boolean) as string[];
+    const urls = categories.map((c) => c.image_url).filter(Boolean) as string[];
     urls.forEach((u) => {
       const img = new Image();
       img.decoding = "async";
       img.src = u;
     });
-  }, [items, categories]);
+  }, [categories]);
 
+  /* load a category's dishes on demand */
+  useEffect(() => {
+    if (openCat) loadCategoryItems(openCat);
+  }, [openCat]);
+
+  /* searching needs the whole menu */
+  useEffect(() => {
+    if (searchOpen || query.trim() || favDrawerOpen) ensureAllItems();
+  }, [searchOpen, query, favDrawerOpen]);
 
   useEffect(() => {
-    reloadAll();
+    let idle: number | undefined;
+    loadCritical().then(() => {
+      const run = () => {
+        loadSecondary();
+        ensureAllItems();
+      };
+      const ric = (window as any).requestIdleCallback;
+      if (typeof ric === "function") idle = ric(run, { timeout: 2500 });
+      else idle = window.setTimeout(run, 800);
+    });
+
     const sb = supabase as any;
+    const refreshItems = () => {
+      allItemsRef.current = false;
+      loadedCatsRef.current.clear();
+      fetchCategoryCounts().then(setCatCounts).catch(console.error);
+      ensureAllItems();
+    };
     const channel = sb
       .channel("menu-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () =>
         fetchCategories().then(setCategories).catch(console.error),
       )
-      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, () =>
-        fetchMenuItems().then(setItems).catch(console.error),
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, refreshItems)
       .on("postgres_changes", { event: "*", schema: "public", table: "menu_item_options" }, () =>
         fetchMenuItemOptions().then(setOptions).catch(console.error),
       )
@@ -416,9 +497,15 @@ function HomePage() {
       .subscribe();
 
     return () => {
+      if (idle !== undefined) {
+        const cic = (window as any).cancelIdleCallback;
+        if (typeof cic === "function") cic(idle);
+        else window.clearTimeout(idle);
+      }
       sb.removeChannel(channel);
     };
   }, []);
+
 
   const optionsByItem = useMemo(() => {
     const m: Record<string, MenuItemOption[]> = {};
@@ -1150,7 +1237,9 @@ function HomePage() {
               ? Array.from({ length: 6 }, (_, index) => <CategorySkeleton key={index} />)
               : categories.filter((c) => c.visible !== false).map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
-              if (catItems.length === 0) return null;
+              const catCount = catCounts[c.id] ?? catItems.length;
+              if (catCount === 0) return null;
+
               const isOpen = openCat === c.id;
               return (
                 <div
@@ -1187,7 +1276,7 @@ function HomePage() {
                         <span className="gold-text">{c.name}</span>
                       </span>
                       <span className="mt-1 block text-[10px] text-foreground/60 md:text-xs">
-                        {catItems.length} طبق
+                        {catCount} طبق
                       </span>
                     </div>
                   </button>
@@ -1195,11 +1284,12 @@ function HomePage() {
                   {isOpen && (
                     <div className="border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-4 py-5 md:px-6 md:py-7">
                       <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4">
-                        {openingCategory === c.id
-                          ? Array.from({ length: Math.min(3, Math.max(1, catItems.length)) }, (_, index) => (
+                        {openingCategory === c.id || loadingCat === c.id || catItems.length === 0
+                          ? Array.from({ length: Math.min(3, Math.max(1, catCount)) }, (_, index) => (
                               <DishCardSkeleton key={index} />
                             ))
                           : catItems.map((item) => {
+
                           const key = item.id;
                           const qty = getPending(key);
                           const itemOpts = optionsByItem[item.id] ?? [];

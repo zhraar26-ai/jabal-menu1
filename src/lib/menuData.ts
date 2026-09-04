@@ -127,13 +127,56 @@ export async function fetchCategories(): Promise<Category[]> {
   return data ?? [];
 }
 
+/** Lightweight fields needed for rendering menu cards. */
+const ITEM_FIELDS =
+  "id,category_id,name,description,price,discount_price,image_url,sort_order,available,featured,created_at";
+
 export async function fetchMenuItems(): Promise<MenuItem[]> {
   const { data, error } = await sb
     .from("menu_items")
-    .select("*")
+    .select(ITEM_FIELDS)
     .order("sort_order", { ascending: true });
   if (error) throw error;
   return data ?? [];
+}
+
+/** Only the featured (الأكثر طلباً) dishes — used for the first paint. */
+export async function fetchFeaturedItems(limit = 8): Promise<MenuItem[]> {
+  const { data, error } = await sb
+    .from("menu_items")
+    .select(ITEM_FIELDS)
+    .eq("available", true)
+    .eq("featured", true)
+    .order("sort_order", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** On-demand dishes for a single category. */
+export async function fetchItemsByCategory(categoryId: string): Promise<MenuItem[]> {
+  const { data, error } = await sb
+    .from("menu_items")
+    .select(ITEM_FIELDS)
+    .eq("category_id", categoryId)
+    .eq("available", true)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Tiny query used to know how many dishes each category has before loading them. */
+export async function fetchCategoryCounts(): Promise<Record<string, number>> {
+  const { data, error } = await sb
+    .from("menu_items")
+    .select("category_id")
+    .eq("available", true);
+  if (error) throw error;
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as { category_id: string }[]) {
+    counts[row.category_id] = (counts[row.category_id] ?? 0) + 1;
+  }
+  return counts;
 }
 
 export async function fetchMenuItemOptions(): Promise<MenuItemOption[]> {
@@ -144,6 +187,18 @@ export async function fetchMenuItemOptions(): Promise<MenuItemOption[]> {
   if (error) throw error;
   return data ?? [];
 }
+
+export async function fetchOptionsForItems(itemIds: string[]): Promise<MenuItemOption[]> {
+  if (itemIds.length === 0) return [];
+  const { data, error } = await sb
+    .from("menu_item_options")
+    .select("*")
+    .in("menu_item_id", itemIds)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
 
 export async function fetchOffers(activeOnly = false): Promise<Offer[]> {
   let q = sb.from("offers").select("*").order("sort_order", { ascending: true });
