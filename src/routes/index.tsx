@@ -52,6 +52,7 @@ import {
   checkOrderGuard,
   logOrder,
   rateLimit,
+  optimizedImage,
   sanitizeText,
   saveAddress,
   saveFavorites,
@@ -432,7 +433,9 @@ function HomePage() {
   /* warm the browser cache only for what is already on screen */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const urls = categories.map((c) => c.image_url).filter(Boolean) as string[];
+    const urls = categories
+      .map((c) => optimizedImage(c.image_url, 160))
+      .filter(Boolean) as string[];
     urls.forEach((u) => {
       const img = new Image();
       img.decoding = "async";
@@ -912,9 +915,9 @@ function HomePage() {
                         >
                           <div className="relative aspect-[4/3] w-full overflow-hidden">
                             <img
-                              src={item.image_url || ITEM_PLACEHOLDER}
+                              src={optimizedImage(item.image_url, 420) || ITEM_PLACEHOLDER}
                               alt={item.name}
-                              loading="eager"
+                              loading="lazy"
                               decoding="async"
                               onClick={() =>
                                 setLightbox({
@@ -1034,8 +1037,10 @@ function HomePage() {
 
         <div className="absolute inset-0">
           <img
-            src={heroSrc}
+            src={optimizedImage(heroSrc, 1280, 60) || heroSrc}
             alt="مطعم جبل"
+            fetchPriority="high"
+            decoding="async"
             width={1600}
             height={1100}
             className="h-full w-full object-cover opacity-45"
@@ -1264,6 +1269,7 @@ function HomePage() {
                       <span className="block h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-[color-mix(in_oklab,var(--gold)_65%,transparent)] md:h-20 md:w-20">
                         <MenuImage
                           src={c.image_url}
+                          width={160}
                           alt={c.name}
                           className="block h-full w-full object-cover object-center"
                         />
@@ -1890,8 +1896,9 @@ function HomePage() {
                     return (
                       <div key={`favd-${item.id}`} className="glass-card flex items-center gap-3 rounded-xl p-2">
                         <img
-                          src={item.image_url || ITEM_PLACEHOLDER}
+                          src={optimizedImage(item.image_url, 120) || ITEM_PLACEHOLDER}
                           alt={item.name}
+                          loading="lazy"
                           className="h-14 w-14 shrink-0 rounded-lg object-cover"
                         />
                         <div className="min-w-0 flex-1">
