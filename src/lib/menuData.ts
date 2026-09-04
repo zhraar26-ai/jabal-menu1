@@ -118,6 +118,25 @@ export function isStoreOpen(theme: ThemeSettings | null, now = new Date()): bool
 
 const sb = supabase as any;
 
+/**
+ * Rewrites a public storage URL to the on-the-fly image transformer so the
+ * browser downloads a small WebP instead of the multi-MB original.
+ * Non-storage URLs (bundled assets, external images) are returned untouched.
+ */
+export function optimizedImage(
+  url: string | null | undefined,
+  width: number,
+  quality = 62,
+): string | null {
+  if (!url) return null;
+  const marker = "/storage/v1/object/public/";
+  if (!url.includes(marker)) return url;
+  const [base, qs] = url.split("?");
+  const bust = qs ? `&${qs}` : "";
+  return `${base.replace(marker, "/storage/v1/render/image/public/")}?width=${width}&quality=${quality}&resize=contain${bust}`;
+}
+
+
 export async function fetchCategories(): Promise<Category[]> {
   const { data, error } = await sb
     .from("categories")
