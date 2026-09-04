@@ -422,32 +422,52 @@ function HomePage() {
     }
   }, []);
 
-  /* warm the browser cache so images render instantly when a category opens */
+  /* warm the browser cache only for what is already on screen */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const urls = [
-      ...items.map((it) => it.image_url),
-      ...categories.map((c) => c.image_url),
-    ].filter(Boolean) as string[];
+    const urls = categories.map((c) => c.image_url).filter(Boolean) as string[];
     urls.forEach((u) => {
       const img = new Image();
       img.decoding = "async";
       img.src = u;
     });
-  }, [items, categories]);
+  }, [categories]);
 
+  /* load a category's dishes on demand */
+  useEffect(() => {
+    if (openCat) loadCategoryItems(openCat);
+  }, [openCat]);
+
+  /* searching needs the whole menu */
+  useEffect(() => {
+    if (searchOpen || query.trim() || favDrawerOpen) ensureAllItems();
+  }, [searchOpen, query, favDrawerOpen]);
 
   useEffect(() => {
-    reloadAll();
+    let idle: number | undefined;
+    loadCritical().then(() => {
+      const run = () => {
+        loadSecondary();
+        ensureAllItems();
+      };
+      const ric = (window as any).requestIdleCallback;
+      if (typeof ric === "function") idle = ric(run, { timeout: 2500 });
+      else idle = window.setTimeout(run, 800);
+    });
+
     const sb = supabase as any;
+    const refreshItems = () => {
+      allItemsRef.current = false;
+      loadedCatsRef.current.clear();
+      fetchCategoryCounts().then(setCatCounts).catch(console.error);
+      ensureAllItems();
+    };
     const channel = sb
       .channel("menu-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () =>
         fetchCategories().then(setCategories).catch(console.error),
       )
-      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, () =>
-        fetchMenuItems().then(setItems).catch(console.error),
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, refreshItems)
       .on("postgres_changes", { event: "*", schema: "public", table: "menu_item_options" }, () =>
         fetchMenuItemOptions().then(setOptions).catch(console.error),
       )
@@ -477,9 +497,15 @@ function HomePage() {
       .subscribe();
 
     return () => {
+      if (idle !== undefined) {
+        const cic = (window as any).cancelIdleCallback;
+        if (typeof cic === "function") cic(idle);
+        else window.clearTimeout(idle);
+      }
       sb.removeChannel(channel);
     };
   }, []);
+
 
   const optionsByItem = useMemo(() => {
     const m: Record<string, MenuItemOption[]> = {};
