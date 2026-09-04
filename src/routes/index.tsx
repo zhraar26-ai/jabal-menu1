@@ -1237,7 +1237,9 @@ function HomePage() {
               ? Array.from({ length: 6 }, (_, index) => <CategorySkeleton key={index} />)
               : categories.filter((c) => c.visible !== false).map((c) => {
               const catItems = itemsByCat[c.id] ?? [];
-              if (catItems.length === 0) return null;
+              const catCount = catCounts[c.id] ?? catItems.length;
+              if (catCount === 0) return null;
+
               const isOpen = openCat === c.id;
               return (
                 <div
