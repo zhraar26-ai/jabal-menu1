@@ -38,6 +38,11 @@ import {
   fetchDishRatings,
   fetchMenuItems,
   fetchMenuItemOptions,
+  fetchFeaturedItems,
+  fetchItemsByCategory,
+  fetchCategoryCounts,
+  fetchOptionsForItems,
+
   fetchOffers,
   fetchRestaurantRatings,
   fetchTheme,
