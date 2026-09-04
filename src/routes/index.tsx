@@ -1276,7 +1276,7 @@ function HomePage() {
                         <span className="gold-text">{c.name}</span>
                       </span>
                       <span className="mt-1 block text-[10px] text-foreground/60 md:text-xs">
-                        {catItems.length} طبق
+                        {catCount} طبق
                       </span>
                     </div>
                   </button>
@@ -1284,11 +1284,12 @@ function HomePage() {
                   {isOpen && (
                     <div className="border-t border-[color-mix(in_oklab,var(--gold)_15%,transparent)] px-4 py-5 md:px-6 md:py-7">
                       <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4">
-                        {openingCategory === c.id
-                          ? Array.from({ length: Math.min(3, Math.max(1, catItems.length)) }, (_, index) => (
+                        {openingCategory === c.id || loadingCat === c.id || catItems.length === 0
+                          ? Array.from({ length: Math.min(3, Math.max(1, catCount)) }, (_, index) => (
                               <DishCardSkeleton key={index} />
                             ))
                           : catItems.map((item) => {
+
                           const key = item.id;
                           const qty = getPending(key);
                           const itemOpts = optionsByItem[item.id] ?? [];
