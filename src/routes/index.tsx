@@ -332,28 +332,84 @@ function HomePage() {
       return next;
     });
 
-  const reloadAll = async () => {
-    const requests = [
+  /* ---------- staged, on-demand data loading ---------- */
+  const loadedCatsRef = useRef<Set<string>>(new Set());
+  const allItemsRef = useRef(false);
+  const [catCounts, setCatCounts] = useState<Record<string, number>>({});
+  const [loadingCat, setLoadingCat] = useState<string | null>(null);
+
+  const mergeItems = (incoming: MenuItem[]) =>
+    setItems((cur) => {
+      const map = new Map(cur.map((i) => [i.id, i] as const));
+      for (const it of incoming) map.set(it.id, it);
+      return Array.from(map.values()).sort((a, b) => a.sort_order - b.sort_order);
+    });
+
+  const mergeOptions = (incoming: MenuItemOption[]) =>
+    setOptions((cur) => {
+      const map = new Map(cur.map((o) => [o.id, o] as const));
+      for (const o of incoming) map.set(o.id, o);
+      return Array.from(map.values());
+    });
+
+  const loadCategoryItems = async (catId: string) => {
+    if (allItemsRef.current || loadedCatsRef.current.has(catId)) return;
+    loadedCatsRef.current.add(catId);
+    setLoadingCat(catId);
+    try {
+      const rows = await fetchItemsByCategory(catId);
+      mergeItems(rows);
+      mergeOptions(await fetchOptionsForItems(rows.map((r) => r.id)));
+    } catch (e) {
+      loadedCatsRef.current.delete(catId);
+      console.error(e);
+    } finally {
+      setLoadingCat((c) => (c === catId ? null : c));
+    }
+  };
+
+  /** Full menu — only needed for search / favorites; loaded when the browser is idle. */
+  const ensureAllItems = async () => {
+    if (allItemsRef.current) return;
+    allItemsRef.current = true;
+    try {
+      const [all, opts] = await Promise.all([fetchMenuItems(), fetchMenuItemOptions()]);
+      mergeItems(all);
+      mergeOptions(opts);
+    } catch (e) {
+      allItemsRef.current = false;
+      console.error(e);
+    }
+  };
+
+  /** First paint: categories + theme + offers + featured only (tiny payload). */
+  const loadCritical = async () => {
+    const results = await Promise.allSettled([
       fetchCategories().then(setCategories),
-      fetchMenuItems().then(setItems),
-      fetchMenuItemOptions().then(setOptions),
+      fetchFeaturedItems().then(mergeItems),
+      fetchCategoryCounts().then(setCatCounts),
       fetchOffers(true).then(setOffers),
-      fetchDeliveryAreas(true).then(setAreas),
-      fetchDishRatings().then(setRatings),
-      fetchRestaurantRatings().then(setReviews),
       fetchTheme().then((t) => {
         if (t) {
           setTheme(t);
           applyTheme(t);
         }
       }),
-    ];
-    const results = await Promise.allSettled(requests);
-    results.forEach((result) => {
-      if (result.status === "rejected") console.error(result.reason);
-    });
+    ]);
+    results.forEach((r) => r.status === "rejected" && console.error(r.reason));
     setMenuLoading(false);
   };
+
+  /** Everything else, after the menu is interactive. */
+  const loadSecondary = async () => {
+    const results = await Promise.allSettled([
+      fetchDeliveryAreas(true).then(setAreas),
+      fetchDishRatings().then(setRatings),
+      fetchRestaurantRatings().then(setReviews),
+    ]);
+    results.forEach((r) => r.status === "rejected" && console.error(r.reason));
+  };
+
 
   // restore local prefs
   useEffect(() => {
