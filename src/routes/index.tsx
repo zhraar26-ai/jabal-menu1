@@ -403,12 +403,14 @@ function HomePage() {
       fetchCategories().then(setCategories),
       fetchFeaturedItems().then(mergeItems),
       fetchCategoryCounts().then(setCatCounts),
+      fetchOrderCounts().then(setOrderCounts),
       fetchOffers(true).then(setOffers),
-      fetchTheme().then((t) => {
-        if (t) {
-          setTheme(t);
-          applyTheme(t);
-        }
+      fetchTheme().then(async (t) => {
+        if (!t) return;
+        setTheme(t);
+        applyTheme(t);
+        const ids = normalizeSlots((t as any).featured_slots).filter(Boolean) as string[];
+        if (ids.length) mergeItems(await fetchItemsByIds(ids));
       }),
     ]);
     results.forEach((r) => r.status === "rejected" && console.error(r.reason));
