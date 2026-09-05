@@ -24,6 +24,11 @@ import {
   DEFAULT_CLOSED_MESSAGE,
   DayHours,
   OrderRow,
+  fetchOrderCounts,
+  resolveFeaturedSlots,
+  saveFeaturedSlots,
+  normalizeSlots,
+
 } from "@/lib/menuData";
 
 import { LogOut, Plus, Save, Trash2 } from "lucide-react";
