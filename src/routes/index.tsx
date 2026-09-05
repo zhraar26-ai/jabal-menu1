@@ -545,10 +545,17 @@ function HomePage() {
     return m;
   }, [categories, items]);
 
+  /** Exactly 4 slots: admin picks win, the rest auto-fill by live sales. */
   const featuredItems = useMemo(
-    () => items.filter((it) => it.available && (it as any).featured),
-    [items],
+    () =>
+      resolveFeaturedSlots(
+        normalizeSlots((theme as any)?.featured_slots),
+        items,
+        orderCounts,
+      ).filter(Boolean) as MenuItem[],
+    [items, orderCounts, theme],
   );
+
 
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase();
