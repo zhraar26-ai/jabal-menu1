@@ -344,6 +344,8 @@ function HomePage() {
   const loadedCatsRef = useRef<Set<string>>(new Set());
   const allItemsRef = useRef(false);
   const [catCounts, setCatCounts] = useState<Record<string, number>>({});
+  const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
+
   const [loadingCat, setLoadingCat] = useState<string | null>(null);
 
   const mergeItems = (incoming: MenuItem[]) =>
