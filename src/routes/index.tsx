@@ -505,14 +505,17 @@ function HomePage() {
 
       .on("postgres_changes", { event: "*", schema: "public", table: "theme_settings" }, () =>
         fetchTheme()
-          .then((t) => {
-            if (t) {
-              setTheme(t);
-              applyTheme(t);
-            }
+          .then(async (t) => {
+            if (!t) return;
+            setTheme(t);
+            applyTheme(t);
+            fetchOrderCounts().then(setOrderCounts).catch(console.error);
+            const ids = normalizeSlots((t as any).featured_slots).filter(Boolean) as string[];
+            if (ids.length) mergeItems(await fetchItemsByIds(ids));
           })
           .catch(console.error),
       )
+
       .subscribe();
 
     return () => {
