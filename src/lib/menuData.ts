@@ -54,10 +54,23 @@ export type ThemeSettings = {
   footer_text: string;
   location_url: string;
   featured_enabled?: boolean;
+  featured_slots?: (string | null)[] | null;
   opening_hours?: DayHours[] | null;
   manual_closed?: boolean;
   closed_message?: string | null;
 };
+
+/** Exactly four slots in the "الأكثر طلباً" section. */
+export const FEATURED_SLOT_COUNT = 4;
+
+export function normalizeSlots(v: unknown): (string | null)[] {
+  const arr = Array.isArray(v) ? v : [];
+  return Array.from({ length: FEATURED_SLOT_COUNT }, (_, i) => {
+    const x = arr[i];
+    return typeof x === "string" && x.length > 0 ? x : null;
+  });
+}
+
 
 /* ============ OPENING HOURS ============ */
 
