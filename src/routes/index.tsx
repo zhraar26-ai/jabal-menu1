@@ -40,8 +40,13 @@ import {
   fetchMenuItemOptions,
   fetchFeaturedItems,
   fetchItemsByCategory,
+  fetchItemsByIds,
+  fetchOrderCounts,
+  resolveFeaturedSlots,
+  normalizeSlots,
   fetchCategoryCounts,
   fetchOptionsForItems,
+
 
   fetchOffers,
   fetchRestaurantRatings,
