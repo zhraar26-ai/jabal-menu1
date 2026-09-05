@@ -237,6 +237,14 @@ export async function saveFeaturedSlots(slots: (string | null)[]) {
 
 
 /** On-demand dishes for a single category. */
+/** Dishes by explicit ids (used to hydrate manually pinned featured slots). */
+export async function fetchItemsByIds(ids: string[]): Promise<MenuItem[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await sb.from("menu_items").select(ITEM_FIELDS).in("id", ids);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function fetchItemsByCategory(categoryId: string): Promise<MenuItem[]> {
   const { data, error } = await sb
     .from("menu_items")
