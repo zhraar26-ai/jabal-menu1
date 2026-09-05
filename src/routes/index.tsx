@@ -40,8 +40,13 @@ import {
   fetchMenuItemOptions,
   fetchFeaturedItems,
   fetchItemsByCategory,
+  fetchItemsByIds,
+  fetchOrderCounts,
+  resolveFeaturedSlots,
+  normalizeSlots,
   fetchCategoryCounts,
   fetchOptionsForItems,
+
 
   fetchOffers,
   fetchRestaurantRatings,
@@ -344,6 +349,8 @@ function HomePage() {
   const loadedCatsRef = useRef<Set<string>>(new Set());
   const allItemsRef = useRef(false);
   const [catCounts, setCatCounts] = useState<Record<string, number>>({});
+  const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
+
   const [loadingCat, setLoadingCat] = useState<string | null>(null);
 
   const mergeItems = (incoming: MenuItem[]) =>
@@ -396,12 +403,14 @@ function HomePage() {
       fetchCategories().then(setCategories),
       fetchFeaturedItems().then(mergeItems),
       fetchCategoryCounts().then(setCatCounts),
+      fetchOrderCounts().then(setOrderCounts),
       fetchOffers(true).then(setOffers),
-      fetchTheme().then((t) => {
-        if (t) {
-          setTheme(t);
-          applyTheme(t);
-        }
+      fetchTheme().then(async (t) => {
+        if (!t) return;
+        setTheme(t);
+        applyTheme(t);
+        const ids = normalizeSlots((t as any).featured_slots).filter(Boolean) as string[];
+        if (ids.length) mergeItems(await fetchItemsByIds(ids));
       }),
     ]);
     results.forEach((r) => r.status === "rejected" && console.error(r.reason));
@@ -496,14 +505,17 @@ function HomePage() {
 
       .on("postgres_changes", { event: "*", schema: "public", table: "theme_settings" }, () =>
         fetchTheme()
-          .then((t) => {
-            if (t) {
-              setTheme(t);
-              applyTheme(t);
-            }
+          .then(async (t) => {
+            if (!t) return;
+            setTheme(t);
+            applyTheme(t);
+            fetchOrderCounts().then(setOrderCounts).catch(console.error);
+            const ids = normalizeSlots((t as any).featured_slots).filter(Boolean) as string[];
+            if (ids.length) mergeItems(await fetchItemsByIds(ids));
           })
           .catch(console.error),
       )
+
       .subscribe();
 
     return () => {
@@ -533,10 +545,17 @@ function HomePage() {
     return m;
   }, [categories, items]);
 
+  /** Exactly 4 slots: admin picks win, the rest auto-fill by live sales. */
   const featuredItems = useMemo(
-    () => items.filter((it) => it.available && (it as any).featured),
-    [items],
+    () =>
+      resolveFeaturedSlots(
+        normalizeSlots((theme as any)?.featured_slots),
+        items,
+        orderCounts,
+      ).filter(Boolean) as MenuItem[],
+    [items, orderCounts, theme],
   );
+
 
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase();

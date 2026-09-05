@@ -54,10 +54,23 @@ export type ThemeSettings = {
   footer_text: string;
   location_url: string;
   featured_enabled?: boolean;
+  featured_slots?: (string | null)[] | null;
   opening_hours?: DayHours[] | null;
   manual_closed?: boolean;
   closed_message?: string | null;
 };
+
+/** Exactly four slots in the "الأكثر طلباً" section. */
+export const FEATURED_SLOT_COUNT = 4;
+
+export function normalizeSlots(v: unknown): (string | null)[] {
+  const arr = Array.isArray(v) ? v : [];
+  return Array.from({ length: FEATURED_SLOT_COUNT }, (_, i) => {
+    const x = arr[i];
+    return typeof x === "string" && x.length > 0 ? x : null;
+  });
+}
+
 
 /* ============ OPENING HOURS ============ */
 
@@ -172,7 +185,66 @@ export async function fetchFeaturedItems(limit = 8): Promise<MenuItem[]> {
   return data ?? [];
 }
 
+/** Total ordered quantity per dish, from the live orders table. */
+export async function fetchOrderCounts(): Promise<Record<string, number>> {
+  const { data, error } = await sb.rpc("item_order_counts");
+  if (error) throw error;
+  const out: Record<string, number> = {};
+  for (const r of (data ?? []) as { menu_item_id: string; orders_count: number }[]) {
+    out[r.menu_item_id] = Number(r.orders_count) || 0;
+  }
+  return out;
+}
+
+/**
+ * Resolves the 4 "الأكثر طلباً" slots: manual picks win, remaining slots are
+ * auto-filled with the best-selling available dishes (then by sort order).
+ */
+export function resolveFeaturedSlots(
+  slots: (string | null)[],
+  allItems: MenuItem[],
+  counts: Record<string, number>,
+): (MenuItem | null)[] {
+  const byId = new Map(allItems.map((i) => [i.id, i]));
+  const resolved: (MenuItem | null)[] = normalizeSlots(slots).map((id) => {
+    const it = id ? byId.get(id) : undefined;
+    return it && it.available ? it : null;
+  });
+  const used = new Set(resolved.filter(Boolean).map((i) => (i as MenuItem).id));
+  const auto = allItems
+    .filter((i) => i.available && !used.has(i.id))
+    .sort(
+      (a, b) =>
+        (counts[b.id] ?? 0) - (counts[a.id] ?? 0) ||
+        Number(!!(b as any).featured) - Number(!!(a as any).featured) ||
+        a.sort_order - b.sort_order,
+    );
+  let k = 0;
+  for (let i = 0; i < FEATURED_SLOT_COUNT; i++) {
+    if (!resolved[i]) resolved[i] = auto[k++] ?? null;
+  }
+  return resolved;
+}
+
+export async function saveFeaturedSlots(slots: (string | null)[]) {
+  const { error } = await sb
+    .from("theme_settings")
+    .update({ featured_slots: normalizeSlots(slots) })
+    .eq("id", 1);
+  if (error) throw error;
+}
+
+
+
 /** On-demand dishes for a single category. */
+/** Dishes by explicit ids (used to hydrate manually pinned featured slots). */
+export async function fetchItemsByIds(ids: string[]): Promise<MenuItem[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await sb.from("menu_items").select(ITEM_FIELDS).in("id", ids);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function fetchItemsByCategory(categoryId: string): Promise<MenuItem[]> {
   const { data, error } = await sb
     .from("menu_items")

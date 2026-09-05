@@ -24,6 +24,11 @@ import {
   DEFAULT_CLOSED_MESSAGE,
   DayHours,
   OrderRow,
+  fetchOrderCounts,
+  resolveFeaturedSlots,
+  saveFeaturedSlots,
+  normalizeSlots,
+
 } from "@/lib/menuData";
 
 import { LogOut, Plus, Save, Trash2 } from "lucide-react";
@@ -751,32 +756,84 @@ function FeaturedTab() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [enabled, setEnabled] = useState(true);
+  const [slots, setSlots] = useState<(string | null)[]>(normalizeSlots(null));
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [pick, setPick] = useState("");
 
   const load = () => {
     setLoading(true);
-    Promise.all([fetchMenuItems(), fetchCategories(), fetchTheme()])
-      .then(([its, cs, t]) => {
+    Promise.all([fetchMenuItems(), fetchCategories(), fetchTheme(), fetchOrderCounts()])
+      .then(([its, cs, t, c]) => {
         setItems(its);
         setCats(cs);
+        setCounts(c);
         setEnabled(((t as any)?.featured_enabled ?? true) as boolean);
+        setSlots(normalizeSlots((t as any)?.featured_slots));
       })
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
-  const catName = (id: string) => cats.find((c) => c.id === id)?.name ?? "";
-  const featured = items.filter((it) => (it as any).featured);
-  const rest = items.filter((it) => !(it as any).featured);
+  /* live order counts — dropdown ranking updates as orders arrive */
+  useEffect(() => {
+    const refresh = () => fetchOrderCounts().then(setCounts).catch(console.error);
+    const channel = sb
+      .channel("featured-orders-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, refresh)
+      .subscribe();
+    return () => sb.removeChannel(channel);
+  }, []);
 
-  const setFeatured = async (id: string, value: boolean) => {
+  const catName = (id: string) => cats.find((c) => c.id === id)?.name ?? "";
+
+  /** All available dishes, highest-selling first, zero-sales last. */
+  const ranked = useMemo(
+    () =>
+      items
+        .filter((i) => i.available)
+        .slice()
+        .sort(
+          (a, b) =>
+            (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || a.name.localeCompare(b.name, "ar"),
+        ),
+    [items, counts],
+  );
+
+  const resolved = useMemo(
+    () => resolveFeaturedSlots(slots, items, counts),
+    [slots, items, counts],
+  );
+
+  const setSlot = async (index: number, value: string) => {
+    const next = slots.slice();
+    next[index] = value || null;
+    setSlots(next);
     setSaving(true);
-    const { error } = await sb.from("menu_items").update({ featured: value }).eq("id", id);
-    setSaving(false);
-    if (error) return alert("خطأ: " + error.message);
-    setItems((cur) => cur.map((i) => (i.id === id ? ({ ...i, featured: value } as MenuItem) : i)));
+    try {
+      await saveFeaturedSlots(next);
+      // keep the legacy featured flags in sync with what the page shows
+      const shown = new Set(
+        resolveFeaturedSlots(next, items, counts)
+          .filter(Boolean)
+          .map((i) => (i as MenuItem).id),
+      );
+      const ids = items.map((i) => i.id);
+      await Promise.all([
+        sb.from("menu_items").update({ featured: true }).in("id", [...shown]),
+        sb
+          .from("menu_items")
+          .update({ featured: false })
+          .in("id", ids.filter((id) => !shown.has(id))),
+      ]);
+      setItems((cur) =>
+        cur.map((i) => ({ ...i, featured: shown.has(i.id) }) as MenuItem),
+      );
+    } catch (e: any) {
+      alert("خطأ: " + (e?.message ?? e));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleSection = async (value: boolean) => {
@@ -809,89 +866,76 @@ function FeaturedTab() {
       </div>
 
       <div className="glass-card rounded-2xl p-4">
-        <div className="mb-3 font-display font-bold text-foreground">إضافة طبق للقسم</div>
-        <div className="flex flex-wrap gap-2">
-          <select
-            value={pick}
-            onChange={(e) => setPick(e.target.value)}
-            className="min-w-[220px] flex-1 rounded-xl bg-black/20 px-3 py-2 text-sm text-foreground gold-border"
-          >
-            <option value="">اختر طبقاً…</option>
-            {rest.map((it) => (
-              <option key={it.id} value={it.id}>
-                {it.name} — {catName(it.category_id)}
-              </option>
-            ))}
-          </select>
-          <button
-            disabled={!pick || saving}
-            onClick={async () => {
-              await setFeatured(pick, true);
-              setPick("");
-            }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-4 py-2 text-sm font-bold text-[var(--forest-deep)] disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" /> إضافة
-          </button>
+        <div className="mb-1 font-display font-bold text-foreground">
+          خانات القسم الأربعة {saving && <span className="text-xs text-foreground/60">جارٍ الحفظ…</span>}
         </div>
-      </div>
+        <div className="mb-4 text-xs text-foreground/60">
+          اترك الخانة على "تلقائي" ليتم اختيار الطبق الأكثر مبيعاً، أو اختر طبقاً محدداً ليظهر دائماً.
+          الأرقام بجانب الأسماء هي عدد الطلبات المباشرة.
+        </div>
 
-      <div className="glass-card rounded-2xl p-4">
-        <div className="mb-3 font-display font-bold text-foreground">
-          الأطباق المختارة ({featured.length})
-        </div>
-        {featured.length === 0 ? (
-          <div className="text-sm text-foreground/60">لا توجد أطباق مختارة بعد.</div>
-        ) : (
-          <div className="space-y-2">
-            {featured.map((it) => (
-              <div
-                key={it.id}
-                className="flex items-center gap-3 rounded-xl bg-black/20 p-2"
-              >
-                {it.image_url && (
-                  <img
-                    src={it.image_url}
-                    alt={it.name}
-                    className="h-12 w-12 rounded-lg object-cover"
-                  />
-                )}
-                <div className="flex-1">
-                  <div className="text-sm font-bold text-foreground">{it.name}</div>
-                  <div className="text-xs text-foreground/60">{catName(it.category_id)}</div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => {
+            const shown = resolved[i];
+            return (
+              <div key={i} className="rounded-xl bg-black/20 p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--gold)]">
+                  الخانة {i + 1}
+                  <span className="rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-normal text-foreground/70">
+                    {slots[i] ? "اختيار يدوي" : "تلقائي"}
+                  </span>
                 </div>
+
                 <select
-                  value={it.id}
-                  onChange={async (e) => {
-                    const next = e.target.value;
-                    if (next === it.id) return;
-                    await setFeatured(it.id, false);
-                    await setFeatured(next, true);
-                  }}
-                  className="rounded-xl bg-black/30 px-2 py-1 text-xs text-foreground gold-border"
+                  value={slots[i] ?? ""}
+                  onChange={(e) => setSlot(i, e.target.value)}
+                  className="w-full rounded-xl bg-black/30 px-3 py-2 text-sm text-foreground gold-border"
                 >
-                  <option value={it.id}>استبدال بـ…</option>
-                  {rest.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
+                  <option value="">تلقائي (حسب الأكثر مبيعاً)</option>
+                  {ranked.map((it) => (
+                    <option key={it.id} value={it.id}>
+                      {it.name} (عدد الطلبات: {counts[it.id] ?? 0})
                     </option>
                   ))}
                 </select>
-                <button
-                  onClick={() => setFeatured(it.id, false)}
-                  className="rounded-full bg-red-500/80 p-2 text-white"
-                  title="إزالة"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+
+                <div className="mt-2 flex items-center gap-2">
+                  {shown?.image_url && (
+                    <img
+                      src={shown.image_url}
+                      alt={shown.name}
+                      className="h-10 w-10 rounded-lg object-cover"
+                    />
+                  )}
+                  <div className="flex-1 text-xs text-foreground/70">
+                    {shown ? (
+                      <>
+                        <span className="font-bold text-foreground">{shown.name}</span>{" "}
+                        — {catName(shown.category_id)} · عدد الطلبات: {counts[shown.id] ?? 0}
+                      </>
+                    ) : (
+                      "لا يوجد طبق متاح لهذه الخانة"
+                    )}
+                  </div>
+                  {slots[i] && (
+                    <button
+                      onClick={() => setSlot(i, "")}
+                      className="rounded-full bg-black/40 p-2 text-foreground/80"
+                      title="إرجاع للتلقائي"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
+
 
 /* ============ OFFERS ============ */
 
