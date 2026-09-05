@@ -8,6 +8,13 @@
       "when": 1788503872940,
       "tag": "0000_menu_perf_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788601407304,
+      "tag": "0001_featured_slots_and_order_counts",
+      "breakpoints": true
     }
   ]
 }

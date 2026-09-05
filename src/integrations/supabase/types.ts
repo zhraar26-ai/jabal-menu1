@@ -286,6 +286,7 @@ export type Database = {
           background_style: string
           closed_message: string
           featured_enabled: boolean
+          featured_slots: Json
           font_family: string
           footer_text: string
           forest_color: string
@@ -303,6 +304,7 @@ export type Database = {
           background_style?: string
           closed_message?: string
           featured_enabled?: boolean
+          featured_slots?: Json
           font_family?: string
           footer_text?: string
           forest_color?: string
@@ -320,6 +322,7 @@ export type Database = {
           background_style?: string
           closed_message?: string
           featured_enabled?: boolean
+          featured_slots?: Json
           font_family?: string
           footer_text?: string
           forest_color?: string
@@ -364,6 +367,13 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      item_order_counts: {
+        Args: never
+        Returns: {
+          menu_item_id: string
+          orders_count: number
+        }[]
       }
     }
     Enums: {
