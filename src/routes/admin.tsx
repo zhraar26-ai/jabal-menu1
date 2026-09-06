@@ -1188,6 +1188,25 @@ function ThemeTab() {
       </div>
 
       <div>
+        <label className="text-xs text-foreground/70">
+          رقم واتساب لاستلام الطلبات (بصيغة دولية بدون +)
+        </label>
+        <input
+          value={(t as any).whatsapp_number ?? ""}
+          onChange={(e) =>
+            setT({ ...t, whatsapp_number: e.target.value.replace(/[^\d]/g, "") } as any)
+          }
+          placeholder="9647878777237"
+          dir="ltr"
+          inputMode="numeric"
+          className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+        />
+        <p className="mt-1 text-[11px] text-foreground/55">
+          سيتم إرسال جميع طلبات السلة إلى هذا الرقم.
+        </p>
+      </div>
+
+      <div>
         <label className="text-xs text-foreground/70">صورة الهيرو</label>
         <div className="mt-1">
           <ImageField
