@@ -227,6 +227,7 @@ export type Database = {
           id: string
           items: Json
           phone: string | null
+          status: string
           subtotal: number
           total: number
         }
@@ -238,6 +239,7 @@ export type Database = {
           id?: string
           items?: Json
           phone?: string | null
+          status?: string
           subtotal?: number
           total?: number
         }
@@ -249,6 +251,7 @@ export type Database = {
           id?: string
           items?: Json
           phone?: string | null
+          status?: string
           subtotal?: number
           total?: number
         }
@@ -299,6 +302,7 @@ export type Database = {
           location_url: string
           manual_closed: boolean
           opening_hours: Json
+          whatsapp_number: string
         }
         Insert: {
           background_style?: string
@@ -317,6 +321,7 @@ export type Database = {
           location_url?: string
           manual_closed?: boolean
           opening_hours?: Json
+          whatsapp_number?: string
         }
         Update: {
           background_style?: string
@@ -335,6 +340,7 @@ export type Database = {
           location_url?: string
           manual_closed?: boolean
           opening_hours?: Json
+          whatsapp_number?: string
         }
         Relationships: []
       }

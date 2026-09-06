@@ -15,6 +15,13 @@
       "when": 1788601407304,
       "tag": "0001_featured_slots_and_order_counts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788680408322,
+      "tag": "0002_order_status_and_whatsapp_number",
+      "breakpoints": true
     }
   ]
 }
