@@ -28,6 +28,9 @@ import {
   resolveFeaturedSlots,
   saveFeaturedSlots,
   normalizeSlots,
+  ORDER_STATUSES,
+  orderStatusLabel,
+  updateOrderStatus,
 
 } from "@/lib/menuData";
 
@@ -205,7 +208,7 @@ function LoginScreen() {
 
 /* ============ DASHBOARD ============ */
 
-type Tab = "analytics" | "hours" | "categories" | "items" | "featured" | "offers" | "delivery" | "reviews" | "theme";
+type Tab = "orders" | "analytics" | "hours" | "categories" | "items" | "featured" | "offers" | "delivery" | "reviews" | "theme";
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("categories");
@@ -241,6 +244,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                 ["offers", "العروض"],
                 ["delivery", "أماكن التوصيل"],
                 ["reviews", "آراء الزبائن"],
+                ["orders", "الطلبات"],
                 ["hours", "أوقات العمل"],
                 ["analytics", "الإحصائيات"],
                 ["theme", "المظهر"],
@@ -261,6 +265,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
           </div>
         </nav>
 
+        {tab === "orders" && <OrdersTab />}
         {tab === "analytics" && <AnalyticsTab />}
         {tab === "hours" && <HoursTab />}
         {tab === "categories" && <CategoriesTab />}
@@ -270,6 +275,148 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         {tab === "delivery" && <DeliveryTab />}
         {tab === "reviews" && <ReviewsTab />}
         {tab === "theme" && <ThemeTab />}
+      </div>
+    </div>
+  );
+}
+
+
+/* ============ ORDERS ============ */
+
+function statusClasses(status: string) {
+  if (status === "delivered") return "bg-emerald-500/20 text-emerald-300 border-emerald-400/40";
+  if (status === "on_way") return "bg-amber-500/20 text-amber-300 border-amber-400/40";
+  return "bg-sky-500/20 text-sky-300 border-sky-400/40";
+}
+
+function OrdersTab() {
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all");
+
+  const load = () => {
+    sb.from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300)
+      .then(({ data }: any) => {
+        setOrders(data ?? []);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    load();
+    const ch = sb
+      .channel("admin-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, load)
+      .subscribe();
+    return () => {
+      sb.removeChannel(ch);
+    };
+  }, []);
+
+  const setStatus = async (id: string, status: string) => {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    try {
+      await updateOrderStatus(id, status);
+    } catch (e: any) {
+      alert("فشل تحديث الحالة: " + (e?.message ?? ""));
+      load();
+    }
+  };
+
+  const shown = orders.filter((o) => filter === "all" || (o.status ?? "sent") === filter);
+
+  if (loading) return <div className="text-foreground/70">جاري التحميل…</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card flex flex-wrap items-center gap-2 rounded-2xl p-3">
+        {([["all", "الكل"], ...ORDER_STATUSES.map((s) => [s.value, s.label] as const)] as const).map(
+          ([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setFilter(v)}
+              className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                filter === v
+                  ? "bg-[var(--gold)] text-[var(--forest-deep)]"
+                  : "gold-border text-foreground/75"
+              }`}
+            >
+              {label}
+            </button>
+          ),
+        )}
+        <span className="ms-auto text-xs text-foreground/60">{shown.length} طلب</span>
+      </div>
+
+      {shown.length === 0 && <div className="text-foreground/60">لا توجد طلبات.</div>}
+
+      <div className="space-y-3">
+        {shown.map((o) => {
+          const status = o.status ?? "sent";
+          const items = Array.isArray(o.items) ? o.items : [];
+          return (
+            <div key={o.id} className="glass-card rounded-2xl p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm font-bold text-[var(--gold)]">
+                  {o.total.toLocaleString()} د.ع
+                  <span className="ms-2 text-xs font-normal text-foreground/60">
+                    {new Date(o.created_at).toLocaleString("ar-IQ")}
+                  </span>
+                </div>
+                <span
+                  className={`rounded-full border px-3 py-1 text-[11px] font-bold ${statusClasses(status)}`}
+                >
+                  {orderStatusLabel(status)}
+                </span>
+              </div>
+
+              <ul className="mt-2 space-y-1 text-xs text-foreground/80">
+                {items.map((it: any, i: number) => (
+                  <li key={i}>
+                    • {it.name}
+                    {it.option ? ` (${it.option})` : ""} × {it.qty}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-2 space-y-0.5 text-xs text-foreground/70">
+                {o.delivery_area && <div>المنطقة: {o.delivery_area}</div>}
+                {o.address && <div>العنوان: {o.address}</div>}
+                {o.phone && (
+                  <div>
+                    الهاتف:{" "}
+                    <a href={`tel:${o.phone}`} dir="ltr" className="text-[var(--gold)]">
+                      {o.phone}
+                    </a>
+                  </div>
+                )}
+                <div>
+                  الأطباق: {o.subtotal.toLocaleString()} د.ع — التوصيل:{" "}
+                  {o.delivery_fee.toLocaleString()} د.ع
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {ORDER_STATUSES.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => setStatus(o.id, s.value)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                      status === s.value
+                        ? "bg-[var(--gold)] text-[var(--forest-deep)]"
+                        : "gold-border text-foreground/75"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1185,6 +1332,25 @@ function ThemeTab() {
           dir="ltr"
           className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
         />
+      </div>
+
+      <div>
+        <label className="text-xs text-foreground/70">
+          رقم واتساب لاستلام الطلبات (بصيغة دولية بدون +)
+        </label>
+        <input
+          value={(t as any).whatsapp_number ?? ""}
+          onChange={(e) =>
+            setT({ ...t, whatsapp_number: e.target.value.replace(/[^\d]/g, "") } as any)
+          }
+          placeholder="9647878777237"
+          dir="ltr"
+          inputMode="numeric"
+          className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+        />
+        <p className="mt-1 text-[11px] text-foreground/55">
+          سيتم إرسال جميع طلبات السلة إلى هذا الرقم.
+        </p>
       </div>
 
       <div>

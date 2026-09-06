@@ -53,6 +53,7 @@ export type ThemeSettings = {
   font_family: string;
   footer_text: string;
   location_url: string;
+  whatsapp_number?: string | null;
   featured_enabled?: boolean;
   featured_slots?: (string | null)[] | null;
   opening_hours?: DayHours[] | null;
@@ -381,8 +382,32 @@ export type OrderRow = {
   delivery_area: string | null;
   phone: string | null;
   address: string | null;
+  status?: string | null;
   created_at: string;
 };
+
+export const DEFAULT_WHATSAPP_NUMBER = "9647878777237";
+
+/** WhatsApp link for sending orders, driven by the admin dashboard setting. */
+export function whatsappLink(theme: ThemeSettings | null | undefined): string {
+  const raw = (theme?.whatsapp_number ?? "").replace(/[^\d]/g, "");
+  return `https://wa.me/${raw || DEFAULT_WHATSAPP_NUMBER}`;
+}
+
+export const ORDER_STATUSES: { value: string; label: string }[] = [
+  { value: "sent", label: "تم الإرسال" },
+  { value: "on_way", label: "في الطريق" },
+  { value: "delivered", label: "تم التسليم" },
+];
+
+export function orderStatusLabel(status: string | null | undefined): string {
+  return ORDER_STATUSES.find((s) => s.value === status)?.label ?? "تم الإرسال";
+}
+
+export async function updateOrderStatus(id: string, status: string) {
+  const { error } = await sb.from("orders").update({ status }).eq("id", id);
+  if (error) throw error;
+}
 
 export async function fetchDeliveryAreas(activeOnly = false): Promise<DeliveryArea[]> {
   let q = sb.from("delivery_areas").select("*").order("sort_order", { ascending: true });

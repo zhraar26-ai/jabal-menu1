@@ -58,6 +58,7 @@ import {
   logOrder,
   rateLimit,
   optimizedImage,
+  whatsappLink,
   sanitizeText,
   saveAddress,
   saveFavorites,
@@ -741,6 +742,8 @@ function HomePage() {
     setTimeout(() => setJustAdded((j) => (j === item.id ? null : j)), 1200);
   };
 
+  const whatsappHref = whatsappLink(theme);
+
   const sendCartToWhatsapp = async () => {
     setOrderError(null);
     const phone = sanitizeText(customerPhone, 40);
@@ -800,7 +803,7 @@ function HomePage() {
       address,
     }).catch(console.error);
 
-    window.open(`${WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`${whatsappHref}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
 
@@ -1610,7 +1613,7 @@ function HomePage() {
 
       {/* ============ FLOATING ACTIONS ============ */}
       <a
-        href={WHATSAPP}
+        href={whatsappHref}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="واتساب"
