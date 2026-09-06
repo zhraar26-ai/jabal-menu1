@@ -58,6 +58,7 @@ import {
   logOrder,
   rateLimit,
   optimizedImage,
+  whatsappLink,
   sanitizeText,
   saveAddress,
   saveFavorites,
