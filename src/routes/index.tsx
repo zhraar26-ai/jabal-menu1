@@ -819,45 +819,8 @@ function HomePage() {
       {/* ============ HEADER ============ */}
       <header className="sticky top-0 z-50 border-b border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[color-mix(in_oklab,var(--forest-deep)_85%,transparent)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
-          <nav className="hidden flex-1 items-center gap-2 text-sm md:flex">
-            {NAV_LINKS.map((l, idx) => (
-              <span key={l.href} className="flex items-center gap-2">
-                <a
-                  href={l.href}
-                  className="story-link text-foreground/85 transition-colors hover:text-[var(--gold)]"
-                >
-                  {l.label}
-                </a>
-                {idx < NAV_LINKS.length - 1 && (
-                  <span className="text-[var(--gold)]/40">•</span>
-                )}
-              </span>
-            ))}
-          </nav>
-
-          <a href="#home" className="flex shrink-0 items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2">
-            <img src={logoImg} alt="مطعم جبل" width={44} height={44} className="h-11 w-11 rounded-full" />
-            <span className="gold-text font-display text-lg font-bold md:text-xl">مطعم جبل</span>
-          </a>
-
-          <div className="hidden flex-1 items-center justify-end gap-2 md:flex">
-            <button
-              onClick={() => {
-                setSearchOpen((v) => !v);
-                requestAnimationFrame(() => searchRef.current?.focus());
-              }}
-              aria-label="بحث"
-              className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-            >
-              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-            </button>
-            <a
-              href={`tel:${PHONE_PRIMARY}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3.5 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
-            >
-              <Phone className="h-3.5 w-3.5" />
-              اتصل للطلب
-            </a>
+          {/* Far-right group: hamburger + logo + name */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setNavOpen((v) => !v)}
               aria-label="القائمة"
@@ -865,27 +828,31 @@ function HomePage() {
             >
               {navOpen ? <X className="h-4 w-4" /> : <MenuIcon className="h-4 w-4" />}
             </button>
+            <a href="#home" className="flex shrink-0 items-center gap-2">
+              <img src={logoImg} alt="مطعم جبل" width={40} height={40} className="h-9 w-9 rounded-full md:h-11 md:w-11" />
+              <span className="gold-text font-display text-base font-bold md:text-xl">مطعم جبل</span>
+            </a>
           </div>
 
-
-          <div className="flex items-center gap-2 md:hidden">
+          {/* Far-left group: search + call button (call hidden on mobile) */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 setSearchOpen((v) => !v);
                 requestAnimationFrame(() => searchRef.current?.focus());
               }}
               aria-label="بحث"
-              className="rounded-full gold-border p-2 text-[var(--gold)]"
+              className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]]"
             >
-              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
             </button>
-            <button
-              onClick={() => setNavOpen((v) => !v)}
-              className="rounded-full gold-border p-2 text-[var(--gold)]"
-              aria-label="القائمة"
+            <a
+              href={`tel:${PHONE_PRIMARY}`}
+              className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
             >
-              {navOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-            </button>
+              <Phone className="h-3.5 w-3.5" />
+              اتصل للطلب
+            </a>
           </div>
         </div>
 
