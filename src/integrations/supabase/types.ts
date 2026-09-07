@@ -194,7 +194,12 @@ export type Database = {
           badge: string | null
           created_at: string
           description: string | null
+          discount_price: number | null
+          expires_at: string | null
+          featured: boolean
           id: string
+          image_url: string | null
+          original_price: number | null
           sort_order: number
           title: string
         }
@@ -203,7 +208,12 @@ export type Database = {
           badge?: string | null
           created_at?: string
           description?: string | null
+          discount_price?: number | null
+          expires_at?: string | null
+          featured?: boolean
           id?: string
+          image_url?: string | null
+          original_price?: number | null
           sort_order?: number
           title: string
         }
@@ -212,7 +222,12 @@ export type Database = {
           badge?: string | null
           created_at?: string
           description?: string | null
+          discount_price?: number | null
+          expires_at?: string | null
+          featured?: boolean
           id?: string
+          image_url?: string | null
+          original_price?: number | null
           sort_order?: number
           title?: string
         }

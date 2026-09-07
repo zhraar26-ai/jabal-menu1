@@ -16,6 +16,7 @@ import {
   fetchMenuItems,
   fetchMenuItemOptions,
   fetchOffers,
+  offerDiscountPercent,
   fetchRestaurantRatings,
   fetchTheme,
   MenuItemOption,
@@ -1104,6 +1105,7 @@ function OffersTab() {
       description: "وصف العرض",
       badge: "خصم",
       active: true,
+      featured: false,
       sort_order: offers.length + 1,
     });
     load();
@@ -1134,6 +1136,14 @@ function OffersTab() {
   );
 }
 
+function toLocalInput(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function OfferCard({
   offer,
   onDelete,
@@ -1144,21 +1154,64 @@ function OfferCard({
   onSaved: () => void;
 }) {
   const [o, setO] = useState(offer);
+  const [savedAt, setSavedAt] = useState(0);
+  const [err, setErr] = useState<string | null>(null);
+  const percent = offerDiscountPercent(o);
+  const expired = !!o.expires_at && new Date(o.expires_at).getTime() <= Date.now();
+
   const save = async () => {
-    await sb
+    setErr(null);
+    const { error } = await sb
       .from("offers")
       .update({
         title: o.title,
         description: o.description,
         badge: o.badge,
         active: o.active,
+        featured: !!o.featured,
+        image_url: o.image_url ?? null,
+        original_price: o.original_price ?? null,
+        discount_price: o.discount_price ?? null,
+        expires_at: o.expires_at ?? null,
         sort_order: o.sort_order,
       })
       .eq("id", o.id);
+    if (error) {
+      setErr(error.message || "فشل الحفظ");
+      return;
+    }
+    setSavedAt(Date.now());
     onSaved();
   };
+
+  const numField = (
+    label: string,
+    key: "original_price" | "discount_price",
+  ) => (
+    <div>
+      <label className="text-xs text-foreground/70">{label}</label>
+      <input
+        type="number"
+        min={0}
+        value={o[key] ?? ""}
+        onChange={(e) =>
+          setO({ ...o, [key]: e.target.value === "" ? null : Number(e.target.value) })
+        }
+        className="mt-1 w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+      />
+    </div>
+  );
+
   return (
     <div className="glass-card space-y-2 rounded-2xl p-4">
+      <ImageField
+        value={o.image_url ?? null}
+        onChange={(url) => setO({ ...o, image_url: url })}
+        folder="offers"
+        label="صورة العرض"
+        aspect={4 / 3}
+        previewClassName="h-16 w-20 rounded-xl object-cover"
+      />
       <input
         value={o.title}
         onChange={(e) => setO({ ...o, title: e.target.value })}
@@ -1175,17 +1228,66 @@ function OfferCard({
       <input
         value={o.badge ?? ""}
         onChange={(e) => setO({ ...o, badge: e.target.value })}
-        placeholder="شارة (مثال: خصم 20%)"
+        placeholder="شارة (اختياري)"
         className="w-full rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
       />
-      <label className="flex items-center gap-2 text-xs text-foreground/80">
-        <input
-          type="checkbox"
-          checked={o.active}
-          onChange={(e) => setO({ ...o, active: e.target.checked })}
-        />
-        مفعّل
-      </label>
+      <div className="grid grid-cols-2 gap-2">
+        {numField("السعر الأصلي", "original_price")}
+        {numField("السعر بعد الخصم", "discount_price")}
+      </div>
+      {percent != null && (
+        <div className="text-[11px] font-bold text-red-400">نسبة الخصم: {percent}%</div>
+      )}
+      <div>
+        <label className="text-xs text-foreground/70">تاريخ ووقت انتهاء العرض</label>
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            type="datetime-local"
+            value={toLocalInput(o.expires_at)}
+            onChange={(e) =>
+              setO({
+                ...o,
+                expires_at: e.target.value ? new Date(e.target.value).toISOString() : null,
+              })
+            }
+            className="flex-1 rounded-lg bg-[var(--forest-deep)] px-3 py-2 text-sm gold-border"
+          />
+          {o.expires_at && (
+            <button
+              type="button"
+              onClick={() => setO({ ...o, expires_at: null })}
+              className="rounded-full gold-border px-3 py-2 text-[11px] text-foreground/70"
+            >
+              بدون
+            </button>
+          )}
+        </div>
+        {expired && (
+          <div className="mt-1 text-[11px] text-red-400">
+            العرض منتهي ومخفي من الموقع — غيّر التاريخ لإعادة تفعيله.
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-xs text-foreground/80">
+          <input
+            type="checkbox"
+            checked={o.active}
+            onChange={(e) => setO({ ...o, active: e.target.checked })}
+          />
+          مفعّل
+        </label>
+        <label className="flex items-center gap-2 text-xs text-foreground/80">
+          <input
+            type="checkbox"
+            checked={!!o.featured}
+            onChange={(e) => setO({ ...o, featured: e.target.checked })}
+          />
+          عرض مميز
+        </label>
+      </div>
+      {err && <div className="text-xs text-red-400">{err}</div>}
+      {savedAt > 0 && !err && <div className="text-xs text-[var(--gold)]">تم الحفظ ✓</div>}
       <div className="flex gap-2">
         <button
           onClick={save}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
-import { Crop, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Crop, RotateCw, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const sb = supabase as any;
@@ -28,8 +28,27 @@ async function getCroppedBlob(
   src: string,
   area: Area,
   keepAlpha: boolean,
+  rotation = 0,
 ): Promise<Blob> {
   const img = await loadImage(src);
+  const rad = ((rotation % 360) * Math.PI) / 180;
+
+  // Draw the rotated source into an intermediate canvas first, so the
+  // crop area (which react-easy-crop reports in rotated space) lines up.
+  const sin = Math.abs(Math.sin(rad));
+  const cos = Math.abs(Math.cos(rad));
+  const rotW = Math.round(img.width * cos + img.height * sin);
+  const rotH = Math.round(img.width * sin + img.height * cos);
+  const rotated = document.createElement("canvas");
+  rotated.width = Math.max(1, rotW);
+  rotated.height = Math.max(1, rotH);
+  const rctx = rotated.getContext("2d", { alpha: true });
+  if (!rctx) throw new Error("Canvas غير مدعوم");
+  rctx.clearRect(0, 0, rotated.width, rotated.height);
+  rctx.translate(rotated.width / 2, rotated.height / 2);
+  rctx.rotate(rad);
+  rctx.drawImage(img, -img.width / 2, -img.height / 2);
+
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(area.width));
   canvas.height = Math.max(1, Math.round(area.height));
@@ -38,7 +57,7 @@ async function getCroppedBlob(
   // no background fill -> transparency of the source is preserved
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(
-    img,
+    rotated,
     area.x,
     area.y,
     area.width,
@@ -76,6 +95,7 @@ export function ImageCropperModal({
 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -95,7 +115,7 @@ export function ImageCropperModal({
     setBusy(true);
     setErr(null);
     try {
-      const blob = await getCroppedBlob(src, areaRef.current, alpha);
+      const blob = await getCroppedBlob(src, areaRef.current, alpha, rotation);
       await onCropped(blob);
     } catch (e: any) {
       setErr(e?.message ?? "فشل قص الصورة");
@@ -133,6 +153,8 @@ export function ImageCropperModal({
             image={src}
             crop={crop}
             zoom={zoom}
+            rotation={rotation}
+            onRotationChange={setRotation}
             minZoom={0.5}
             maxZoom={4}
             restrictPosition={false}
@@ -171,6 +193,14 @@ export function ImageCropperModal({
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
             >
               <ZoomIn className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setRotation((r) => (r + 90) % 360)}
+              aria-label="تدوير"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full gold-border text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              <RotateCw className="h-4 w-4" />
             </button>
           </div>
           <div className="text-[10px] text-foreground/50">
