@@ -97,12 +97,6 @@ const ITEM_PLACEHOLDER =
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 450'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23042c08'/><stop offset='1' stop-color='%23021805'/></linearGradient></defs><rect width='800' height='450' fill='url(%23g)'/><text x='50%' y='52%' font-family='serif' font-size='42' fill='%23ffbd59' text-anchor='middle' opacity='0.55'>مطعم جبل</text></svg>`,
   );
 
-const NAV_LINKS = [
-  { href: "#home", label: "الرئيسية" },
-  { href: "#menu", label: "أقسام المنيو" },
-  { href: "#about", label: "عن المطعم" },
-  { href: "#contact", label: "تواصل" },
-];
 
 const SIDE_LINKS = [
   { href: "#home", label: "الرئيسية" },
