@@ -31,7 +31,26 @@ export type Offer = {
   badge: string | null;
   active: boolean;
   sort_order: number;
+  image_url?: string | null;
+  original_price?: number | null;
+  discount_price?: number | null;
+  expires_at?: string | null;
+  featured?: boolean;
 };
+
+/** Discount percentage, or null when prices don't describe a discount. */
+export function offerDiscountPercent(o: Offer): number | null {
+  const orig = o.original_price ?? null;
+  const disc = o.discount_price ?? null;
+  if (!orig || disc == null || disc >= orig) return null;
+  return Math.round(((orig - disc) / orig) * 100);
+}
+
+export function isOfferLive(o: Offer, now: number = Date.now()): boolean {
+  if (!o.active) return false;
+  if (o.expires_at && new Date(o.expires_at).getTime() <= now) return false;
+  return true;
+}
 
 export type MenuItemOption = {
   id: string;
@@ -297,7 +316,9 @@ export async function fetchOffers(activeOnly = false): Promise<Offer[]> {
   if (activeOnly) q = q.eq("active", true);
   const { data, error } = await q;
   if (error) throw error;
-  return data ?? [];
+  const rows: Offer[] = data ?? [];
+  // Expired offers stay in the DB (admin can reactivate) but never reach the public menu.
+  return activeOnly ? rows.filter((o) => isOfferLive(o)) : rows;
 }
 
 export async function fetchTheme(): Promise<ThemeSettings | null> {
