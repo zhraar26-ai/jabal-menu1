@@ -97,12 +97,6 @@ const ITEM_PLACEHOLDER =
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 450'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23042c08'/><stop offset='1' stop-color='%23021805'/></linearGradient></defs><rect width='800' height='450' fill='url(%23g)'/><text x='50%' y='52%' font-family='serif' font-size='42' fill='%23ffbd59' text-anchor='middle' opacity='0.55'>مطعم جبل</text></svg>`,
   );
 
-const NAV_LINKS = [
-  { href: "#home", label: "الرئيسية" },
-  { href: "#menu", label: "أقسام المنيو" },
-  { href: "#about", label: "عن المطعم" },
-  { href: "#contact", label: "تواصل" },
-];
 
 const SIDE_LINKS = [
   { href: "#home", label: "الرئيسية" },
@@ -819,28 +813,23 @@ function HomePage() {
       {/* ============ HEADER ============ */}
       <header className="sticky top-0 z-50 border-b border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[color-mix(in_oklab,var(--forest-deep)_85%,transparent)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
-          <nav className="hidden flex-1 items-center gap-2 text-sm md:flex">
-            {NAV_LINKS.map((l, idx) => (
-              <span key={l.href} className="flex items-center gap-2">
-                <a
-                  href={l.href}
-                  className="story-link text-foreground/85 transition-colors hover:text-[var(--gold)]"
-                >
-                  {l.label}
-                </a>
-                {idx < NAV_LINKS.length - 1 && (
-                  <span className="text-[var(--gold)]/40">•</span>
-                )}
-              </span>
-            ))}
-          </nav>
+          {/* Far-right group: hamburger + logo + name */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setNavOpen((v) => !v)}
+              aria-label="القائمة"
+              className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
+            >
+              {navOpen ? <X className="h-4 w-4" /> : <MenuIcon className="h-4 w-4" />}
+            </button>
+            <a href="#home" className="flex shrink-0 items-center gap-2">
+              <img src={logoImg} alt="مطعم جبل" width={40} height={40} className="h-9 w-9 rounded-full md:h-11 md:w-11" />
+              <span className="gold-text font-display text-base font-bold md:text-xl">مطعم جبل</span>
+            </a>
+          </div>
 
-          <a href="#home" className="flex shrink-0 items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2">
-            <img src={logoImg} alt="مطعم جبل" width={44} height={44} className="h-11 w-11 rounded-full" />
-            <span className="gold-text font-display text-lg font-bold md:text-xl">مطعم جبل</span>
-          </a>
-
-          <div className="hidden flex-1 items-center justify-end gap-2 md:flex">
+          {/* Far-left group: search + call button (call hidden on mobile) */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 setSearchOpen((v) => !v);
@@ -853,39 +842,11 @@ function HomePage() {
             </button>
             <a
               href={`tel:${PHONE_PRIMARY}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3.5 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)] px-3 py-1.5 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-105"
             >
               <Phone className="h-3.5 w-3.5" />
               اتصل للطلب
             </a>
-            <button
-              onClick={() => setNavOpen((v) => !v)}
-              aria-label="القائمة"
-              className="grid h-9 w-9 place-items-center rounded-full gold-border text-[var(--gold)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--forest-deep)]"
-            >
-              {navOpen ? <X className="h-4 w-4" /> : <MenuIcon className="h-4 w-4" />}
-            </button>
-          </div>
-
-
-          <div className="flex items-center gap-2 md:hidden">
-            <button
-              onClick={() => {
-                setSearchOpen((v) => !v);
-                requestAnimationFrame(() => searchRef.current?.focus());
-              }}
-              aria-label="بحث"
-              className="rounded-full gold-border p-2 text-[var(--gold)]"
-            >
-              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-            </button>
-            <button
-              onClick={() => setNavOpen((v) => !v)}
-              className="rounded-full gold-border p-2 text-[var(--gold)]"
-              aria-label="القائمة"
-            >
-              {navOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-            </button>
           </div>
         </div>
 
