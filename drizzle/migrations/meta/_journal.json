@@ -22,6 +22,13 @@
       "when": 1788680408322,
       "tag": "0002_order_status_and_whatsapp_number",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788762033237,
+      "tag": "0003_offers_upgrade",
+      "breakpoints": true
     }
   ]
 }
