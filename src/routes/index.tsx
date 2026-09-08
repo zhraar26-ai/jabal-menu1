@@ -49,6 +49,8 @@ import {
 
 
   fetchOffers,
+  offerDiscountPercent,
+  isOfferLive,
   fetchRestaurantRatings,
   fetchTheme,
   loadFavorites,
@@ -245,6 +247,33 @@ function Stars({
         </button>
       ))}
     </span>
+  );
+}
+
+/** Live countdown: "DD : HH : MM : SS" — numbers only, no labels. */
+function OfferCountdown({ expiresAt }: { expiresAt: string }) {
+  const [left, setLeft] = useState(() => new Date(expiresAt).getTime() - Date.now());
+  useEffect(() => {
+    const id = setInterval(
+      () => setLeft(new Date(expiresAt).getTime() - Date.now()),
+      1000,
+    );
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  if (left <= 0) return null;
+  const s = Math.floor(left / 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const parts = [
+    pad(Math.floor(s / 86400)),
+    pad(Math.floor((s % 86400) / 3600)),
+    pad(Math.floor((s % 3600) / 60)),
+    pad(s % 60),
+  ];
+  return (
+    <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-[color-mix(in_oklab,var(--forest-deep)_75%,transparent)] px-3 py-2 text-sm font-bold text-[var(--gold)]">
+      <span className="text-xs font-normal text-foreground/70">ينتهي خلال:</span>
+      <span dir="ltr" className="tracking-widest">{parts.join(" : ")}</span>
+    </div>
   );
 }
 
@@ -635,6 +664,31 @@ function HomePage() {
     return m;
   }, [items]);
 
+  /** Offers behave like virtual menu items so they can live in the same cart. */
+  const liveOffers = useMemo(
+    () => offers.filter((o) => isOfferLive(o, nowTick.getTime())),
+    [offers, nowTick],
+  );
+
+  const offerItemById = useMemo(() => {
+    const m: Record<string, MenuItem> = {};
+    for (const o of offers) {
+      const price = o.discount_price ?? o.original_price ?? 0;
+      m[`offer:${o.id}`] = {
+        id: `offer:${o.id}`,
+        category_id: "offers",
+        name: o.title,
+        description: o.description,
+        price,
+        discount_price: null,
+        image_url: o.image_url ?? null,
+        sort_order: o.sort_order,
+        available: true,
+      };
+    }
+    return m;
+  }, [offers]);
+
   const basePrice = (it: MenuItem) =>
     it.discount_price != null && it.discount_price < it.price ? it.discount_price : it.price;
 
@@ -688,11 +742,11 @@ function HomePage() {
   const cartEntries = useMemo(() => {
     const entries: { key: string; item: MenuItem; line: CartLine }[] = [];
     for (const [key, line] of Object.entries(cart)) {
-      const it = itemById[line.itemId];
+      const it = itemById[line.itemId] ?? offerItemById[line.itemId];
       if (it && line.qty > 0) entries.push({ key, item: it, line });
     }
     return entries;
-  }, [cart, itemById]);
+  }, [cart, itemById, offerItemById]);
 
   const cartTotal = useMemo(
     () => cartEntries.reduce((s, e) => s + e.line.unitPrice * e.line.qty, 0),
@@ -734,6 +788,27 @@ function HomePage() {
     setPendingQty((q) => ({ ...q, [item.id]: 1 }));
     setJustAdded(item.id);
     setTimeout(() => setJustAdded((j) => (j === item.id ? null : j)), 1200);
+  };
+
+  const addOfferToCart = (o: Offer) => {
+    const key = `offer:${o.id}__base`;
+    const unitPrice = o.discount_price ?? o.original_price ?? 0;
+    setCart((c) => {
+      const existing = c[key];
+      return {
+        ...c,
+        [key]: {
+          itemId: `offer:${o.id}`,
+          optionId: null,
+          optionName: null,
+          unitPrice,
+          qty: (existing?.qty ?? 0) + 1,
+          note: existing?.note ?? "",
+        },
+      };
+    });
+    setJustAdded(`offer:${o.id}`);
+    setTimeout(() => setJustAdded((j) => (j === `offer:${o.id}` ? null : j)), 1200);
   };
 
   const whatsappHref = whatsappLink(theme);
@@ -1080,36 +1155,84 @@ function HomePage() {
       </section>
 
 
-      {/* ============ OFFERS BANNER ============ */}
-      {(menuLoading || offers.length > 0) && (
-        <section className="px-4 pt-12">
+      {/* ============ OFFERS ============ */}
+      {(menuLoading || liveOffers.length > 0) && (
+        <section id="offers" className="scroll-mt-24 px-4 pt-12">
           <div className="mx-auto max-w-6xl">
-            <div className="text-center">
-              <span className="text-xs uppercase tracking-widest text-[var(--gold)]">عروضنا</span>
-              <h2 className="mt-2 font-display text-2xl font-bold md:text-3xl">
-                <span className="gold-text">عروض</span> وخصومات
-              </h2>
-            </div>
+            <h2 className="text-center font-display text-2xl font-bold md:text-3xl">
+              <span className="gold-text">عروض وخصومات</span>
+            </h2>
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {menuLoading
                 ? Array.from({ length: 3 }, (_, index) => <OfferSkeleton key={index} />)
-                : offers.map((o) => (
-                <div
-                  key={o.id}
-                  className="glass-card relative overflow-hidden rounded-3xl p-5 transition-transform hover:-translate-y-1"
-                >
-                  {o.badge && (
-                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-[var(--gold)] px-3 py-1 text-xs font-bold text-[var(--forest-deep)]">
-                      <Sparkles className="h-3 w-3" />
-                      {o.badge}
-                    </span>
-                  )}
-                  <h3 className="mt-6 font-display text-lg font-bold text-foreground">{o.title}</h3>
-                  {o.description && (
-                    <p className="mt-2 text-sm leading-relaxed text-foreground/75">{o.description}</p>
-                  )}
-                </div>
-                  ))}
+                : liveOffers.map((o) => {
+                    const percent = offerDiscountPercent(o);
+                    const price = o.discount_price ?? o.original_price ?? null;
+                    return (
+                      <div
+                        key={o.id}
+                        className="glass-card flex flex-col overflow-hidden rounded-3xl transition-transform hover:-translate-y-1"
+                      >
+                        <div className="relative">
+                          {o.image_url ? (
+                            <MenuImage
+                              src={o.image_url}
+                              alt={o.title}
+                              width={600}
+                              className="aspect-[4/3] w-full rounded-t-3xl object-cover"
+                            />
+                          ) : (
+                            <div className="grid aspect-[4/3] w-full place-items-center rounded-t-3xl bg-[color-mix(in_oklab,var(--gold)_8%,var(--forest-deep))]">
+                              <Sparkles className="h-8 w-8 text-[var(--gold)]" />
+                            </div>
+                          )}
+                          {percent != null && (
+                            <span className="absolute top-3 left-3 rounded-full bg-red-600 px-3 py-1 text-xs font-extrabold text-white shadow-lg">
+                              {percent}%
+                            </span>
+                          )}
+                          {o.featured && (
+                            <span className="absolute top-3 right-3 rounded-full bg-[var(--gold)] px-3 py-1 text-[11px] font-bold text-[var(--forest-deep)] shadow-gold">
+                              ⭐ عرض مميز
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-1 flex-col p-4">
+                          <h3 className="font-display text-lg font-bold text-foreground">{o.title}</h3>
+                          {o.description && (
+                            <p className="mt-1 text-sm leading-relaxed text-foreground/75">
+                              {o.description}
+                            </p>
+                          )}
+
+                          {price != null && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <span className="text-lg font-extrabold text-[var(--gold)]">
+                                {price.toLocaleString("en-US")} د.ع
+                              </span>
+                              {o.original_price != null &&
+                                o.discount_price != null &&
+                                o.discount_price < o.original_price && (
+                                  <span className="text-sm text-foreground/50 line-through">
+                                    {o.original_price.toLocaleString("en-US")} د.ع
+                                  </span>
+                                )}
+                            </div>
+                          )}
+
+                          {o.expires_at && <OfferCountdown expiresAt={o.expires_at} />}
+
+                          <button
+                            onClick={() => addOfferToCart(o)}
+                            className="mt-4 w-full rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-[1.02]"
+                          >
+                            {justAdded === `offer:${o.id}` ? "تمت الإضافة ✓" : "أضف للطلب"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
             </div>
           </div>
         </section>
