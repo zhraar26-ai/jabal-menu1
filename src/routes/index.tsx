@@ -49,6 +49,8 @@ import {
 
 
   fetchOffers,
+  offerDiscountPercent,
+  isOfferLive,
   fetchRestaurantRatings,
   fetchTheme,
   loadFavorites,
@@ -245,6 +247,33 @@ function Stars({
         </button>
       ))}
     </span>
+  );
+}
+
+/** Live countdown: "DD : HH : MM : SS" — numbers only, no labels. */
+function OfferCountdown({ expiresAt }: { expiresAt: string }) {
+  const [left, setLeft] = useState(() => new Date(expiresAt).getTime() - Date.now());
+  useEffect(() => {
+    const id = setInterval(
+      () => setLeft(new Date(expiresAt).getTime() - Date.now()),
+      1000,
+    );
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  if (left <= 0) return null;
+  const s = Math.floor(left / 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const parts = [
+    pad(Math.floor(s / 86400)),
+    pad(Math.floor((s % 86400) / 3600)),
+    pad(Math.floor((s % 3600) / 60)),
+    pad(s % 60),
+  ];
+  return (
+    <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-[color-mix(in_oklab,var(--forest-deep)_75%,transparent)] px-3 py-2 text-sm font-bold text-[var(--gold)]">
+      <span className="text-xs font-normal text-foreground/70">ينتهي خلال:</span>
+      <span dir="ltr" className="tracking-widest">{parts.join(" : ")}</span>
+    </div>
   );
 }
 
@@ -635,6 +664,26 @@ function HomePage() {
     return m;
   }, [items]);
 
+  /** Offers behave like virtual menu items so they can live in the same cart. */
+  const offerItemById = useMemo(() => {
+    const m: Record<string, MenuItem> = {};
+    for (const o of offers) {
+      const price = o.discount_price ?? o.original_price ?? 0;
+      m[`offer:${o.id}`] = {
+        id: `offer:${o.id}`,
+        category_id: "offers",
+        name: o.title,
+        description: o.description,
+        price,
+        discount_price: null,
+        image_url: o.image_url ?? null,
+        sort_order: o.sort_order,
+        available: true,
+      };
+    }
+    return m;
+  }, [offers]);
+
   const basePrice = (it: MenuItem) =>
     it.discount_price != null && it.discount_price < it.price ? it.discount_price : it.price;
 
@@ -688,11 +737,11 @@ function HomePage() {
   const cartEntries = useMemo(() => {
     const entries: { key: string; item: MenuItem; line: CartLine }[] = [];
     for (const [key, line] of Object.entries(cart)) {
-      const it = itemById[line.itemId];
+      const it = itemById[line.itemId] ?? offerItemById[line.itemId];
       if (it && line.qty > 0) entries.push({ key, item: it, line });
     }
     return entries;
-  }, [cart, itemById]);
+  }, [cart, itemById, offerItemById]);
 
   const cartTotal = useMemo(
     () => cartEntries.reduce((s, e) => s + e.line.unitPrice * e.line.qty, 0),
@@ -734,6 +783,27 @@ function HomePage() {
     setPendingQty((q) => ({ ...q, [item.id]: 1 }));
     setJustAdded(item.id);
     setTimeout(() => setJustAdded((j) => (j === item.id ? null : j)), 1200);
+  };
+
+  const addOfferToCart = (o: Offer) => {
+    const key = `offer:${o.id}__base`;
+    const unitPrice = o.discount_price ?? o.original_price ?? 0;
+    setCart((c) => {
+      const existing = c[key];
+      return {
+        ...c,
+        [key]: {
+          itemId: `offer:${o.id}`,
+          optionId: null,
+          optionName: null,
+          unitPrice,
+          qty: (existing?.qty ?? 0) + 1,
+          note: existing?.note ?? "",
+        },
+      };
+    });
+    setJustAdded(`offer:${o.id}`);
+    setTimeout(() => setJustAdded((j) => (j === `offer:${o.id}` ? null : j)), 1200);
   };
 
   const whatsappHref = whatsappLink(theme);
