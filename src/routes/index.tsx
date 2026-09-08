@@ -1162,7 +1162,7 @@ function HomePage() {
             <h2 className="text-center font-display text-2xl font-bold md:text-3xl">
               <span className="gold-text">عروض وخصومات</span>
             </h2>
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid grid-cols-1 gap-4 px-2 sm:grid-cols-2 sm:px-0 lg:grid-cols-3">
               {menuLoading
                 ? Array.from({ length: 3 }, (_, index) => <OfferSkeleton key={index} />)
                 : liveOffers.map((o) => {
@@ -1171,7 +1171,7 @@ function HomePage() {
                     return (
                       <div
                         key={o.id}
-                        className="glass-card flex flex-col overflow-hidden rounded-3xl transition-transform hover:-translate-y-1"
+                        className="glass-card mx-auto flex w-full max-w-[20rem] flex-col overflow-hidden rounded-2xl transition-transform hover:-translate-y-1 sm:max-w-none sm:rounded-3xl"
                       >
                         <div className="relative">
                           {o.image_url ? (
@@ -1179,42 +1179,42 @@ function HomePage() {
                               src={o.image_url}
                               alt={o.title}
                               width={600}
-                              className="aspect-[4/3] w-full rounded-t-3xl object-cover"
+                              className="aspect-[4/3] w-full rounded-t-2xl object-cover sm:rounded-t-3xl"
                             />
                           ) : (
-                            <div className="grid aspect-[4/3] w-full place-items-center rounded-t-3xl bg-[color-mix(in_oklab,var(--gold)_8%,var(--forest-deep))]">
-                              <Sparkles className="h-8 w-8 text-[var(--gold)]" />
+                            <div className="grid aspect-[4/3] w-full place-items-center rounded-t-2xl bg-[color-mix(in_oklab,var(--gold)_8%,var(--forest-deep))] sm:rounded-t-3xl">
+                              <Sparkles className="h-6 w-6 text-[var(--gold)] sm:h-8 sm:w-8" />
                             </div>
                           )}
                           {percent != null && (
-                            <span className="absolute top-3 left-3 rounded-full bg-red-600 px-3 py-1 text-xs font-extrabold text-white shadow-lg">
+                            <span className="absolute top-2 left-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-lg sm:top-3 sm:left-3 sm:px-3 sm:py-1 sm:text-xs">
                               {percent}%
                             </span>
                           )}
                           {o.featured && (
-                            <span className="absolute top-3 right-3 rounded-full bg-[var(--gold)] px-3 py-1 text-[11px] font-bold text-[var(--forest-deep)] shadow-gold">
+                            <span className="absolute top-2 right-2 rounded-full bg-[var(--gold)] px-2 py-0.5 text-[9px] font-bold text-[var(--forest-deep)] shadow-gold sm:top-3 sm:right-3 sm:px-3 sm:py-1 sm:text-[11px]">
                               ⭐ عرض مميز
                             </span>
                           )}
                         </div>
 
-                        <div className="flex flex-1 flex-col p-4">
-                          <h3 className="font-display text-lg font-bold text-foreground">{o.title}</h3>
+                        <div className="flex flex-1 flex-col p-3 sm:p-4">
+                          <h3 className="font-display text-base font-bold text-foreground sm:text-lg">{o.title}</h3>
                           {o.description && (
-                            <p className="mt-1 text-sm leading-relaxed text-foreground/75">
+                            <p className="mt-1 text-xs leading-relaxed text-foreground/75 sm:text-sm">
                               {o.description}
                             </p>
                           )}
 
                           {price != null && (
-                            <div className="mt-3 flex items-center gap-2">
-                              <span className="text-lg font-extrabold text-[var(--gold)]">
+                            <div className="mt-2 flex items-center gap-2 sm:mt-3">
+                              <span className="text-sm font-extrabold text-[var(--gold)] sm:text-lg">
                                 {price.toLocaleString("en-US")} د.ع
                               </span>
                               {o.original_price != null &&
                                 o.discount_price != null &&
                                 o.discount_price < o.original_price && (
-                                  <span className="text-sm text-foreground/50 line-through">
+                                  <span className="text-xs text-foreground/50 line-through sm:text-sm">
                                     {o.original_price.toLocaleString("en-US")} د.ع
                                   </span>
                                 )}
@@ -1225,7 +1225,7 @@ function HomePage() {
 
                           <button
                             onClick={() => addOfferToCart(o)}
-                            className="mt-4 w-full rounded-full bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-[1.02]"
+                            className="mt-3 w-full rounded-full bg-[var(--gold)] px-4 py-2 text-xs font-bold text-[var(--forest-deep)] shadow-gold transition-transform hover:scale-[1.02] sm:mt-4 sm:py-2.5 sm:text-sm"
                           >
                             {justAdded === `offer:${o.id}` ? "تمت الإضافة ✓" : "أضف للطلب"}
                           </button>
