@@ -315,6 +315,7 @@ function HomePage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [areasOpen, setAreasOpen] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [featOpen, setFeatOpen] = useState(true);
   const [favDrawerOpen, setFavDrawerOpen] = useState(false);
