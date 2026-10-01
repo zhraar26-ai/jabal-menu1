@@ -57,6 +57,9 @@ import {
   loadFavorites,
   loadSavedAddress,
   isStoreOpen,
+  isValidIraqiPhone,
+  normalizePhone,
+  PHONE_ERROR_MESSAGE,
   checkOrderGuard,
   logOrder,
   rateLimit,
@@ -312,6 +315,7 @@ function HomePage() {
   const [navOpen, setNavOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [areasOpen, setAreasOpen] = useState(false);
@@ -764,8 +768,15 @@ function HomePage() {
   const storeOpen = isStoreOpen(theme, nowTick);
   const closedMessage =
     theme?.closed_message || "المطعم مغلق حالياً، نستقبل طلباتكم خلال أوقات العمل";
+  const phoneValid = isValidIraqiPhone(customerPhone);
+  const phoneError =
+    !phoneValid && (phoneTouched || customerPhone.length > 0)
+      ? customerPhone.length === 0
+        ? "رقم الهاتف مطلوب لإكمال الطلب"
+        : PHONE_ERROR_MESSAGE
+      : null;
   const canCheckout =
-    storeOpen && (areas.length === 0 || !!areaId) && customerPhone.trim().length >= 8;
+    storeOpen && (areas.length === 0 || !!areaId) && phoneValid;
 
 
   const addToCart = (item: MenuItem) => {
