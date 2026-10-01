@@ -828,10 +828,20 @@ function HomePage() {
 
   const sendCartToWhatsapp = async () => {
     setOrderError(null);
-    const phone = sanitizeText(customerPhone, 40);
+    const phone = normalizePhone(customerPhone);
     const address = sanitizeText(customerAddress, 500);
     if (!storeOpen) {
       setOrderError(closedMessage);
+      return;
+    }
+    if (areas.length > 0 && !areaId) {
+      setAreasOpen(true);
+      setOrderError("يرجى اختيار منطقة التوصيل أولاً.");
+      return;
+    }
+    if (!isValidIraqiPhone(phone)) {
+      setPhoneTouched(true);
+      setOrderError(PHONE_ERROR_MESSAGE);
       return;
     }
     if (!canCheckout) {
