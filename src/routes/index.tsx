@@ -314,7 +314,7 @@ function HomePage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
-  const [justAdded, setJustAdded] = useState<string | null>(null);
+  const [areasOpen, setAreasOpen] = useState(false);
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [featOpen, setFeatOpen] = useState(true);
   const [favDrawerOpen, setFavDrawerOpen] = useState(false);
