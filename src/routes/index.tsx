@@ -57,6 +57,9 @@ import {
   loadFavorites,
   loadSavedAddress,
   isStoreOpen,
+  isValidIraqiPhone,
+  normalizePhone,
+  PHONE_ERROR_MESSAGE,
   checkOrderGuard,
   logOrder,
   rateLimit,
@@ -312,6 +315,7 @@ function HomePage() {
   const [navOpen, setNavOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [customerAddress, setCustomerAddress] = useState("");
   const [showCheckoutWarning, setShowCheckoutWarning] = useState(false);
   const [areasOpen, setAreasOpen] = useState(false);
@@ -460,7 +464,7 @@ function HomePage() {
     const saved = loadSavedAddress();
     if (saved) {
       setAreaId(saved.areaId ?? "");
-      setCustomerPhone(saved.phone ?? "");
+      setCustomerPhone(normalizePhone(saved.phone ?? ""));
       setCustomerAddress(saved.address ?? "");
     }
   }, []);
@@ -764,8 +768,15 @@ function HomePage() {
   const storeOpen = isStoreOpen(theme, nowTick);
   const closedMessage =
     theme?.closed_message || "المطعم مغلق حالياً، نستقبل طلباتكم خلال أوقات العمل";
+  const phoneValid = isValidIraqiPhone(customerPhone);
+  const phoneError =
+    !phoneValid && (phoneTouched || customerPhone.length > 0)
+      ? customerPhone.length === 0
+        ? "رقم الهاتف مطلوب لإكمال الطلب"
+        : PHONE_ERROR_MESSAGE
+      : null;
   const canCheckout =
-    storeOpen && (areas.length === 0 || !!areaId) && customerPhone.trim().length >= 8;
+    storeOpen && (areas.length === 0 || !!areaId) && phoneValid;
 
 
   const addToCart = (item: MenuItem) => {
@@ -817,10 +828,20 @@ function HomePage() {
 
   const sendCartToWhatsapp = async () => {
     setOrderError(null);
-    const phone = sanitizeText(customerPhone, 40);
+    const phone = normalizePhone(customerPhone);
     const address = sanitizeText(customerAddress, 500);
     if (!storeOpen) {
       setOrderError(closedMessage);
+      return;
+    }
+    if (areas.length > 0 && !areaId) {
+      setAreasOpen(true);
+      setOrderError("يرجى اختيار منطقة التوصيل أولاً.");
+      return;
+    }
+    if (!isValidIraqiPhone(phone)) {
+      setPhoneTouched(true);
+      setOrderError(PHONE_ERROR_MESSAGE);
       return;
     }
     if (!canCheckout) {
@@ -1888,13 +1909,34 @@ function HomePage() {
                     onChange={(e) => setCustomerAddress(e.target.value)}
                     className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
                   />
-                  <input
-                    type="tel"
-                    placeholder="رقم الهاتف *"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
-                  />
+                  <div>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      maxLength={11}
+                      dir="ltr"
+                      placeholder="رقم الهاتف * (07xxxxxxxxx)"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(normalizePhone(e.target.value))}
+                      onBlur={() => setPhoneTouched(true)}
+                      aria-invalid={!!phoneError}
+                      aria-describedby="phone-error"
+                      className={`w-full rounded-lg border bg-[var(--forest-deep)] px-3 py-2 text-xs focus:outline-none ${
+                        phoneError
+                          ? "border-red-500/70 focus:border-red-400"
+                          : "border-[color-mix(in_oklab,var(--gold)_25%,transparent)] focus:border-[var(--gold)]"
+                      }`}
+                    />
+                    {phoneError && (
+                      <p
+                        id="phone-error"
+                        className="mt-1 text-[10px] font-bold leading-tight text-red-300"
+                      >
+                        ⚠️ {phoneError}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {!storeOpen && (
@@ -1903,8 +1945,8 @@ function HomePage() {
                   </div>
                 )}
                 {storeOpen && !canCheckout && (
-                  <div className="mb-2.5 rounded-lg border border-[color-mix(in_oklab,var(--gold)_35%,transparent)] bg-[var(--gold)]/10 px-3 py-2 text-[11px] text-[var(--gold)]">
-                    ⚠️ يرجى اختيار منطقة التوصيل وإدخال رقم الهاتف لتفعيل الإرسال.
+                  <div className="mb-2.5 rounded-lg border border-[color-mix(in_oklab,var(--gold)_35%,transparent)] bg-[var(--gold)]/10 px-3 py-2 text-[11px] leading-snug text-[var(--gold)]">
+                    ⚠️ لتفعيل زر الإرسال: اختر منطقة التوصيل وأدخل رقم هاتف عراقي صحيح (077 / 078 / 079 / 075) مكوّن من 11 رقما.
                   </div>
                 )}
                 {orderError && (
@@ -1932,11 +1974,22 @@ function HomePage() {
                 <button
                   onClick={sendCartToWhatsapp}
                   disabled={!canCheckout}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                  aria-disabled={!canCheckout}
+                  title={
+                    canCheckout
+                      ? "إرسال الطلب عبر واتساب"
+                      : "اختر منطقة التوصيل وأدخل رقم هاتف عراقي صحيح أولاً"
+                  }
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
                 >
                   <MessageCircle className="h-4 w-4" />
                   إرسال الطلب
                 </button>
+                {!canCheckout && storeOpen && (
+                  <p className="mt-1.5 text-center text-[10px] text-foreground/50">
+                    {areas.length > 0 && !areaId ? "① اختر منطقة التوصيل" : phoneValid ? "" : "② أدخل رقم هاتف عراقي صحيح"}
+                  </p>
+                )}
 
               </div>
             )}
