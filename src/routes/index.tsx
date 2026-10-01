@@ -1909,13 +1909,34 @@ function HomePage() {
                     onChange={(e) => setCustomerAddress(e.target.value)}
                     className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
                   />
-                  <input
-                    type="tel"
-                    placeholder="رقم الهاتف *"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
-                  />
+                  <div>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      maxLength={11}
+                      dir="ltr"
+                      placeholder="رقم الهاتف * (07xxxxxxxxx)"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(normalizePhone(e.target.value))}
+                      onBlur={() => setPhoneTouched(true)}
+                      aria-invalid={!!phoneError}
+                      aria-describedby="phone-error"
+                      className={`w-full rounded-lg border bg-[var(--forest-deep)] px-3 py-2 text-xs focus:outline-none ${
+                        phoneError
+                          ? "border-red-500/70 focus:border-red-400"
+                          : "border-[color-mix(in_oklab,var(--gold)_25%,transparent)] focus:border-[var(--gold)]"
+                      }`}
+                    />
+                    {phoneError && (
+                      <p
+                        id="phone-error"
+                        className="mt-1 text-[10px] font-bold leading-tight text-red-300"
+                      >
+                        ⚠️ {phoneError}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {!storeOpen && (
