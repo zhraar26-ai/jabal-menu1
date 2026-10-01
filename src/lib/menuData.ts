@@ -482,12 +482,32 @@ export async function logOrder(payload: {
   phone: string;
   address: string;
 }) {
+  // Server-side guard: never store an order without a valid Iraqi mobile number.
+  const phone = normalizePhone(payload.phone);
+  if (!isValidIraqiPhone(phone)) throw new Error(PHONE_ERROR_MESSAGE);
   const { error } = await sb.from("orders").insert({
     ...payload,
-    phone: payload.phone.slice(0, 40),
+    phone,
     address: payload.address.slice(0, 500),
   });
   if (error) throw error;
+}
+
+/* ============ IRAQI MOBILE PHONE VALIDATION ============ */
+
+const IRAQI_PHONE_PATTERN = /^(?:075|077|078|079)\d{8}$/;
+
+export const PHONE_ERROR_MESSAGE =
+  "رقم الهاتف غير صحيح: يجب أن يبدأ بـ 077 أو 078 أو 079 أو 075 ويتكوّن من 11 رقماً";
+
+/** Keeps digits only and caps the value at the 11-digit Iraqi mobile length. */
+export function normalizePhone(input: string): string {
+  return (input || "").replace(/\D/g, "").slice(0, 11);
+}
+
+/** True only for an Iraqi mobile number: 075/077/078/079 followed by 8 digits (11 total). */
+export function isValidIraqiPhone(input: string): boolean {
+  return IRAQI_PHONE_PATTERN.test(normalizePhone(input));
 }
 
 /* ============ SECURITY HELPERS ============ */
