@@ -464,7 +464,7 @@ function HomePage() {
     const saved = loadSavedAddress();
     if (saved) {
       setAreaId(saved.areaId ?? "");
-      setCustomerPhone(saved.phone ?? "");
+      setCustomerPhone(normalizePhone(saved.phone ?? ""));
       setCustomerAddress(saved.address ?? "");
     }
   }, []);
