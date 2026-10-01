@@ -1821,18 +1821,65 @@ function HomePage() {
               <div className="border-t border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest)] px-5 py-4">
                 <div className="mb-2.5 space-y-1.5">
                   {areas.length > 0 && (
-                    <select
-                      value={areaId}
-                      onChange={(e) => setAreaId(e.target.value)}
-                      className="w-full rounded-lg border border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] px-3 py-2 text-xs focus:border-[var(--gold)] focus:outline-none"
-                    >
-                      <option value="">اختر منطقة التوصيل * ▾</option>
-                      {areas.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setAreasOpen((v) => !v)}
+                        className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-xs transition-colors focus:outline-none ${
+                          areaId
+                            ? "border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--gold)]"
+                            : "border-[color-mix(in_oklab,var(--gold)_25%,transparent)] bg-[var(--forest-deep)] text-foreground/70"
+                        }`}
+                      >
+                        <span className="font-bold">
+                          {areaId && selectedArea
+                            ? `${selectedArea.name} — ${selectedArea.price.toLocaleString()} د.ع`
+                            : "اختر منطقة التوصيل *"}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 transition-transform duration-200 ${areasOpen ? "rotate-180" : ""}`}
+                        />
+                      </button>
+
+                      {areasOpen && (
+                        <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)]/60 p-2 sm:grid-cols-3 md:grid-cols-4">
+                          {areas.map((a) => {
+                            const active = a.id === areaId;
+                            return (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => {
+                                  setAreaId(a.id);
+                                  setAreasOpen(false);
+                                }}
+                                className={`relative flex min-h-[3.25rem] flex-col items-start justify-center gap-0.5 rounded-lg border px-2.5 py-2 text-right transition-all duration-150 active:scale-[0.97] ${
+                                  active
+                                    ? "border-[var(--gold)] bg-[var(--gold)]/15"
+                                    : "border-[color-mix(in_oklab,var(--gold)_20%,transparent)] bg-[var(--forest)]/80 hover:border-[var(--gold)]/60"
+                                }`}
+                              >
+                                <span
+                                  className={`w-full truncate text-[12px] font-bold ${active ? "text-[var(--gold)]" : "text-foreground/90"}`}
+                                >
+                                  {a.name}
+                                </span>
+                                <span
+                                  className={`text-[11px] tabular-nums ${active ? "text-[var(--gold)]/80" : "text-foreground/60"}`}
+                                >
+                                  {a.price.toLocaleString()} د.ع
+                                </span>
+                                {active && (
+                                  <span className="absolute left-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-[var(--gold)] text-[var(--forest-deep)]">
+                                    <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   )}
                   <input
                     type="text"
