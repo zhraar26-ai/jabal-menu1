@@ -18,6 +18,7 @@ import {
   Search,
   Heart,
   Star,
+  Check,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero.jpg";
