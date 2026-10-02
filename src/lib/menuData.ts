@@ -495,14 +495,19 @@ export async function logOrder(payload: {
 
 /* ============ IRAQI MOBILE PHONE VALIDATION ============ */
 
-const IRAQI_PHONE_PATTERN = /^(?:075|077|078|079)\d{8}$/;
+const IRAQI_PHONE_PATTERN = /^(?:0|\+964|00964|964)7[5789]\d{8}$/;
 
 export const PHONE_ERROR_MESSAGE =
-  "رقم الهاتف غير صحيح: يجب أن يبدأ بـ 077 أو 078 أو 079 أو 075 ويتكوّن من 11 رقماً";
+  "رقم الهاتف غير صحيح: أدخل رقماً عراقياً يبدأ بـ 077 أو 078 أو 079 أو 075 (أو بصيغة ‎+964 / 00964 / 964)";
 
-/** Keeps digits only and caps the value at the 11-digit Iraqi mobile length. */
+/** Converts Arabic/Persian digits to 0-9, keeps digits and a leading "+", caps at 14 chars. */
 export function normalizePhone(input: string): string {
-  return (input || "").replace(/\D/g, "").slice(0, 11);
+  const s = (input || "")
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .trim();
+  const plus = s.startsWith("+") ? "+" : "";
+  return (plus + s.replace(/\D/g, "")).slice(0, 14);
 }
 
 /** True only for an Iraqi mobile number: 075/077/078/079 followed by 8 digits (11 total). */
