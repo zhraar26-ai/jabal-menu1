@@ -1863,7 +1863,7 @@ function HomePage() {
                       </button>
 
                       {areasOpen && (
-                        <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)]/60 p-2 sm:grid-cols-3 md:grid-cols-4">
+                        <div className="mt-2 max-h-[280px] grid grid-cols-2 gap-2 overflow-y-auto overscroll-contain scroll-smooth rounded-2xl border border-[color-mix(in_oklab,var(--gold)_18%,transparent)] bg-[var(--forest-deep)]/60 p-2.5 [scrollbar-width:thin] sm:grid-cols-3 md:grid-cols-4">
                           {areas.map((a) => {
                             const active = a.id === areaId;
                             return (
@@ -1874,24 +1874,24 @@ function HomePage() {
                                   setAreaId(a.id);
                                   setAreasOpen(false);
                                 }}
-                                className={`relative flex min-h-[3.25rem] flex-col items-start justify-center gap-0.5 rounded-lg border px-2.5 py-2 text-right transition-all duration-150 active:scale-[0.97] ${
+                                className={`relative flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all duration-150 active:scale-[0.97] ${
                                   active
-                                    ? "border-[var(--gold)] bg-[var(--gold)]/15"
+                                    ? "border-[var(--gold)] bg-[var(--gold)]/15 shadow-[0_0_0_3px_color-mix(in_oklab,var(--gold)_12%,transparent)]"
                                     : "border-[color-mix(in_oklab,var(--gold)_20%,transparent)] bg-[var(--forest)]/80 hover:border-[var(--gold)]/60"
                                 }`}
                               >
                                 <span
-                                  className={`w-full truncate text-[12px] font-bold ${active ? "text-[var(--gold)]" : "text-foreground/90"}`}
+                                  className={`line-clamp-2 w-full text-[12.5px] font-extrabold leading-tight ${active ? "text-[var(--gold)]" : "text-foreground/90"}`}
                                 >
                                   {a.name}
                                 </span>
                                 <span
-                                  className={`text-[11px] tabular-nums ${active ? "text-[var(--gold)]/80" : "text-foreground/60"}`}
+                                  className={`text-[11.5px] font-bold tabular-nums ${active ? "text-[var(--gold)]/80" : "text-foreground/60"}`}
                                 >
                                   {a.price.toLocaleString()} د.ع
                                 </span>
                                 {active && (
-                                  <span className="absolute left-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-[var(--gold)] text-[var(--forest-deep)]">
+                                  <span className="absolute left-2 top-2 grid h-4 w-4 place-items-center rounded-full bg-[var(--gold)] text-[var(--forest-deep)]">
                                     <Check className="h-2.5 w-2.5" strokeWidth={3} />
                                   </span>
                                 )}
@@ -1900,6 +1900,7 @@ function HomePage() {
                           })}
                         </div>
                       )}
+
                     </div>
                   )}
                   <input
