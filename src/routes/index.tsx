@@ -1912,7 +1912,7 @@ function HomePage() {
                   <div>
                     <input
                       type="tel"
-                      inputMode="numeric"
+                      inputMode="tel"
                       autoComplete="tel"
                       maxLength={14}
                       dir="ltr"
