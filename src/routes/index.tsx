@@ -1914,7 +1914,7 @@ function HomePage() {
                       type="tel"
                       inputMode="numeric"
                       autoComplete="tel"
-                      maxLength={11}
+                      maxLength={14}
                       dir="ltr"
                       placeholder="رقم الهاتف * (07xxxxxxxxx)"
                       value={customerPhone}
